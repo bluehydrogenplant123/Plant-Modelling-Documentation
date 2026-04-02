@@ -1,0 +1,580 @@
+\documentclass{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{changepage}
+\usepackage{tabularx}
+\usepackage{pdflscape}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{longtable} 
+\usepackage{booktabs}
+\usepackage{float}
+
+\hypersetup{
+    colorlinks=true,       % false: boxed links; true: colored links
+    linkcolor=red,          % color of internal links (change box color with linkbordercolor)
+    citecolor=green,        % color of links to bibliography
+    filecolor=magenta,      % color of file links
+    urlcolor=cyan           % color of external links
+}
+\title{Hazard Analysis\\\progname}
+
+\author{\authname}
+
+\date{}
+
+\input{../Comments}
+\input{../Common}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+~\newpage
+
+\pagenumbering{roman}
+
+\begin{table}[hp]
+\caption{Revision History} \label{TblRevisionHistory}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
+\midrule
+16th October 2024 & Kishor Pandya & Added Introduction and Scope/Purpose of HA\\
+16th October 2024 & Madhu Sivaprasam & Added safety and security requirements\\
+20th October 2024 & Rasik Pokharel & Added Roadmap and Critical Assumptions\\
+22nd October 2024 & Dhrumil Pandya & Added Failure Mode and Effect Analysis; System Boundaries and Components\\
+3rd April 2024 & Madhu Sivaprasam & Changes for revision 1\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+~\newpage
+
+\tableofcontents
+
+~\newpage
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+This document outlines the Hazard Analysis for the modeling software used in plants and factories. The software allows users to build and simulate models of factories or plants, consisting of nodes (representing machines) and edges (representing processes) to simulate various production or operational workflows.
+
+The definitions used in this document come from the STPA (System-Theoretic Process Analysis) Handbook, a comprehensive guide on hazard analysis techniques based on an extended model of accident causation \cite{Leveson2018}.
+
+\begin{itemize}
+    \item \textbf{Loss}: A loss refers to something of value to the stakeholders. Losses may include human injury, machine or equipment failure, production downtime, environmental damage, or any outcome deemed unacceptable by stakeholders \cite{Leveson2018}.
+    \item \textbf{Hazard}: A hazard is a system state or set of conditions that, combined with specific worst-case scenarios, could result in a loss \cite{Leveson2018}.
+    \item \textbf{System}: A system is a collection of components working together to achieve common objectives. In this context, the system refers to the modeling software that integrates various machines and processes into a unified simulation \cite{Leveson2018}.
+\end{itemize}
+
+The purpose of this document is to identify, analyze, and address the potential hazards in the modeling software, ensuring the safety, efficiency, and security of the system during operation.
+
+\section{Scope and Purpose of Hazard Analysis}
+
+\subsection{Scope} The scope of the hazard analysis is as follows: First, the system boundaries and components of the modeling software are defined. This provides a comprehensive breakdown of all internal components, enabling the identification of specific areas where hazards may manifest. The document outlines critical assumptions regarding how the system will be used. These assumptions help narrow the scope to focus on system hazards, differentiating them from other potential hazards that can be mitigated through these assumptions. A Failure Mode and Effect Analysis (FMEA) will be conducted, presenting potential hazards in a clear and understandable format. The document will also describe new safety and security requirements that arise from this analysis. Lastly, a roadmap will be defined to determine which of the new requirements will be prioritized for completion by the end of the final revision of the capstone project and which will be excluded from scope.
+
+\subsection{Purpose} The purpose of this hazard analysis is to evaluate the modeling software from a hazard perspective. By doing so, developers can identify specific areas where hazards may arise and formulate mitigation plans before the development phase begins. This proactive approach will help prevent these hazards from appearing in the final system. Furthermore, the analysis will yield a set of safety and security requirements that may not be immediately apparent.
+
+\section{System Boundaries and Components}
+
+\subsection{Graphical User Interface (GUI)}
+
+\textbf{Description:}
+The GUI is developed using React and ReactFlow, which is a major dependency for node and edge management. It allows users to create, modify, and visualize factory plant schemas through an interactive canvas.
+\\\\
+\textbf{Functionality:}
+\begin{itemize}
+    \item Facilitates user interactions such as dragging and dropping nodes representing machinery and connecting them with edges representing material or energy streams.
+    \item Provides features like zooming, panning, hierarchical views, and real-time feedback on the model's validity.  
+\end{itemize}
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item Interfaces with the backend service to send user actions and receive updates.
+        \item Relies heavily on ReactFlow for rendering and managing the graphical elements.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Dependency on ReactFlow}: If ReactFlow Pro fails, is outdated, or contains vulnerabilities, it may render the GUI non-functional or insecure.
+        \item \textbf{User Input Errors}: Incorrect or malicious data entry could lead to faulty simulations or system crashes.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Backend Service}
+
+\textbf{Description:}
+Built with ExpressJS, the backend serves as the intermediary between the GUI, databases, and the Python simulation models.
+\\\\
+\textbf{Functionality:}
+\begin{itemize}
+    \item Processes API requests from the GUI.
+    \item Manages data flow between the frontend and databases.
+    \item Orchestrates simulation requests to the Python models and returns results to the GUI.
+\end{itemize}
+
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item Receives and validates data from the GUI.
+        \item Communicates with both the SQL (PostgreSQL) and NoSQL (MongoDB) databases.
+        \item Interfaces with the Python simulation models via APIs or direct calls.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Data Validation Failures}: Improper validation may lead to corrupted data or injection attacks.
+        \item \textbf{API Endpoint Failures}: Unhandled exceptions or crashes may disrupt service.
+        \item \textbf{Security Vulnerabilities}: Weak authentication or authorization mechanisms may allow unauthorized access.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Database Layer}
+
+\textbf{Description:}
+Comprises two databases: PostgreSQL for system data and MongoDB for user-specific data.
+\\\\
+\textbf{Functionality:}
+\begin{itemize}
+    \item \textbf{PostgreSQL}: Stores system-related data such as standard industry data, default equipment parameters, and operational constraints.
+    \item \textbf{MongoDB}: Holds user-specific data like customized plant models, configurations, and simulation results.
+    
+\end{itemize}
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item The backend service performs CRUD operations on both databases.
+        \item The databases interact with the backend to store and retrieve data upon user actions.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Data Corruption or Loss}: Hardware failures or software bugs may result in data loss.
+        \item \textbf{Concurrency Issues}: Simultaneous access could lead to inconsistencies.
+        \item \textbf{Unauthorized Data Access}: Insufficient security measures may expose sensitive data.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Python Simulation Models}
+
+\textbf{Description:}
+Pre-existing Python scripts developed by Dr. Vladimir Mahalec’s team.
+
+\textbf{Functionality:}
+\begin{itemize}
+    \item Perform mathematical modeling and simulation based on input data received from the backend.
+    \item Return simulation results for visualization in the GUI.
+    
+\end{itemize}
+
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item Receives input data from the backend.
+        \item Outputs results back to the backend.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Incorrect Simulation Results}: Bugs or incorrect input formatting may produce faulty outputs.
+        \item \textbf{Execution Failures}: Unhandled exceptions may halt simulations.
+        \item \textbf{Performance Issues}: High resource consumption may slow down the system.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Version Control System}
+
+\textbf{Description:}
+Manages versioning of plant schemas.
+\\\\
+\textbf{Functionality:}
+\begin{itemize}
+    \item Allows users to save, retrieve, and manage different versions of their models.
+    \item Maintains a history of modifications for tracking changes and collaboration.
+    
+\end{itemize}
+
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item Works with the backend and databases to store and retrieve versioned data.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Version Conflicts}: Improper handling may lead to overwriting or loss of data.
+        \item \textbf{Data Loss}: System failures could result in lost versions.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Authentication and User Management}
+
+\textbf{Description:}
+Handles user accounts and access control.
+\\\\
+\textbf{Functionality:}
+\begin{itemize}
+    \item Implements role-based access control (RBAC) to restrict access based on user roles.
+    \item Manages user authentication, authorization, and session management.
+    
+\end{itemize}
+
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item Interfaces with the backend and databases to authenticate users.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Unauthorized Access}: Compromised credentials may lead to data breaches.
+        \item \textbf{Privilege Escalation}: Misconfigured roles may grant excessive permissions.
+    \end{itemize}
+\end{itemize}
+
+\subsection{External Libraries and Tools}
+
+\textbf{Description:}
+Includes \textbf{ReactFlow Pro}, dbgate, and other third-party tools.
+\\\\
+\textbf{Functionality:}
+\begin{itemize}
+    \item \textbf{ReactFlow Pro}: Enhances the GUI with advanced node and edge management capabilities.
+    \item \textbf{dbgate}: Provides an interface for database management.
+    \item Other tools support documentation, issue tracking, and security testing.
+    
+\end{itemize}
+\textbf{Interactions \& Potential Hazards:}
+\begin{itemize}
+    \item \textbf{Interactions:}
+    \begin{itemize}
+        \item Integrated into the GUI and backend.
+    \end{itemize}
+    \item \textbf{Potential Hazards:}
+    \begin{itemize}
+        \item \textbf{Dependency Failures}: Issues in external libraries may affect system stability.
+        \item \textbf{Security Vulnerabilities}: Outdated or compromised libraries may introduce risks.
+        \item \textbf{License Compliance}: Improper use may lead to legal issues.
+    \end{itemize}
+\end{itemize}
+
+\section{Critical Assumptions}
+
+The following critical assumptions have been made about the software system for the capstone project. These assumptions aim to identify and minimize potential hazards by addressing the system's limitations and expected conditions.
+
+\begin{enumerate}
+    \item \textbf{Data Integrity and Security}
+    \begin{itemize}
+        \item It is assumed that data provided to the system will be in the expected format and within reasonable bounds for validation.
+        \item No malicious code will be intentionally introduced into the system through user input, even though input validation and sanitization measures are in place.
+        \item Encryption mechanisms (e.g., SSL/TLS and AES-256) are assumed to be effective in securing sensitive data from unauthorized access.
+    \end{itemize}
+    
+    \item \textbf{System Dependencies}
+    \begin{itemize}
+        \item Third-party libraries and tools used for development, such as version control (Git), security testing tools (SAST, DAST), and logging systems, are assumed to be functioning correctly and free from critical vulnerabilities.
+        \item Software updates to dependencies will not introduce breaking changes or new vulnerabilities that affect system stability.
+    \end{itemize}
+
+    \item \textbf{\textcolor{blue}{Valid System Tables}}
+    \begin{itemize}
+        \item \textcolor{blue}{It is assumed that all system table data will be validly entered and not go against the rules provided in the Excel schemas.}
+    \end{itemize}
+
+    \item \textbf{\textcolor{blue}{Local hardware}}
+    \begin{itemize}
+        \item \textcolor{blue}{It is assumed the local computer will function as intended and be able to deploy both a frontend client and a backend server without any issue.}
+    \end{itemize}
+
+    \item \textbf{\textcolor{blue}{Browser options}}
+    \begin{itemize}
+        \item \textcolor{blue}{It is assumed the user will use a modern browser service such as Chrome, Edge, or Firefox to deploy the service.}
+    \end{itemize}
+
+
+
+    
+\end{enumerate}
+
+These assumptions help define the boundaries and expected operating conditions for the project. Mitigating potential risks associated with these assumptions is crucial to ensuring a robust and secure system.
+
+\newpage
+
+% \begin{table}[H]
+%     \centering
+%     \resizebox{\textwidth}{!}{ % Resize the table to fit the page width
+%         \begin{tabular}{@{} p{2cm} p{2cm} p{3cm} p{3cm} p{2.5cm} p{2.5cm} p{3.5cm} p{1cm} p{1cm} p{1cm} @{}}
+%             \hline
+%             \textbf{Design Function} & \textbf{Failure Mode} & \textbf{Effects of Failure} & \textbf{Causes of Failure} & \textbf{Detection} & \textbf{Risks} & \textbf{Recommended Action} & \textbf{SR} & \textbf{Ref} & \textbf{Severity} \\
+%             \hline
+%             GUI & GUI unresponsive or crashes & Users cannot create or modify models; Potential loss of unsaved work & Software bugs; Memory leaks; Issues with React/ReactFlow & User experiences freezes; Error logs & User frustration; Data loss & Implement error handling; Update and test libraries; Consider auto-save feature & FR4, PRF2 & H-GUI-1 & High \\
+%             \hline
+%             GUI & Incorrect rendering of models & Misinterpretation of plant structure; Incorrect simulation inputs & Data synchronization issues; Rendering bugs & Visual inconsistencies; Failed UI tests & Erroneous results; Safety hazards & Data validation; Automated UI testing & FR2, FR10 & H-GUI-2 & High \\
+%             \hline
+%             GUI & ReactFlow dependency failure & Loss of node/edge manipulation; Security vulnerabilities & Outdated library; Security breaches in third-party code & Functionality tests fail; Security scans & System instability; Data breaches & Update ReactFlow; Monitor security advisories; Implement fallback mechanisms & SEC-IMM1, MSA2 & H-GUI-3 & High \\
+%             \hline
+%             Backend Service & API failure or incorrect responses & GUI cannot communicate; Incorrect data processing & Server crashes; API bugs & Downtime reports; Error logs & Service unavailability; Data corruption & Implement error handling; Regular API testing & FR4, PRF2 & H-BE-1 & High \\
+%             \hline
+%             Backend Service & Security vulnerabilities & Unauthorized access; System compromise & Poor input validation; Missing authentication checks & Security audits; Unusual activity logs & Data breaches; Legal issues & Enforce input validation; Implement robust authentication & SEC-INT1, SEC-ACC1 & H-BE-2 & Critical \\
+%             \hline
+%             Database Layer & Data corruption or loss & Loss of user data; Inaccurate results & Improper operations; Hardware failures & Integrity checks fail; User reports & Significant data loss; Compromised integrity & Regular backups; Data validation & MSM1, PRF2 & H-DB-1 & Critical \\
+%             \hline
+%             Database Layer & Database unavailable & Cannot access or save data; Impaired system & Server crashes; Network issues & Monitoring alerts; Connection errors & Service disruption; Data inconsistency & Implement replication; Failover strategies; Health monitoring & OEWE2, PRF2 & H-DB-2 & High \\
+%             \hline
+%             Python Models & Incorrect simulation results & Misleading data; Flawed decisions & Simulation bugs; Input formatting errors & Validation discrepancies; Failed tests & Compromised designs; Safety hazards & Validate outputs; Conduct thorough testing & FR9, PPA2 & H-PSM-1 & Critical \\
+%             \hline
+%             Python Models & Simulation execution failure & No simulation results; Workflow interruptions & Unhandled exceptions; Resource limitations & Error logs; Execution errors & Project delays; User frustration & Implement exception handling; Optimize code & FR4, PRF1 & H-PSM-2 & High \\
+%             \hline
+%             Version Control & Version conflicts; Data loss & Lost work; Version confusion & Concurrency issues; Logic bugs & Inconsistent histories; User reports & Loss of work; Reduced trust & Implement concurrency controls; Provide clear histories & FR5, FR6 & H-VCS-1 & High \\
+%             \hline
+%             Auth/User Mgmt & Unauthorized access & Data breaches; Unauthorized changes & Weak passwords; No multi-factor authentication & Unusual activities; Security audits & Legal issues; Data integrity loss & Enforce strong passwords; Implement MFA & SEC-PRI1, SEC-ACC1 & H-AUM-1 & Critical \\
+%             \hline
+%             Auth/User Mgmt & Incorrect role assignments & Access to unauthorized data/features & RBAC misconfiguration & Anomalies in logs; User reports & Data leaks; Security risks & Regular role audits; Verification processes & SEC-ACC1 & H-AUM-2 & High \\
+%             \hline
+%             External Libraries & License compliance issues & Legal action; Infringement consequences & Misuse of licensed software & License audits; Legal notices & Financial penalties; Reputation damage & Review licenses; Document compliance & LR2 & H-ELT-1 & High \\
+%             \hline
+%             External Libraries & Security vulnerabilities & Potential attacks; Exploitation & Outdated dependencies & Security scans; Assessments & System compromise; Data breaches & Update dependencies; Monitor security advisories & SEC-IMM1 & H-ELT-2 & Critical \\
+%             \hline
+%         \end{tabular}
+%     }
+%     \caption{Failure Mode and Effect Analysis (FMEA)}
+%     \label{tab:FMEA}
+%     \end{table}
+\begin{landscape}
+    \section{Failure Mode and Effect Analysis}
+
+    \begin{longtable}{@{} p{2cm} p{2cm} p{3cm} p{3cm} p{2.5cm} p{2.5cm} p{3.5cm} p{1cm} p{1cm} p{1cm}}
+        \caption{Failure Mode and Effect Analysis (FMEA)} \label{tab:FMEA} \\
+        \toprule
+        \textbf{Design Function} & \textbf{Failure Mode} & \textbf{Effects of Failure} & \textbf{Causes of Failure} & \textbf{Detection} & \textbf{Risks} & \textbf{Recommended Action} & \textbf{SR} & \textbf{Ref} & \textbf{Severity} \\
+        \midrule
+        \endfirsthead
+    
+        \toprule
+        \textbf{Design Function} & \textbf{Failure Mode} & \textbf{Effects of Failure} & \textbf{Causes of Failure} & \textbf{Detection} & \textbf{Risks} & \textbf{Recommended Action} & \textbf{SR} & \textbf{Ref} & \textbf{Severity} \\
+        \midrule
+        \endhead
+    
+        \midrule
+        \multicolumn{10}{r}{\textit{Continued on next page}} \\
+        \midrule
+        \endfoot
+    
+        \bottomrule
+        \endlastfoot
+        
+        GUI & GUI unresponsive or crashes & Users cannot create or modify models. Potential data loss & Software bugs, Memory leaks, Issues with React/ReactFlow & User experiences freezes, Error logs & User frustration, Data loss & Implement error handling, Update and test libraries, Consider auto-save feature & FR4, PRF2 & H-GUI-1 & High \\
+    
+        \midrule
+        
+        GUI & Incorrect rendering of models & Misinterpretation of plant structure. Incorrect simulation inputs & Data synchronization issues, Rendering bugs & Visual inconsistencies, Failed UI tests & Erroneous results, Safety hazards & Data validation, Automated UI testing & FR2, FR10 & H-GUI-2 & High \\
+        
+        \midrule
+        
+        GUI & ReactFlow dependency failure & Loss of node/edge manipulation. Security vulnerabilities & Outdated library, Security breaches in third-party code & Functionality tests fail, Security scans & System instability, Data breaches & Update ReactFlow, Monitor security advisories, Implement fallback mechanisms & SEC-IMM1, MSA2 & H-GUI-3 & High \\
+        
+        \midrule
+        
+        Backend Service & API failure or incorrect responses & GUI cannot communicate. Incorrect data processing & Server crashes, API bugs & Downtime reports, Error logs & Service unavailability, Data loss & Implement error handling, Regular API testing & FR4, PRF2 & H-BE-1 & High \\
+        
+        \midrule
+        
+        Backend Service & Security vulnerabilities & Unauthorized access. System compromise & Poor input validation, Missing authentication checks & Security audits, Unusual activity logs & Data breaches, Legal issues & Enforce input validation, Implement robust authentication & SEC-INT1, SEC-ACC1 & H-BE-2 & Critical \\
+        
+        \midrule
+        
+        Database Layer & Data corruption or loss & Data loss. Inaccurate results & Improper operations, Hardware failures & Integrity checks fail, User reports & Significant data loss, Compromised integrity & Regular backups, Data validation & MSM1, PRF2 & H-DB-1 & Critical \\
+        
+        \midrule
+        
+        Database Layer & Database unavailable & Cannot access or save data. Impaired system & Server crashes, Network issues & Monitoring alerts, Connection errors & Service disruption, Data inconsistency & Implement replication, Failover strategies, Health monitoring & OEWE2, PRF2 & H-DB-2 & High \\
+        
+        \midrule
+        
+        Python Models & Incorrect simulation results & Misleading data. Flawed decisions & Simulation bugs, Input formatting errors & Validation discrepancies, Failed tests & Compromised designs, Safety hazards & Validate outputs, Conduct thorough testing & FR9, PPA2 & H-PSM-1 & Critical \\
+        
+        \midrule
+        
+        Python Models & Simulation execution failure & No simulation results. Workflow interruptions & Unhandled exceptions, Resource limitations & Error logs, Execution errors & Project delays, User frustration & Implement exception handling, Optimize code & FR4, PRF1 & H-PSM-2 & High \\
+        
+        \midrule
+        
+        Version Control & Version conflicts. Data loss & Lost work. Version confusion & Concurrency issues, Logic bugs & Inconsistent histories, User reports & Loss of work, Reduced trust & Implement concurrency controls, Provide clear histories & FR5, FR6 & H-VCS-1 & High \\
+        
+        \midrule
+        
+        Auth/User Mgmt & Unauthorized access & Data breaches. Unauthorized changes & Weak passwords, No multi-factor authentication & Unusual activities, Security audits & Legal issues, Data loss & Enforce strong passwords, Implement MFA & SEC-PRI1, SEC-ACC1 & H-AUM-1 & Critical \\
+        
+        \midrule
+        
+        Auth/User Mgmt & Incorrect role assignments & Access to unauthorized data or features & RBAC misconfiguration & Anomalies in logs, User reports & Data leaks, Security risks & Regular role audits, Verification processes & SEC-ACC1 & H-AUM-2 & High \\
+        
+        \midrule
+        
+        External Libraries & License compliance issues & Legal action. Infringement consequences & Misuse of licensed software & License audits, Legal notices & Financial penalties, Reputation damage & Review licenses, Document compliance & LR2 & H-ELT-1 & High \\
+        
+        \midrule
+        
+        External Libraries & Security vulnerabilities & Potential attacks. Exploitation & Outdated dependencies & Security scans, Assessments & System compromise, Data breaches & Update dependencies, Monitor security advisories & SEC-IMM1 & H-ELT-2 & Critical \\
+    \end{longtable}
+    \end{landscape}
+    
+
+
+
+\section{Safety and Security Requirements}
+These requirements are identical to the requirements found in the security requirements section and the safety-critical subsection of the performance requirements section in the SRS. If any new requirements are added to this section, they will also be added to the SRS and vice versa to ensure consistency between the two documents.   
+
+\subsection{Access Requirements}
+\begin{tcolorbox}[title=SEC-ACC1]
+\textbf{Description:} The system shall enforce role-based access control (RBAC) to restrict access to specific features and data based on user roles. \\
+\textbf{Rationale:} RBAC ensures that users can only access information and perform actions that are relevant to their roles, minimizing security risks associated with excessive permissions. \\
+\textbf{Fit Criterion:} The system defines roles such as Administrator, Operator, and Viewer, each with a distinct set of permissions and access rights.
+\end{tcolorbox}
+
+\subsection{Integrity Requirements}
+\begin{tcolorbox}[title=SEC-INT1]
+\textbf{Description:} The system shall ensure data integrity by validating and sanitizing all input fields. \\
+\textbf{Rationale:} Validating and sanitizing inputs prevent malicious data from being processed by the system, reducing the risk of attacks such as SQL injection or XSS. \\
+\textbf{Fit Criterion:} All inputs are validated against predefined formats, and inputs containing scripts or special characters are automatically sanitized or rejected.
+\end{tcolorbox}
+
+\begin{tcolorbox}[title=SEC-INT2]
+\textbf{Description:} The system shall implement version control for configuration files and database entries to prevent unauthorized or untracked modifications. \\
+\textbf{Rationale:} Version control helps maintain the integrity of configuration files and critical data by allowing the system to track changes and revert to previous states if needed. \\
+\textbf{Fit Criterion:} The system uses a version control system (e.g., Git) for configuration files, and database entries are tracked using timestamps and unique identifiers.
+\end{tcolorbox}
+
+\subsection{Privacy Requirements}
+\begin{tcolorbox}[title=SEC-PRI1]
+\textbf{Description:} The system shall implement data encryption for sensitive user information both in transit and at rest. \\
+\textbf{Rationale:} Encrypting sensitive data protects against unauthorized access and data breaches, ensuring compliance with privacy standards. \\
+\textbf{Fit Criterion:} All sensitive data, such as user credentials and personal information, is encrypted using AES-256 at rest and SSL/TLS during transmission.
+\end{tcolorbox}
+
+
+
+\subsection{Audit Requirements}
+\begin{tcolorbox}[title=SEC-AUD1]
+\textbf{Description:} The system shall log all relevant user actions, including login attempts, data access, and modifications, for audit and monitoring purposes. \\
+\textbf{Rationale:} Comprehensive logging helps in tracking user activities, detecting suspicious behavior, and conducting post-incident analysis. \\
+\textbf{Fit Criterion:} The system records all user actions, including timestamps, user IDs, IP addresses, and the type of action, with logs stored securely and reviewed periodically.
+\end{tcolorbox}
+
+
+
+\subsection{Immunity Requirements}
+\begin{tcolorbox}[title=SEC-IMM1]
+\textbf{Description:} The system shall employ secure coding practices and automated security testing to detect and prevent vulnerabilities during development. \\
+\textbf{Rationale:} Secure coding and testing reduce the likelihood of vulnerabilities being introduced into the system, enhancing its resilience against attacks. \\
+\textbf{Fit Criterion:} The system undergoes automated security testing with tools like SAST (Static Application Security Testing) and DAST (Dynamic Application Security Testing) integrated into the development lifecycle.
+\end{tcolorbox}
+
+\subsection{Safety-Critical Requirements}
+This app does not require any safety-critical requirement since it's not a safety critical application. 
+
+
+
+\section{Roadmap}
+
+\subsection{Safety and Security Requirements Implementation Plan}
+The safety and security requirements outlined in this section will be addressed incrementally throughout the capstone project timeline. The following plan details which requirements will be implemented as part of the capstone, and which will be deferred for future development.
+
+\begin{enumerate}
+    \item \textbf{Access Requirements (SEC-ACC1)}
+    \begin{itemize}
+        \item \textbf{Capstone Timeline:} Implement role-based access control (RBAC) for at least three user roles: Administrator, Operator, and Viewer, each with distinct access rights.
+        \item \textbf{Future Implementation:} Refine and expand the role definitions and permissions as more specific user roles emerge. Implement multi-factor authentication for additional security.
+    \end{itemize}
+
+    \item \textbf{Integrity Requirements (SEC-INT1 and SEC-INT2)}
+    \begin{itemize}
+        \item \textbf{Capstone Timeline:} 
+        \begin{itemize}
+            \item (SEC-INT1) Implement input validation and sanitization for critical forms to ensure data integrity.
+   
+        \end{itemize}
+        \item \textbf{Future Implementation:} Expand input validation coverage to all forms, enhance error handling, and implement database-level version control for auditing changes to critical entries and (SEC-INT2) Integrate version control for configuration files, utilizing a system like Git to track changes.
+                
+    \end{itemize}
+
+    \item \textbf{Privacy Requirements (SEC-PRI1)}
+    \begin{itemize}
+        \item \textbf{Capstone Timeline:} Implement data encryption for sensitive information during transmission using SSL/TLS.
+        \item \textbf{Future Implementation:} Extend encryption to data at rest, using AES-256 to safeguard all sensitive stored information.
+    \end{itemize}
+
+    \item \textbf{Audit Requirements (SEC-AUD1)}
+    \begin{itemize}
+        \item \textbf{Capstone Timeline:} Implement logging of key user actions, such as login attempts and data modifications, along with timestamps and user identifiers.
+        \item \textbf{Future Implementation:} Expand the logging system to include more granular events, secure log storage, and periodic review processes for compliance.
+    \end{itemize}
+
+    \item \textbf{Immunity Requirements (SEC-IMM1)}
+    \begin{itemize}
+        \item \textbf{Capstone Timeline:} Incorporate secure coding practices into the development workflow and use automated security testing tools like SAST.
+        \item \textbf{Future Implementation:} Add DAST to detect vulnerabilities during runtime, and perform regular security assessments and code reviews.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Safety-Critical Requirements}
+No safety-critical requirements will be implemented, as the application is not classified as a safety-critical system.
+
+This phased approach ensures that critical security and safety measures are prioritized and implemented effectively, while allowing room for future enhancements and compliance improvements.
+
+\newpage{}
+
+\section*{Appendix --- Reflection}
+
+\wss{Not required for CAS 741}
+
+\input{../Reflection.tex}
+
+\begin{enumerate}
+    \item What went well while writing this deliverable?
+    
+    \textbf{Madhu}: I was able to finish my work quickly and ahead of time by cross-referencing the existing work we did in the SRS and including some of the hazards we discovered while making the SRS. 
+    \\
+    \textbf{Kishor}: I was able to finish my assigned work pretty easily. This document wasn't as extensive at the SRS plus the work we did with the SRS helped write this document.
+    \\
+    \textbf{Dhrumil}: I was able to complete my tasks quickly by using the work we did for the SRS. This earlier work helped me add relevant hazards and create FMEA table.
+    \\
+    \textbf{Rasik}: Given the large amount of work we had completed for the SRS, I was able to easily reference the SRS to complete this document. 
+    
+    \item What pain points did you experience during this deliverable, and how
+    did you resolve them?
+
+    \textbf{Madhu}: Since the deadline was fairly soon after the SRS deadline, it was difficult to coordinate a meeting time appropriately split up the work. 
+    
+    \textbf{Kishor}: To be honest, I did not have any pain points while completing this document.
+    
+    \textbf{Dhrumil}: I had some time management challenges since the deliverable was due soon after the SRS. However, I prioritized tasks and used the SRS to make my work easier.
+
+    \textbf{Rasik}: I did not have any pain points.
+    
+    \item Which of your listed risks had your team thought of before this
+    deliverable, and which did you think of while doing this deliverable? For
+    the latter ones (ones you thought of while doing the Hazard Analysis), how
+    did they come about?
+
+    - The risk we thought about before this deliverable were cybersecurity related risks since our project could have some potential security risks due to it working with confidential information. Since we had already considered all important risks while working on the SRS we did not have any new risks come up while working on the HA. However we did still meet and discuss risk ideas and potential problem areas to ensure we covered all bases.
+
+    \item Other than the risk of physical harm (some projects may not have any
+    appreciable risks of this form), list at least 2 other types of risk in
+    software products. Why are they important to consider?
+
+    - One type of risk is cyber security risk. This is important to consider as the consequences of not addressing this risk can be loss of personal or confidential information. Another risk to consider is fault or error risk which can occur due to your program failing to performa n operation. This risk is important to consider since not addressing it can result in a faulty program.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+
+    \bibitem{Leveson2018} 
+    Nancy G. Leveson and John P. Thomas. 
+    \textit{STPA Handbook}. 
+    March 2018.
+    
+    \end{thebibliography}
+
+\end{document}

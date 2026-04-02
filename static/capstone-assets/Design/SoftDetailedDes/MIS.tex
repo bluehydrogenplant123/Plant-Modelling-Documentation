@@ -1,0 +1,852 @@
+\documentclass[12pt, titlepage]{article}
+
+\usepackage{amsmath, mathtools}
+
+\usepackage[round]{natbib}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{colortbl}
+\usepackage{xr}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{xfrac}
+\usepackage{tabularx}
+\usepackage{float}
+% \usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\usepackage{fullpage}
+
+\hypersetup{
+bookmarks=true,     % show bookmarks bar?
+colorlinks=true,       % false: boxed links; true: colored links
+linkcolor=red,          % color of internal links (change box color with linkbordercolor)
+citecolor=blue,      % color of links to bibliography
+filecolor=magenta,  % color of file links
+urlcolor=cyan          % color of external links
+}
+
+\usepackage{array}
+
+\externaldocument{../../SRS/SRS}
+
+\input{../../Comments}
+\input{../../Common}
+
+\begin{document}
+
+\title{Module Interface Specification for \progname{}}
+
+\author{\authname}
+
+\date{\today}
+
+\maketitle
+
+\pagenumbering{roman}
+
+\section{Revision History}
+
+\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
+\midrule
+Jan 15th & 1.0 & Madhu Sivapragasam: Added auth and restore modules to MIS\\
+Jan 16th & 1.0 & Dhrumil Pandya: Added Save module and System data module to MIS\\
+Jan 16th & 1.0 & Madhu Sivapragasam: Added Simulation module and appendix\\
+Jan 16th & 1.1 & Kishor Pandya: Added Dashboard module and appendix\\
+Jan 16th & 1.1 & Rasik Pokharel: Added canvas module and appendix\\
+Jan 16th & 1.2 & Kishor Pandya: Added symbol table\\
+April 2nd & 2.0 & Madhu Sivapragasam: Small changes for rev 1\\
+\bottomrule
+\end{tabularx}
+
+~\newpage
+
+\section{Symbols, Abbreviations and Acronyms}
+The following table defines the symbols, abbreviations, and acronyms used throughout this document:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Symbol/Abbreviation} & \textbf{Definition} \\ \hline
+Auth & Authentication Module \\ \hline
+JSON & JavaScript Object Notation \\ \hline
+GUI & Graphical User Interface \\ \hline
+mAuth & Authentication Module (as a dependency) \\ \hline
+mUser & User Data Module (as a dependency) \\ \hline
+Z & Integer, a number without a fractional component \\ \hline
+N & Natural Number, a number in [1, $\infty$) \\ \hline
+R & Real Number, any number in ($-\infty$, $\infty$) \\ \hline
+ID & Identifier \\ \hline
+API & Application Programming Interface \\ \hline
+ReactFlow & React library for building interactive diagrams \\ \hline
+POC & Proof of Concept \\ \hline
+SRS & System Requirements Specification \\ \hline
+URL & Uniform Resource Locator \\ \hline
+CI/CD & Continuous Integration and Continuous Delivery \\ \hline
+\end{tabular}
+\caption{Symbols, Abbreviations, and Acronyms}
+\label{table:abbreviations}
+\end{table}
+
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+The following document details the Module Interface Specifications for the chemical plant modeling software project. This software will help engineers model and simulate real-life chemical plants.
+
+Complementary documents include the System Requirement Specifications
+and Module Guide.  The full documentation and implementation can be
+found at \url{https://github.com/MadhuranS/capstone/}.  
+
+\section{Notation}
+
+The structure of the MIS for modules comes from \citet{HoffmanAndStrooper1995},
+with the addition that template modules have been adapted from
+\cite{GhezziEtAl2003}.  The mathematical notation comes from Chapter 3 of
+\citet{HoffmanAndStrooper1995}.  For instance, the symbol := is used for a
+multiple assignment statement and conditional rules follow the form $(c_1
+\Rightarrow r_1 | c_2 \Rightarrow r_2 | ... | c_n \Rightarrow r_n )$.
+
+The following table summarizes the primitive data types used by \progname. 
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\noindent 
+\begin{tabular}{l l p{7.5cm}} 
+\toprule 
+\textbf{Data Type} & \textbf{Notation} & \textbf{Description}\\ 
+\midrule
+character & char & a single symbol or digit\\
+string & String & A sequence of characters \\
+integer & $\mathbb{Z}$ & a number without a fractional component in (-$\infty$, $\infty$) \\
+natural number & $\mathbb{N}$ & a number without a fractional component in [1, $\infty$) \\
+real & $\mathbb{R}$ & any number in (-$\infty$, $\infty$)\\
+JavaScript Object Notation & JSON & A format for storing data in the form of a collection of key/value pairs or an unordered list of values\\
+\bottomrule
+\end{tabular} 
+\end{center}
+
+\noindent
+The specification of \progname \ uses some derived data types: sequences, strings, and
+tuples. Sequences are lists filled with elements of the same data type. Strings
+are sequences of characters. Tuples contain a list of values, potentially of
+different types. In addition, \progname \ uses functions, which
+are defined by the data types of their inputs and outputs. Local functions are
+described by giving their type signature followed by their specification.
+
+\section{Module Decomposition}
+
+The following table is taken directly from the Module Guide document for this project.
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{p{0.3\textwidth} p{0.6\textwidth}}
+  \toprule
+  \textbf{Level 1} & \textbf{Level 2}\\
+  \midrule
+  
+  {Hardware-Hiding Module} &  \\
+  \midrule
+  
+  \multirow{7}{0.3\textwidth}{Behaviour-Hiding Module} & Authentication Module\\
+  & Save Module\\
+  & Restore Module\\
+  & Canvas Module\\
+  & System Data Module\\
+  & User Data Module\\
+  & Dashboard Module\\
+  
+  \midrule
+  
+  \multirow{1}{0.3\textwidth}{Software Decision Module} & Simulation Module\\
+  
+  \bottomrule
+  
+  \end{tabular}
+  \caption{Module Hierarchy}
+  \end{table}
+
+\newpage
+~\newpage
+
+\section{MIS of Authentication Module} \label{mAuthMIS} 
+Implements the logic behind the authentication of different users into the system. This includes functionality such as registering new users as well as logging in new users. 
+
+\subsection{Module}
+
+Auth
+
+\subsection{Uses}
+Uses the User data module to obtain information via the user data interface regarding a specific user as a response to a login attempt. 
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+checkToken & None & validToken: Boolean & - \\
+getToken & None & token: String & - \\
+login & email: String, password: String & None & - \\
+register & firstName: String, lastName: String, email: String, password: String & None & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+  \item token: A string that represents your authentication token and represents an identifier for the user
+\end{itemize}
+
+\subsubsection{Environment Variables}
+
+N/A
+
+\subsubsection{Assumptions}
+
+N/A
+
+\subsubsection{Access Routine Semantics}
+
+\noindent checkToken():
+\begin{itemize}
+\item transition: None
+\item output: Returns the validity of the current user token to ensure the current user session is still valid
+\item exception: None
+\end{itemize}
+
+\noindent getToken():
+\begin{itemize}
+\item transition: None
+\item output: Returns the current user token so that requests to secured modules can be validated as being done by the user
+\item exception: None
+\end{itemize}
+
+\noindent login():
+\begin{itemize}
+\item transition: Updates the token state variable with the correct user token based off of the user email and password. The token is then pulled from the User Data module. 
+\item output: None
+\item exception: None
+\end{itemize}
+
+\noindent register():
+\begin{itemize}
+\item transition: Updates the token state variable just like the login function but also updates the user data module with a new user entity. 
+\item output: None
+\item exception: None
+\end{itemize}
+
+
+\subsubsection{Local Functions}
+
+N/A
+\newpage
+
+\section{MIS of Restore Module} \label{mRestoreMIS} 
+Implements the logic behind restoring old diagrams onto the canvas 
+
+\subsection{Module}
+
+Restore
+
+\subsection{Uses}
+Uses the User Data module to obtain information on old diagrams
+Uses the Authentication module to authenticate as the user in order to retrieve diagram information
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular}{p{4cm} p{4cm} p{4cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+fetchDiagramsData & None & None & - \\
+getDiagramIds & None & diagrams: JSON & - \\
+getDiagram & diagramId: String & diagram: JSON & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+  \item diagramsData: A raw JSON data set containing information on all diagram data belonging to a specific user
+\end{itemize}
+
+\subsubsection{Environment Variables}
+
+N/A
+
+\subsubsection{Assumptions}
+
+N/A
+
+\subsubsection{Access Routine Semantics}
+
+\noindent fetchDiagramsData():
+\begin{itemize}
+\item transition: Uses the user data to module to update the diagramsData state with a list of the JSON formatted diagrams that belong to the current user
+\item output: None
+\item exception: None
+\end{itemize}
+
+\noindent getDiagrams():
+\begin{itemize}
+\item transition: None
+\item output: Returns a JSON array of all currently stored diagrams
+\item exception: None
+\end{itemize}
+
+\noindent getDiagram():
+\begin{itemize}
+\item transition: None
+\item output: Returns the data for a specific diagram to the calling module
+\item exception: None
+\end{itemize}
+
+
+\subsubsection{Local Functions}
+
+N/A
+
+\newpage
+\section{MIS of Canvas Module} \label{mCanvasMIS} 
+Implements the logic and interface for nodes and edges on the canvas using ReactFlow.
+
+\subsection{Module}
+
+Canvas
+
+\subsection{Uses}
+Uses the data from System Data module and User Data module to obtain information to build out nodes and edges.
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center} \begin{tabular}{|p{4cm}|p{4cm}|p{2.5cm}|p{5cm}|} \hline \textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\ \hline \texttt{addNode} & NodeData & NodeID & NodeExistsException \\ \hline \texttt{removeNode} & NodeID & - & NodeNotFoundException \\ \hline \texttt{updateNode} & NodeID, NodeData & - & NodeNotFoundException \\ \hline \texttt{addEdge} & EdgeData & EdgeID & EdgeExistsException \\ \hline \texttt{removeEdge} & EdgeID & - & EdgeNotFoundException \\ \hline \texttt{updateEdge} & EdgeID, EdgeData & - & EdgeNotFoundException \\ \hline \texttt{setNodeCompletion} & NodeID, CompletionStatus & - & NodeNotFoundException \\ \hline \texttt{getCanvasState} & - & CanvasState & - \\ \hline \end{tabular} \end{center}
+
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+  \item nodes: A data driven react flow node component containing the data from the system modules to display and modify node variables, node name and version.
+  \item node tab: This state variable keeps track of which tab is active at any given time within a node.
+  \item node completion: This state variable tracks whether or not a node is complete
+  \item edges: A data driven react flow edge component that connects ports on an input node to and output node. This state variable also contains a name and a material stream.
+\end{itemize}
+
+\subsubsection{Environment Variables}
+ \begin{itemize} \item \texttt{ReactFlow}: The React Flow library environment for rendering and interacting with nodes and edges on the canvas. \end{itemize} 
+
+\subsubsection{Assumptions}
+\begin{itemize} \item It is assumed that all node and edge data provided to the canvas module is valid and conforms to the required schema. \item Users interact with the module through a GUI interface, and all backend communication is handled outside of this module. \end{itemize} 
+\subsubsection{Access Routine Semantics}
+
+\begin{itemize} 
+\item \texttt{addNode}: Adds a new node to the canvas. The input
+\texttt{NodeData} contains the information required to initialize the node. Returns the \texttt{NodeID} of the added node or throws 
+\texttt{NodeExistsException} if a node with the same ID already exists. 
+\item \texttt{removeNode}: Removes a node from the canvas. Throws 
+\texttt{NodeNotFoundException} if the specified node does not exist. 
+\item \texttt{updateNode}: Updates the properties of an existing node. Throws \texttt{NodeNotFoundException} if the node is not found. 
+\item \texttt{addEdge}: Adds a new edge between two nodes. The input 
+\texttt{EdgeData} specifies the source, target, and properties of the edge. Returns the \texttt{EdgeID} or throws
+\texttt{EdgeExistsException} if an edge with the same ID already exists. 
+\item \texttt{removeEdge}: Removes an edge from the canvas. Throws \texttt{EdgeNotFoundException} if the specified edge does not exist. 
+\item \texttt{updateEdge}: Updates the properties of an existing edge. Throws \texttt{EdgeNotFoundException} if the edge is not found.
+\item \texttt{setNodeCompletion}: Sets the completion status of a node. Throws \texttt{NodeNotFoundException} if the node is not found. 
+\item \texttt{getCanvasState}: Returns the current state of the canvas, including nodes, edges, and metadata. \end{itemize} 
+
+\subsubsection{Local Functions}
+
+N/A
+
+\newpage
+
+\section{MIS of Save Module} \label{mSaveMIS} 
+Implements the logic behind storing new diagrams, updating existing diagrams, and saving any associated domain snapshots into the user database.
+
+\subsection{Module}
+
+Save
+
+\subsection{Uses}
+\begin{itemize}
+  \item Authentication (\texttt{mAuth}) to make sure requests originate from a valid, logged-in user
+  \item User Data (\texttt{mUser}) to save and update diagram data in the database.
+\end{itemize}
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular} {p{3cm} p{7cm} p{2cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+createDiagram & name: String, canvas: JSON, parameters: JSON, domainId: String, snapshotData: JSON & None & - \\
+updateDiagram & diagramId: String, name: String, canvas: JSON, parameters: JSON, updatedSnapshotData: JSON & None & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+\begin{itemize}
+  \item \texttt{saveData}: An internal state of the diagram data being created or updated. This is not persisted in the module itself, but used as an intermediary before database operations.
+\end{itemize}
+
+\subsubsection{Environment Variables}
+
+N/A
+
+\subsubsection{Assumptions}
+
+\begin{itemize}
+  \item A valid user ID or token is present to identify which diagrams should be saved or updated.
+  \item The user has proper permissions to create or modify diagrams.
+\end{itemize}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent \textbf{createDiagram}(\textit{name, canvas, parameters, domainId, snapshotData}):
+\begin{itemize}
+\item transition: 
+  \begin{itemize}
+    \item Validates the user's authentication status via the Authentication module.
+    \item Stores a new diagram entry in the database, along with the associated \textit{snapshotData} if provided. 
+  \end{itemize}
+\item output: None
+\item exception: 
+  \begin{itemize}
+    \item If the user is invalid (authentication fails), an exception is thrown.
+    \item If required data (e.g., \texttt{name}, \texttt{canvas}) is missing, a 400 Bad Request error is raised.
+  \end{itemize}
+\end{itemize}
+
+\noindent \textbf{updateDiagram}(\textit{diagramId, name, canvas, parameters, updatedSnapshotData}):
+\begin{itemize}
+\item transition: 
+  \begin{itemize}
+    \item Validates the user's authentication.
+    \item Finds the existing diagram by \texttt{diagramId} and updates its \texttt{name}, \texttt{canvas}, and \texttt{parameters} fields in the database.
+    \item If \textit{updatedSnapshotData} is provided, updates the associated snapshot entry as well.
+  \end{itemize}
+\item output: None
+\item exception:
+  \begin{itemize}
+    \item If \texttt{diagramId} does not exist or does not belong to this user, a 403 Forbidden or 404 Not Found error is raised.
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+N/A
+
+\newpage
+
+\section{MIS of User Data Module} \label{mUser}
+Implements the logic behind retrieving user data from the user mongoDB database.
+
+\subsection{Module}
+
+User Data
+
+\subsection{Uses}
+\begin{itemize}
+  \item Authentication (\texttt{mAuth}) User data requires authorization to be accessed
+\end{itemize}
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular}{p{3cm} p{4cm} p{4cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+getAllNetworks & None & domains: JSON & - \\
+getNetwork & networkID: string &  domain: JSON & - \\ 
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+None
+
+\subsubsection{Environment Variables}
+
+N/A
+
+\subsubsection{Assumptions}
+
+\begin{itemize}
+  \item The network IDs requested are valid or the calling module can handle a not-found case.
+  \item The user is authorized because user data is restricted to authenticated users.
+\end{itemize}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent \textbf{getAllNetworks}():
+\begin{itemize}
+\item transition: None
+\item output: Returns a JSON array of all networks present in the user DB.
+\item exception: 
+  \begin{itemize}
+    \item If the user is not authenticated, a 401 or 403 error is raised.
+  \end{itemize}
+\end{itemize}
+
+\noindent \textbf{getNetwork}(\textit{networkID}):
+\begin{itemize}
+\item transition: None
+\item output: Returns a JSON object containing the data for the requested network (e.g., nodes, edges, domain, name, sim, task type etc).
+\item exception:
+  \begin{itemize}
+    \item If the \textit{networkID} does not exist, a 404 Not Found error is raised.
+    \item If the user is unauthorized, a 403 error is raised (where applicable).
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+N/A
+
+
+\section{MIS of System Data Module} \label{mSystemMIS}
+Implements the logic behind retrieving domain/system data used by the canvas and other parts of the application.
+
+\subsection{Module}
+
+System Data
+
+\subsection{Uses}
+\begin{itemize}
+  \item Authentication (\texttt{mAuth}) if domain data requires authorization to be accessed
+\end{itemize}
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular}{p{3cm} p{4cm} p{4cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+getAllDomains & None & domains: JSON & - \\
+getDomain & domainId: String & domain: JSON & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+None
+
+\subsubsection{Environment Variables}
+
+N/A
+
+\subsubsection{Assumptions}
+
+\begin{itemize}
+  \item The domain IDs requested are valid or the calling module can handle a not-found case.
+  \item The user is authorized if domain data is restricted to authenticated users.
+\end{itemize}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent \textbf{getAllDomains}():
+\begin{itemize}
+\item transition: None
+\item output: Returns a JSON array of all domains present in the system.
+\item exception: 
+  \begin{itemize}
+    \item If user is not authenticated (if applicable), a 401 or 403 error is raised.
+  \end{itemize}
+\end{itemize}
+
+\noindent \textbf{getDomain}(\textit{domainId}):
+\begin{itemize}
+\item transition: None
+\item output: Returns a JSON object containing the data for the requested domain (e.g., domain name, models, etc.).
+\item exception:
+  \begin{itemize}
+    \item If the \textit{domainId} does not exist, a 404 Not Found error is raised.
+    \item If the user is unauthorized, a 403 error is raised (where applicable).
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+N/A
+
+\newpage
+
+\section{MIS of Simulation Module} \label{mSimulation} 
+Implements the the algorithm that computes the factory outputs based off of a set of inputs.
+
+\subsection{Module}
+
+Simulation
+
+\subsection{Uses}
+N/A
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+runSimulation & diagramData: JSON & outputData: JSON & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+N/A
+
+\subsubsection{Environment Variables}
+
+N/A
+
+\subsubsection{Assumptions}
+
+N/A
+
+\subsubsection{Access Routine Semantics}
+
+\noindent runSimulation():
+\begin{itemize}
+\item transition: None
+\item output: Computes factory output data using an internal algorithm and given input diagram data
+\item exception: Malformed data will return an error
+\end{itemize}
+
+
+\subsubsection{Local Functions}
+
+N/A
+
+\newpage
+\section{MIS of Dashboard Module} \label{Module}
+
+\subsection{Module}
+Dashboard
+
+\subsection{Uses}
+
+\begin{itemize}
+  \item \texttt{User Data Module} (Fetches user-specific data, such as saved diagrams)
+  \item \texttt{System Data Module} (Fetches domain-related metadata)
+  \item \texttt{Restore Module} (Handles restoration of previously saved canvases)
+  \item \texttt{Authentication Module} (Manages authentication and user state)
+  \item \texttt{Canvas Module} (Creates and navigates to a new canvas)
+\end{itemize}
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+None. 
+
+\textbf{Justification}: No constants are exported as the module operates on dynamic input and state variables.
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+  \begin{tabular}{p{4cm} p{4cm} p{4cm} p{2cm}}
+    \hline
+    \textbf{Name} & \textbf{Input} & \textbf{Output} & \textbf{Exceptions} \\
+    \hline
+    \texttt{User Data Module} & \texttt{accessToken: string} & \texttt{diagrams: List} & \texttt{InvalidToken} \\
+    \texttt{System Data Module} & \texttt{accessToken: string} & \texttt{domains: List} & \texttt{InvalidToken} \\
+    \texttt{Restore Module} & \texttt{diagramId: string}, \texttt{accessToken: string} & \texttt{canvas: any} & \texttt{InvalidToken}, \texttt{InvalidDiagram} \\
+    \texttt{Authentication Module} & \texttt{accessToken: string} & - & \texttt{InvalidToken} \\
+    \texttt{Canvas Module} & \texttt{canvasName: string, domain: string, calcType: string} & - & \texttt{MissingInput} \\
+    \hline
+  \end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+\begin{itemize}
+  \item \texttt{canvasName}: (\texttt{string}) The name of the canvas being created.
+  \item \texttt{domain}: (\texttt{string}) The selected domain for the canvas.
+  \item \texttt{calcType}: (\texttt{string}) The calculation type selected by the user.
+  \item \texttt{isCreating}: (\texttt{boolean}) Indicates if the user is in the process of creating a new canvas.
+  \item \texttt{user}: (\texttt{object}) Contains information about the authenticated user.
+  \item \texttt{domains}: (\texttt{List}) Stores domains retrieved via the \texttt{System Data Module}.
+  \item \texttt{diagrams}: (\texttt{List}) Stores diagrams retrieved via the \texttt{User Data Module}.
+\end{itemize}
+
+\subsubsection{Environment Variables}
+None.
+
+\textbf{Justification}: This module is self-contained and interacts only with other modules via API calls. It does not directly interface with external devices or systems.
+\begin{itemize}
+  \item The \texttt{System Data Module}, \texttt{User Data Module} are functional and return valid data when provided with a valid \texttt{accessToken}.
+  \item User authentication is successfully handled before by the Authentication Module.
+\end{itemize}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent \texttt{fetchDomains()}:
+\begin{itemize}
+  \item \textbf{Transition}: 
+    \begin{itemize}
+        \item Updates the \texttt{domains} state variable with the retrieved list.
+        \item Triggers a UI re-render to display the updated domain list.
+    \end{itemize}
+    \item \textbf{Exception}: Throws \texttt{InvalidToken} if the provided \texttt{accessToken} is invalid or expired.
+\end{itemize}
+\noindent \texttt{fetchDiagrams()}:
+\begin{itemize}
+    \item \textbf{Transition}: 
+    \begin{itemize}
+        \item Updates the \texttt{diagrams} state variable with the retrieved list.
+    \end{itemize}
+    \item \textbf{Exception}: Throws \texttt{InvalidToken} if the provided \texttt{accessToken} is invalid or expired.
+\end{itemize}
+
+\noindent \texttt{handleSubmit(event)}:
+\begin{itemize}
+    \item \textbf{Output}: 
+    \begin{itemize}
+        \item Validates user input for \texttt{canvasName}, \texttt{domain}, and \texttt{calcType}.
+        \item Updates the corresponding state variables.
+        \item Navigates to the canvas view with metadata for the new canvas.
+    \end{itemize}
+    \item \textbf{Exception}: Throws \texttt{MissingInput} if any required input is missing.
+\end{itemize}
+
+\noindent \texttt{handleLoadDiagram(diagramId)}:
+\begin{itemize}
+    \item \textbf{Output}: 
+    \begin{itemize}
+        \item Retrieves the diagram data corresponding to the \texttt{diagramId}.
+        \item Updates the canvas state and navigates to the diagram view.
+    \end{itemize}
+    \item \textbf{Exception}: 
+    \begin{itemize}
+        \item Throws \texttt{InvalidDiagram} if the \texttt{diagramId} is not found.
+        \item Throws \texttt{InvalidToken} if the access token is invalid.
+    \end{itemize}
+  \end{itemize}
+
+  \subsubsection{Local Functions}
+  None.
+
+  \textbf{Justification}: The module does not rely on private local functions. All operations are either handled by access routines or delegated to other modules.
+
+
+\bibliographystyle {plainnat}
+\bibliography {../../../refs/References}
+
+\section{Appendix} \label{Appendix}
+
+
+\newpage{}
+
+\section*{Appendix --- Reflection}
+
+
+The information in this section will be used to evaluate the team members on the
+graduate attribute of Problem Analysis and Design.
+
+\input{../../Reflection.tex}
+
+\begin{enumerate}
+  \item What went well while writing this deliverable? \\
+    Madhu: We were able to validate our requirements proceses by ensuring that our designs had full coverage over our requirements\\
+    Rasik: We were able to review and verify our existing design process and formalize our thoughts. This helped us in making our tasks. \\
+    Kishor: This gave me a good reason to look back at the requirements document and make sure our POC was completing most of them.\\
+    Dhrumil: I found that breaking the system down into modules and creating a clear “uses” hierarchy made our design easier to understand. It was also helpful to see how our implementation choices tied back to the project’s high-level goals and requirements. \\
+  \item What pain points did you experience during this deliverable, and how
+    did you resolve them?\\
+    Madhu: It was time consuming and tedious to track back and verify the requirements we had defined months ago however it was still an important step to ensure the design was robust. \\
+    Rasik: The nature of formalizing semantics is tedious and a little bit error prone. We had to go through multiple iterations to come to the current design. \\
+    Kishor: It was annoying to go back and trace all of the state variables since the module I was working on had been completed a while back.\\
+    Dhrumil: It was tedious to clearly define the MIS for the Save and System Data modules, as mapping out their functionality and endpoints required revisiting previous design discussions. \\
+  \item Which of your design decisions stemmed from speaking to your client(s)
+  or a proxy (e.g. your peers, stakeholders, potential users)? For those that
+  were not, why, and where did they come from? \\
+  The UI design decisions around creating a central dashboard module came from our client since they were particular about how the UI should look. However decisions around how data should be stored and delivered were up to us which is why we devised the user data and system data modules. 
+  \item While creating the design doc, what parts of your other documents (e.g.
+  requirements, hazard analysis, etc), it any, needed to be changed, and why? \\
+  We had to reevaluate the importance of some of the requirements surrounding look and feel that we wrote down in the SRS. This is because as we came up with our modules and through interactions with our clients we realized that some of our appearence requirements did not fit. 
+  \item What are the limitations of your solution?  Put another way, given
+  unlimited resources, what could you do to make the project better? 
+  (LO\_ProbSolutions) \\
+  We think a more server driven solution would be better and something we would implement if we had infinite time. Currently alot of our logic and data is in the canvas module which is client driven which can cause efficiency problems however we felt that this was the most effective design in the short term. 
+  \item Give a brief overview of other design solutions you considered.  What
+  are the benefits and tradeoffs of those other designs compared with the chosen
+  design?  From all the potential options, why did you select the documented design? \\
+  (LO\_Explores) \\
+  We also considered defining our data within the client modules such as the canvas module and dashboard module. However we felt that creating a data driven solution with the user data and system data modules would be more flexible and allow users more freedom of choice. We also considered using the computers own file system for saving and restoring but we felt that doing that limits us from deploying to the cloud if we need to and limits the save and restore functionality which is why we developed the save and restore modules instead. 
+
+\end{enumerate}
+
+
+\end{document}

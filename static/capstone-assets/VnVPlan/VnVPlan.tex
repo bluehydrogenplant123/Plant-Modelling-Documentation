@@ -1,0 +1,1799 @@
+\documentclass[12pt, titlepage]{article}
+
+\usepackage{array}
+\usepackage{amssymb} 
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{adjustbox}
+\usepackage{longtable}
+\usepackage{rotating}
+\usepackage{hyperref}
+\usepackage[round]{natbib}
+\usepackage{caption}
+\usepackage[normalem]{ulem} % for strikethrough
+\hypersetup{
+    colorlinks,
+    citecolor=blue,
+    filecolor=black,
+    linkcolor=red,
+    urlcolor=blue
+}
+
+\input{../Comments}
+\input{../Common}
+
+\begin{document}
+
+\title{System Verification and Validation Plan for \progname{}} 
+\author{\authname}
+\date{\today}
+	
+\maketitle
+
+\pagenumbering{roman}
+
+\section*{Revision History}
+
+\begin{tabularx}{\textwidth}{p{3cm}p{3cm}p{3cm}X}
+\toprule {\bf Date} & {\bf Version} & {\bf Notes} & {\bf Author}\\
+\midrule
+October 30 & 1.0 & Added most of section 4.2 & Kishor Pandya\\
+November 1st & 1.0 & Added section 2 general information & Rasik Pokharel\\
+November 1st & 1.0 & Added system tests for FR's & Madhu Sivapragasam\\
+November 3 & 1.1 & Finished section 4.2, and Traceability Matrix & Kishor Pandya\\
+November 4 & 1.2 & Added a plan for V\&V & Dhrumil Pandya\\
+April 3 & 2.0 & Updated VNV plan with rev 1 requirements and unit testing description & Madhu Sivapragasam\\
+\bottomrule
+\end{tabularx}
+
+~\\
+\newpage
+
+\tableofcontents
+
+\listoftables
+
+\newpage
+
+\section{Symbols, Abbreviations, and Acronyms}
+
+The SRS Symbols, Abbreviations, and Acronyms tables will cover all terminology used in this document. The SRS is linked in the relevant documentation section. 
+
+\newpage
+
+\pagenumbering{arabic}
+
+This document provides a plan that we will use as part of the verification and validation process for our project. We will cover general information, a testing plan as well as system tests for our functional and non functional requirements defined in the SRS. 
+
+\section{General Information}
+
+\subsection{Summary}
+
+The software being tested is a chemical plant modeling tool designed to simulate and analyze various components of a manufacturing plant, focusing on chemical processes. The software represents these processes through nodes and edges, where nodes denote key elements such as reactors, heat exchangers, and edges denote the streams that connect them. Users input relevant data into the tool to run simulations using proprietary Python scripts in the back end, allowing for detailed analysis an interaction of components within the plant model.
+
+
+\subsection{Objectives}
+
+The objective of the testing outlined in this verification and validation plan is to ensure that the software is in a functional and reliable state for end users. This project aims to support a long-term application, intended for use by developers and researchers in the future. Therefore, a core goal is to demonstrate adequate usability and ensure accuracy by the project’s completion.
+
+The verification and validation process will confirm that the software meets both its functional and non-functional requirements, fulfilling the needs and expectations of all stakeholders. A significant portion of this testing will focus on usability, accuracy, and performance, particularly within the GUI, where responsiveness is important even if simulation timing can extend up to one second.
+
+Certain objectives, however, will be designated as out of scope. For instance, we will not be conducting comprehensive performance tests beyond the GUI or assessing usability for non-target user groups outside the field of chemical engineering and simulation. Additionally, the project leverages several third-party libraries and assumes they have been validated by their original development teams, so their internal quality will not be re-verified in this plan.
+
+By clearly defining the scope and limitations, the plan prioritizes essential qualities, ensuring that resources are directed toward achieving a high standard of usability and accuracy for core project components.
+ 
+
+\subsection{Challenge Level and Extras}
+
+Our project is a complex full-stack system, requiring backend services for version management and a sophisticated front-end for plant schema creation and modification. While not advanced due to limited novelty, it meets the criteria for a general challenge level due to the intricate development involved.
+
+\textcolor{blue}{\sout{As extras, we’ll include user documentation, enabling the sponsor to effectively use the system post-completion, and conduct usability testing to ensure user-centered design, robustness, and overall usability. These additions further support the project’s general challenge level.}
+Since we are now handing over the project to a new set of developers at the end of the term, we decided that creating a code walkthrough and a user instructional video made more sense as extras. This is because our existing docs provide enough text based content for the user to follow and it would be easier for newer developers to learn how to use the system with a video. Similarly to help support newer developers we wrote out a code walkthrough so that they could learn the codebase faster. }
+
+
+\subsection{Relevant Documentation}
+
+Below are relevant project documents that will be referenced in this verification and validation plan.
+
+\subsection{Relevant Documentation}
+
+Below are relevant project documents that will be referred to in this verification and validation plan.
+
+\begin{itemize}
+    \item \textbf{Development Plan (Pokharel, Pandya, Pandya, and Sivapragasam, 2024a)} \\
+    The Development Plan details the team members and the roles and responsibilities they each have for the system, including the testing of it. It also includes specific testing tools and frameworks that will be used for each component of the application. \\[1em]
+    \url{https://github.com/MadhuranS/capstone/blob/main/docs/DevelopmentPlan/DevelopmentPlan.pdf}
+    
+    \item \textbf{Hazard Analysis (Pokharel, Pandya, Pandya, and Sivapragasam, 2024b)} \\
+    The Hazard Analysis identifies potential hazards and risks in the system. These hazards are used to inform this document, ensuring that each mitigation strategy is feasible and verifiable. \\[1em]
+    \url{https://github.com/MadhuranS/capstone/blob/main/docs/HazardAnalysis/HazardAnalysis.pdf}
+
+    
+    \item \textbf{Software Requirements Specification (SRS) (Pokharel, Pandya, Pandya, and Sivapragasam, 2024e)} \\
+    The Software Requirements Specification defines the functional and non-functional requirements of the system. It serves as the basis for ensuring that all requirements are met within the verification and validation process. \\[1em]
+    \url{https://github.com/MadhuranS/capstone/blob/main/docs/SRS/SRS.pdf}
+\end{itemize}
+
+
+
+
+\section{Plan}
+
+This section presents the Verification and Validation (V\&V) Plan for our capstone project. It introduces the Verification and Validation Team, detailing each member’s role and responsibilities in verifying various system aspects. We outline our plans for verifying the SRS, Design, the V\&V Plan itself, and the Implementation. Additionally, we list the tools we’ll use for Automated Testing and Verification, including unit testing frameworks and linters. Lastly, the Software Validation Plan explains how we’ll validate the software through user feedback and integration testing with our existing Python simulation scripts.
+
+\subsection{Verification and Validation Team}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{4cm}|>{\raggedright\arraybackslash}p{3cm}|>{\raggedright\arraybackslash}p{8cm}|}
+  \hline
+  \textbf{Name} & \textbf{Role} & \textbf{Role in Project Verification} \\
+  \hline
+  Madhu Sivapragasam & Team Member & Madhu will be verifying the frontend aspects of the project, including the Graphical User Interface (GUI) developed using React and ReactFlow. He will ensure that the user interface meets usability requirements and functions correctly. \\
+  \hline
+  Dhrumil Pandya & Team Member & Dhrumil will be verifying the database integration and backend services, ensuring that data flows correctly between the frontend, backend, and both SQL and NoSQL databases. He will also verify the ORM implementation and data integrity. \\
+  \hline
+  Kishor Pandya & Team Member & Kishor will be verifying the integration with the existing Python simulation scripts, ensuring that inputs are correctly passed to the scripts and outputs are accurately captured and displayed. He will also verify the correctness of the simulation results within the system. \\
+  \hline
+  Rasik Pokharel & Team Member & Rasik will be verifying the overall system functionality, including the end-to-end workflow from user input to simulation results. He will also focus on verifying security requirements and ensuring that the system meets specified performance criteria. \\
+  \hline
+  Dr. Vladimir Mahalec & Supervisor & Dr. Mahalec will oversee the project and provide guidance on domain-specific requirements. He will verify that the system meets the needs of the intended users and aligns with the goals of the project. He will also assist in validating the system against existing workflows. \\
+  \hline
+  Farbod Maghsoudi &	Collaborator &	Farbod, a member of Dr. Mahalec's research team, developed the Python simulation scripts and maintains the Excel tables. He will assist in verifying the integration between the new system and the existing Python scripts, ensuring compatibility and correctness.\\
+  \hline
+  Yiding Li	& Teaching Assistant & Yiding will verify and provide feedback on all project documents, including the SRS, Hazard Analysis Plan, and V\&V plan. He will ensure that the documents meet course requirements and provide constructive feedback for improvements.\\
+  \hline
+  Dr. Smith	& Professor	& Dr. Smith will provide oversight on the project deliverables and ensure that the project adheres to academic standards. He will review key project artifacts and provide guidance on the verification and validation processes.\\
+  \hline
+  \end{longtable}
+
+\subsection{SRS Verification Plan}
+
+\subsubsection{Internal Team Review}
+
+\textbf{Participants}: All team members (Madhu, Dhrumil, Kishor, Rasik)
+\\\\
+\textbf{Process}:
+
+\begin{itemize}
+    \item \textbf{Individual Review}: Each team member will independently review the SRS, focusing on their areas of expertise.
+    \begin{itemize}
+        \item \textbf{Madhu}: Usability and GUI requirements.
+        \item \textbf{Dhrumil}: Database and backend requirements.
+        \item \textbf{Kishor}: Integration with Python scripts and simulation requirements.
+        \item \textbf{Rasik}: Security, performance, and overall system requirements.
+    \end{itemize}
+    \item \textbf{Checklist Use}: We will thoroughly assess the document using an SRS Verification Checklist (provided below).
+\end{itemize}
+
+\subsubsection{Supervisor and Research Team Review}
+
+\textbf{Participants}: Dr. Vladimir Mahalec, Farbod Maghsoudi, Team Members
+\\\\
+\textbf{Process}:
+\begin{itemize}
+    \item \textbf{Scheduling a Meeting}: During our weekly touchbase meeting (November 7th 2024) with Dr. Mahalec and Farbod we will present the SRS.
+    \item \textbf{Presentation Structure}:
+    \begin{itemize}
+        \item \textbf{Introduction}: Brief overview of the subsections of the SRS and break down the SRS by domain expertise of the team member.
+        \item \textbf{Requirements Walkthrough}: Thoroughly go through each subsection of the SRS, highlighting key requirements.
+    \end{itemize}
+    \item \textbf{Potential Questions to ask}:
+    \begin{itemize}
+        \item Are there any requirements that are missing or need clarification?
+        \item Do the specified requirements align with the current workflows?
+        \item Are there any concerns about the feasibility of certain requirements?
+    \end{itemize}
+    \item \textbf{Task-Based Inspection}: Provide Dr. Mahalec and Farbod with specific scenarios or tasks to consider.
+    \item \textbf{Feedback}: Use a shared document and meeting minutes to record feedback and note any suggested changes to the Github Issues.
+\end{itemize}
+
+\subsubsection{Teaching Assistant and Professor Review}
+
+\textbf{Participants}: Yiding Li (TA), Dr. Smith
+\\\\
+\textbf{Process}:
+\begin{itemize}
+    \item \textbf{Submission}: Provide the revised SRS for formal evaluation.
+    \item \textbf{Feedback}: Review comments and make necessary adjustments.
+\end{itemize}
+
+\subsubsection{SRS Verification Checklist}
+We will use the following SRS Verification Checklist during our reviews:
+\begin{longtable}{|p{0.3\textwidth}|p{0.6\textwidth}|}
+  \hline
+  \textbf{Checklist Item} & \textbf{Description} \\ \hline
+  \textbf{Completeness} & 
+  - We will ensure all functional and non-functional requirements are included. \newline
+  - We will confirm that all stakeholder needs are addressed. \\ \hline
+  \textbf{Clarity} & 
+  - We will check that requirements are written clearly and without ambiguity. \newline
+  - We will use consistent terminology throughout the document. \\ \hline
+  \textbf{Consistency} & 
+  - We will look for any conflicting requirements. \newline
+  - We will make sure the document's structure and formatting are consistent. \\ \hline
+  \textbf{Testability} & 
+  - We will verify that each requirement can be tested. \newline
+  - We will provide acceptance criteria for each requirement. \\ \hline
+  \textbf{Traceability} & 
+  - We will ensure each requirement links back to a stakeholder need or objective. \\ \hline
+  \textbf{Feasibility} & 
+  - We will check that the requirements are achievable. \newline
+  - We will consider any resource limitations. \\ \hline
+  \textbf{Correctness} & 
+  - We will confirm that the requirements accurately represent what the software should do. \newline
+  - We will have domain experts validate the requirements. \\ \hline
+  \textbf{Prioritization} & 
+  - We will prioritize requirements based on their importance and urgency. \\ \hline
+  \end{longtable}
+
+\subsection{Design Verification Plan}
+
+
+\subsubsection{Internal Design Review}
+
+\textbf{Participants}: All team members
+\\\\
+\textbf{Process}:
+\begin{itemize}
+    \item \textbf{Module Assignment}:
+    \begin{itemize}
+        \item \textbf{Madhu}: GUI and frontend components.
+        \item \textbf{Dhrumil}: Backend services and database interactions.
+        \item \textbf{Kishor}: Integration with Python simulation scripts.
+        \item \textbf{Rasik}: Security and system performance checks.
+    \end{itemize}
+    \item \textbf{Individual Review}:
+    \begin{itemize}
+        \item Review assigned modules for alignment with the SRS.
+        \item Check for consistency, completeness, and feasibility.
+    \end{itemize}
+    \item \textbf{Group Walkthrough}:
+    \begin{itemize}
+        \item Present findings to the team.
+        \item Discuss any discrepancies between the design when we design the MIS and MG for potential improvements.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Supervisor and Research Team Review}
+
+\textbf{Participants}: Dr. Vladimir Mahalec, Team Members
+\\\\
+\textbf{Process}:
+\begin{itemize}
+    \item \textbf{Design Presentation}:
+    \begin{itemize}
+        \item Prepare a presentation outlining the system architecture, module interactions (MIS and MG when done in next deliverable), and data flow.
+        \item Emphasize areas critical to the stakeholders, such as simulation integration and data handling.
+    \end{itemize}
+    \item \textbf{Example questions to ask}:
+      \begin{itemize}
+          \item Does the proposed design support the required functionalities?
+          \item Are there any concerns about scalability or maintainability?
+          \item Does the design adequately address security and data integrity?
+      \end{itemize}
+\end{itemize}
+
+\subsubsection{Verification Activities}
+
+\textbf{Task-Based Inspection}:
+\begin{itemize}
+    \item \textbf{Scenario Walkthrough}: Walk through specific use cases to ensure the design supports required functionalities.
+    \begin{itemize}
+        \item Example: "How does the system handle a user creating a new plant model and running a simulation?"
+    \end{itemize}
+\end{itemize}
+
+\textbf{Consistency Checks}:
+\begin{itemize}
+    \item \textbf{Traceability Matrix}: We will be creating a matrix mapping SRS requirements to the test to ensure coverage. We will be using that to do consistency check between the SRS and the design and the tests. 
+\end{itemize}
+
+\subsubsection{Design Verification Checklist}
+We will use the following Design Verification Checklist during our reviews:
+\begin{longtable}{|p{0.3\textwidth}|p{0.6\textwidth}|}
+  \hline
+  \textbf{Checklist Item} & \textbf{Description} \\ \hline
+  \textbf{Alignment with Requirements} & 
+  - We will ensure the design covers all requirements from the SRS. \\ \hline
+  \textbf{Modularity} & 
+  - We will check that the system is divided into logical modules. \newline
+  - We will make sure each module's responsibilities are clearly defined. \\ \hline
+  \textbf{Interfaces} & 
+  - We will ensure interfaces between modules are clearly specified. \\ \hline
+  \textbf{Data Flow} & 
+  - We will verify that data moves logically and efficiently between components. \\ \hline
+  \textbf{External Integration} & 
+  - We will check that integration with the Python scripts is well planned. \\ \hline
+  \textbf{Security} & 
+  - We will ensure security requirements are addressed in the design. \\ \hline
+  \textbf{Scalability} & 
+  - We will verify the design considers future growth and increased load. \\ \hline
+  \textbf{Error Handling} & 
+  - We will ensure the design includes ways to handle errors gracefully. \\ \hline
+  \end{longtable}
+
+\subsection{Verification and Validation Plan Verification Plan}
+
+
+\subsubsection{Participants}
+Here are task for each team member and supervisor:
+\begin{itemize}
+    \item \textbf{Madhu Sivapragasam}: Focus on verifying that the V\&V Plan covers GUI and usability testing.
+    \item \textbf{Dhrumil Pandya}: Verify that the V\&V Plan includes testing for database interactions and backend services.
+    \item \textbf{Kishor Pandya}: Ensure the V\&V Plan included testing for the integration with Python simulation scripts.
+    \item \textbf{Rasik Pokharel}: Verify that the V\&V Plan covers security requirements and performance testing that Dr. Mahalec requires.
+    \item \textbf{Dr. Vladimir Mahalec}: Supervisor providing guidance and validation of the V\&V Plan.
+\end{itemize}
+
+\subsubsection{Verification Activities: Internal Team Review}
+\textbf{Individual Review}:
+\begin{itemize}
+    \item Each team member will independently review the V\&V Plan subsubsections relevant to their expertise.
+    \item Use the V\&V Plan Verification Checklist (provided below) to assess completeness, clarity, and feasibility.
+\end{itemize}
+
+
+\textbf{Group Discussion}:
+\begin{itemize}
+    \item Hold a meeting to discuss findings from individual reviews.
+    \item Identify any discrepancies, ambiguities, or areas of improvement.
+    \item Document all feedback and proposed changes in the GitHub issue tracker.
+\end{itemize}
+
+\subsubsection{Verification Activities: Supervisor Review}
+
+\textbf{Meeting with Dr. Mahalec}:
+\begin{itemize}
+    \item Present the V\&V Plan to Dr. Mahalec in our weekly Thursday meeting.
+    \item Walk through each subsubsection, explaining the verification and validation plan and the document.
+\end{itemize}
+
+\textbf{Questions to ask}:
+\begin{itemize}
+    \item Does the plan adequately cover all critical components of the project?
+    \item Are there any concerns about the feasibility of the proposed verification activities?
+    \item Does the plan align with project objectives and timelines?
+\end{itemize}
+
+\textbf{Feedback}:
+\begin{itemize}
+    \item Document any suggestions or concerns raised by Dr. Mahalec.
+    \item Discuss potential adjustments to the plan if needed based on the meetings.
+\end{itemize}
+
+\subsubsection{Verification Checklist}
+
+We will use the following V\&V Plan Verification Checklist during our reviews:
+
+\begin{longtable}{|p{0.3\textwidth}|p{0.6\textwidth}|}
+  \hline
+  \textbf{Checklist Item} & \textbf{Description} \\ \hline
+  \textbf{Completeness} & 
+  - We will ensure the plan covers all parts of the project (SRS, Design, Implementation). \newline
+  - We will check that all activities are clearly described. \newline
+  - We will make sure both functional and non-functional requirements are addressed. \\ \hline
+  \textbf{Clarity} & 
+  - We will ensure the verification activities are described clearly. \newline
+  - We will confirm team roles and responsibilities are clearly defined. \\ \hline
+  \textbf{Feasibility} & 
+  - We will check that the planned activities are doable within our timeline and resources. \newline
+  - We will ensure we have the necessary tools. \\ \hline
+  \textbf{Alignment} & 
+  - We will make sure the V\&V Plan aligns with our project's goals and requirements. \\ \hline
+  \textbf{Risk Management} & 
+  - We will verify that potential risks are identified. \newline
+  - We will ensure mitigation strategies are included. \\ \hline
+  \textbf{Compliance} & 
+  - We will check that the plan adheres to industry standards and addresses any compliance needs. \\ \hline
+  \end{longtable}
+
+
+\subsection{Implementation Verification Plan}
+
+We will verify our software implementation to ensure it meets all the requirements. Each team member will focus on specific areas:
+\begin{itemize}
+    \item \textbf{Madhu} will verify the frontend, including the GUI components and user interactions.
+    \item \textbf{Dhrumil} will verify the backend services, API endpoints, and database interactions.
+    \item \textbf{Kishor} will verify the integration with the Python simulation scripts, ensuring accurate data exchange.
+    \item \textbf{Rasik} will verify security aspects, performance, and compliance with security requirements.
+\end{itemize}
+
+For \textbf{unit testing}, we will use \textbf{Jest} for both frontend and backend:
+\begin{itemize}
+    \item \textbf{Madhu} will use Jest to test React components on the frontend, ensuring they render correctly and handle user interactions as expected.
+    \item \textbf{Dhrumil} will use Jest to test backend services, checking that API endpoints respond correctly and backend logic works as intended.
+    \item \textbf{Kishor} will use Jest to test the communication between the backend and the Python scripts.
+\end{itemize}
+
+We will work together on integration testing to ensure all parts of the system work smoothly together. This includes testing workflows from the user interface to the simulation results, making sure data flows correctly.
+
+We will perform code reviews for all code we write. At least two team members will review each pull request to ensure the code is correct and follows our standards. We will use ESLint for checking code quality and Prettier for consistent code formatting.
+
+We plan to set up continuous integration using GitHub Actions. This will automate our testing and code checks whenever we push code or open a pull request. We will also have regular code walkthroughs, where team members present their code to the group. This will help us share knowledge and spot any issues.
+
+For more details on our technology stack, development
+practices, and CI/CD strategies, please refer to the De-
+velopment Plan. Relevant subsections include our tech-
+nology choices and continuous integration/deployment
+strategies
+
+\subsection{Automated Testing and Verification Tools}
+
+To maintain code quality and catch issues early, we will use several automated tools.
+\begin{itemize}
+    \item \textbf{Testing Framework}:
+        \begin{itemize}
+            \item \textbf{Jest}: We will use Jest for both frontend and backend unit testing. Using one framework simplifies our setup and ensures consistency across the project.
+        \end{itemize}
+    \item \textbf{Linters and Formatters}:
+        \begin{itemize}
+            \item \textbf{ESLint}: Enforces coding standards and catches syntax errors in our JavaScript and TypeScript code.
+            \item \textbf{Prettier}: Keeps our code formatting consistent across the project.
+        \end{itemize}
+    \item \textbf{Continuous Integration}:
+        \begin{itemize}
+            \item \textbf{GitHub Actions}: Automates our testing and code quality checks whenever we push code or create a pull request. This helps ensure that our code meets quality standards before it is merged.
+        \end{itemize}
+\end{itemize}
+
+\subsection{Software Validation Plan}
+\begin{itemize}
+    \item \textbf{Use of External Data}: We will integrate the existing Excel tables and Python simulation scripts provided by Farbod into our system. Testing with real data will help us verify that our software produces accurate and consistent results.
+    \item \textbf{Stakeholder Review Sessions}: We will hold regular meetings with our supervisor, Dr. Mahalec, and his research team. In these sessions, we will demonstrate our software, show our progress, and gather their feedback. This helps ensure that we're on the right track and meeting their expectations.
+    \item \textbf{Task-Based Inspection}: During review sessions, we'll ask stakeholders to perform specific tasks, like creating a new plant model and running a simulation. Observing them will help us assess the software's usability and identify any areas for improvement.
+    \item \textbf{Rev 0 Demo}: We will use the Rev 0 demo to validate our requirements and gather valuable feedback. We'll demonstrate the software to Dr. Mahalec and his team, discuss what works well, and identify areas that need improvement.
+    \item \textbf{User Acceptance Testing (UAT)}: After incorporating feedback from the Rev 0 demo, we'll invite actual users from the research team to use the software and provide feedback. This will help us ensure the software is user-friendly and meets their needs.
+    \item \textbf{Validation of Non-Functional Requirements}: We'll test performance, security, and usability to ensure the software operates efficiently and is secure and easy to use.
+    \item \textbf{Documentation Validation}: We'll create user manuals and guides, and review them with our stakeholders to ensure they are clear and helpful.
+\end{itemize}
+
+\section{System Tests}
+The below section outlines system tests for all of the functional and non functional requirements of our system. 
+
+\subsection{Tests for Functional Requirements}
+This subsection defines tests for each of the functional requirements listed in our SRS. We do not need added subsections for the functional requirements test since there are no subsections for functional requirements. 
+		
+\paragraph{Tests for FR1}
+
+\begin{enumerate}
+
+\item{STN-FR1\\}
+
+\textbf{Description:} The user must be able to create nodes in the product canvas.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a blank canvas thats setup with a new domain already selected.
+
+\textbf{Input/Condition:} The user navigates to the sidebar and drags a new node onto the canvas.
+
+\textbf{Output/Result:} The new node appears on the canvas with the correct icon and can be selected and moved easily.
+
+\textbf{How the test will be performed:} A user will be asked to add a node to the blank canvas and then the output is verified by the user.
+					
+\item{STN-FR2\\}
+
+
+\textbf{Description:} The user must be able to update existing nodes on the product canvas
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a canvas that has a node already displayed in the canvas
+
+\textbf{Input/Condition:} The user selects a node and drags it to a new location
+
+\textbf{Output/Result:} The node moves to the new location
+
+\textbf{How the test will be performed:} A user will be asked to move a node from one location to another
+
+\item{STN-FR3\\}
+
+
+\textbf{Description:} The user must be able to delete a node from a canvas
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a canvas that has a node already displayed in the canvas
+
+\textbf{Input/Condition:} The user selects a node and and presses backspace to delete it
+
+\textbf{Output/Result:} The node disappears from the canvas
+
+\textbf{How the test will be performed:} A user will be asked to delete a node from the canvas using backspace
+
+\end{enumerate}
+
+	
+\paragraph{Tests for FR2}
+
+\begin{enumerate}
+
+\item{STN-FR4\\}
+
+\textbf{Description:} The user must be able to select a node and input values for each of the node variables.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a blank canvas thats setup with a node appearing on the canvas.
+
+\textbf{Input/Condition:} The user selects a node and adds values to each of the node variables. 
+
+\textbf{Output/Result:} The updated node now has values assigned to each variable which can be verified by selecting the node again.
+
+\textbf{How the test will be performed:} A user will be asked to update the values for a specific node variable.
+					
+\item{STN-FR5\\}
+
+
+\textbf{Description:} The user must be able to update stream values for the edge connection between two nodes
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a canvas that has a two nodes with an edge connecting them
+
+\textbf{Input/Condition:} The user selects the edge and updates the stream property
+
+\textbf{Output/Result:} The edge now has the selected stream property
+
+\textbf{How the test will be performed:} A user will be asked update the stream property of an edge connecting two nodes
+
+\end{enumerate}
+
+\paragraph{Tests for FR3}
+
+\begin{enumerate}
+
+\item{STN-FR6\\}
+
+\textbf{Description:} The user must be able to run a plant simulation model for a given plant design and then receive outputs based off of that simulation. 
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with an existing plant model saved to the canvas.
+
+\textbf{Input/Condition:} The user clicks the run button in order to run the simulation for that model.
+
+\textbf{Output/Result:} The simulation is run and the outputs of the simulation are displayed to the user, the outputs should be equivalent to the outputs we get from using the excel solver model.
+
+\textbf{How the test will be performed:} A user will be asked to run a simulation and then verify that the outputs match the outputs from the excel solver. 
+
+\end{enumerate}
+			
+\paragraph{Tests for FR4}
+
+
+\begin{enumerate}
+
+\item{STN-FR7\\}
+
+\textbf{Description:} The product must be able to display an error message if the user attempts to run a plant that is incomplete or has incorrect parameters. 
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with an existing plant model with an unconnected pair of nodes.
+
+\textbf{Input/Condition:} The user clicks the run button in order to run the simulation for that model.
+
+\textbf{Output/Result:} An error message is displayed indicating that the pair of nodes is disconnected which means that the plant specified has an incorrect configuration. 
+
+\textbf{How the test will be performed:} A user will be asked to run a simulation for an incorrect plant model and then read an error message displayed from attempting to run that model. 
+
+\end{enumerate}
+
+\paragraph{Tests for FR5}
+
+\begin{enumerate}
+
+\item{STN-FR8\\}
+
+\textbf{Description:} The product must be able to save existing canvas models into a local file format
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with an existing plant model.
+
+\textbf{Input/Condition:} The user clicks the save button in order to save the file locally.
+
+\textbf{Output/Result:} The file should be saved locally to their local file system.
+
+\textbf{How the test will be performed:} A user will be asked to save a model locally to their file system and then verify that the file exists in their local file system. 
+
+\end{enumerate}
+
+\paragraph{Tests for FR6}
+
+\begin{enumerate}
+
+\item{STN-FR9\\}
+
+\textbf{Description:} The product must be able to restore files into the canvas from files stored in the local file storage.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a blank new plant canvas in the domain selection screen
+
+\textbf{Input/Condition:} The user clicks the restore button and then chooses to restore a file from their local filesystem.
+
+\textbf{Output/Result:} The restored canvas should appear on the screen
+
+\textbf{How the test will be performed:} A user will be asked to restore a file from their local filesystem into the canvas and then check to make sure the model on the canvas matches what was on the local filesystem. 
+
+\end{enumerate}
+
+\paragraph{Tests for FR7}
+
+\begin{enumerate}
+
+\item{STN-FR10\\}
+
+\textbf{Description:} The user must be able to zoom into specific details on the canvas and observe the model closer
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a plant canvas with a detailed plant already existing on the canvas
+
+\textbf{Input/Condition:} The user double clicks to zoom into a certain section of the canvas
+
+\textbf{Output/Result:} The canvas will now be zoomed into that section of the model
+
+\textbf{How the test will be performed:} A user will be asked to zoom into a certain section of the plant canvas and then confirm that the product zooms into that section.
+
+\end{enumerate}
+
+\paragraph{Tests for FR8}
+
+\begin{enumerate}
+
+\item{STN-FR11\\}
+
+\textbf{Description:} The user must be able to export the computation model output results into a csv file.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a plant canvas with a detailed plant already existing on the canvas and with the simulation run so that the output appears.
+
+\textbf{Input/Condition:} The user clicks the export to csv button in order to export the data.
+
+\textbf{Output/Result:} A csv is downloaded with all the output data stored to the csv.
+
+\textbf{How the test will be performed:} A user will be asked to output the results of the computational model to a csv and then check the csv to confirm that the data matches what appears in the model outputs.
+
+\end{enumerate}
+
+\paragraph{Tests for FR9}
+
+\begin{enumerate}
+
+\item{STN-FR12\\}
+
+\textbf{Description:} The product must validate input data to make sure it is correct before the simulation runs.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a canvas that has a node displayed on it that has incorrect input data saved on to it such as a certain field without a corresponding value.
+
+\textbf{Input/Condition:} The user clicks the run simulation button
+
+\textbf{Output/Result:} An error message is displayed indicating that one of the fields is missing a value.
+
+\textbf{How the test will be performed:} A user will be asked to run the simulation for a node with incorrect input data and then read the error message thats returned when running the simulation to verify that errors are correctly provided.
+
+\end{enumerate}
+
+
+\paragraph{Tests for FR10}
+
+\begin{enumerate}
+
+\item{STN-FR13\\}
+
+\textbf{Description:} The product must provide realtime notifications for missing edges or nodes
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with a canvas that has two nodes displayed that are missing a connection
+
+\textbf{Input/Condition:} The user does not connect the two nodes
+
+\textbf{Output/Result:} An indicator should appear that it makes it clear that an edge is missing
+
+\textbf{How the test will be performed:} A user will be asked to look at a canvas with two unconnected nodes and verify that an indicator appears that indicates there is a missing edge.
+
+\end{enumerate}
+
+\subsection{Tests for Nonfunctional Requirements}
+The below sections include tests for nonfunctional requirements. 
+
+\subsubsection{Appearance Requirements}
+
+\begin{enumerate}
+    \item{STN-LAFAR1\\}
+
+    \textbf{Description:} The product shall feature a clear and logically structured layout that organizes information hierarchically to reflect the plant’s structure and process flow.
+
+    \textbf{Type:} Functional, Dynamic, Manual
+
+    \textbf{Initial State:} The software is opened with a blank canvas.
+
+    \textbf{Input/Condition:} The user navigates to select the domain for the plant model.
+
+    \textbf{Output/Result:} The user interface will display the available models, which they can drag and drop onto the empty canvas. Users should be able to locate and navigate between different sections without confusion, and information must be presented clearly in a hierarchical manner.
+
+    \textbf{How the test will be performed:} A group of users will be asked to complete specific tasks, such as finding a particular model and following the process flow. Feedback will be collected through a usability survey focused on layout clarity, evaluating aspects like ease of navigation and organization of information.
+
+    \item{STN-LAFAR2\\}
+
+\textbf{Description:} The product must use a consistent design across all elements, including fonts, colors, icons, and widgets, to ensure a cohesive and professional appearance.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main User Interface.
+
+\textbf{Input/Condition:} The user is able to change the Canvas color between a light and dark theme.
+
+\textbf{Output/Result:} The User Interface will reflect the selected theme (light or dark) across all elements. Specific color coding will apply to the models: input ports will be green, output ports will be red, and info ports will be blue.
+
+\textbf{How the test will be performed:} Testers will evaluate the color scheme on multiple screens, ensuring adherence to the specified color guidelines and documenting any inconsistencies.
+
+\item{STN-LAFAR3\\}
+
+\textbf{Description:} The software must provide drag-and-drop functionality, allowing users to add, delete, rearrange, or modify elements such as reactor, source, separator, etc.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main User Interface with a blank Canvas.
+
+\textbf{Input/Condition:} The user is able to drag and drop models onto the Canvas, rearrange them, and remove any dropped models as needed.
+
+\textbf{Output/Result:} The User Interface will allow users to interact with models by dragging and dropping them onto the Canvas, with options to reposition or delete models. Changes made by the user are accurately reflected in the plant model hierarchy and layout.
+
+\textbf{How the test will be performed:} A group of users will be asked to complete tasks involving the drag-and-drop functionality, such as adding specific models, rearranging them in a process flow, and deleting certain elements. Feedback will be collected via a usability survey focusing on ease of adding, arranging, and removing models, as well as the clarity of visual feedback for each action.
+
+
+\end{enumerate}
+
+
+\subsubsection{Style Requirements}
+\begin{enumerate}
+\item{STN-LAFSR1\\}
+
+\textbf{Description:} The software must maintain sufficient contrast ratios between text, background colors, and interactive elements to ensure readability and accessibility.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main User Interface.
+
+\textbf{Input/Condition:} The user navigates through various sections of the interface, including areas with text, background elements, and interactive components.
+
+\textbf{Output/Result:} All text and interactive elements have a contrast ratio of at least 4.5:1 against their background colors, ensuring readability and accessibility compliance.
+
+\textbf{How the test will be performed:} Using an accessibility tool or a color contrast analyzer, testers will measure contrast ratios for text and interactive elements against their backgrounds across different sections of the software. Any element with insufficient contrast will be documented for correction.
+
+\item{STN-LAFSR2\\}
+
+\textbf{Description:} The software must utilize a neutral color scheme with professional accent colors reserved for emphasis and highlighting specific elements.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main User Interface with a default theme.
+
+\textbf{Input/Condition:} The user navigates through various screens, observing the color scheme and accent colors used across the interface.
+
+\textbf{Output/Result:} The interface displays a neutral base color palette with no more than three accent colors used only for actionable elements, alerts, or key information.
+
+\textbf{How the test will be performed:} Testers will verify that the color scheme adheres to the neutral base and professional accent guidelines. Screenshots will be reviewed to confirm that accent colors are used consistently and only in areas requiring emphasis, and no more than three accent colors are visible at any time.
+
+\item{STN-LAFSR3\\}
+
+\textbf{Description:} The software must incorporate clear visual cues, such as highlighting, shading, or outlines, to indicate interactivity and selectable elements.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying various interactive components.
+
+\textbf{Input/Condition:} The user interacts with elements such as buttons, models, and edges, observing visual feedback for each interaction.
+
+\textbf{Output/Result:} Each interactive element visibly changes appearance (e.g., background color, border) when hovered over or selected, providing feedback on interactivity.
+
+\textbf{How the test will be performed:} Testers will systematically hover over and select interactive elements, observing changes in visual cues such as color, shading, or outlines. Feedback consistency will be documented, and any interactive element that lacks appropriate visual feedback will be identified.
+
+\end{enumerate}
+
+
+\subsubsection{Ease of Use Requirements}
+\begin{enumerate}
+\item{STN-UHE1\\}
+
+\textbf{Description:} Each component of the service should be labeled with a descriptive tag that indicates what that component is used for.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main User Interface with all components accessible.
+
+\textbf{Input/Condition:} The user examines each UI component to locate and read its associated label.
+
+\textbf{Output/Result:} Each component has a unique, clear label that accurately describes its function, with no components left unlabeled or ambiguously labeled.
+
+\textbf{How the test will be performed:} Testers will go through each UI component and confirm the presence of a descriptive label for each one. They will record any component that is missing a label or has an unclear or misleading label, ensuring that every component has a one-to-one relationship with its label.
+
+
+\item{STN-UHE2\\}
+
+\textbf{Description:} The UI control animations, such as dragging and dropping nodes and edges, should be smooth and without lag.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened with nodes and edges available for dragging and dropping onto the canvas.
+
+\textbf{Input/Condition:} The user performs drag-and-drop actions with nodes and edges, observing the smoothness of the animation.
+
+\textbf{Output/Result:} All animations run smoothly without buffering or lag, allowing users to seamlessly move nodes and edges on the canvas.
+
+\textbf{How the test will be performed:} Testers will interact with the drag-and-drop elements, observing animation smoothness and responsiveness. Feedback will be gathered from testers and optionally from third-party reviewers, who will rate the smoothness of the animations. Any instances of lag or buffering will be noted for refinement.
+\end{enumerate}
+
+\subsubsection{Personalization and Internationalization Requirements}
+
+\begin{enumerate}
+
+\item{STN-UHPI-1\\}
+
+\textbf{Description:} The system will use English everywhere throughout the system.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main interface and all accessible screens and components.
+
+\textbf{Input/Condition:} The tester navigates through all screens, features, and tooltips within the system, observing any text elements (e.g., labels, buttons, notifications).
+
+\textbf{Output/Result:} All text within the system is displayed in English, with no text appearing in other languages or being left untranslated.
+
+\textbf{How the test will be performed:} Testers will systematically go through each part of the user interface, checking that all text elements, including error messages, tooltips, menus, and labels, are written in English. Any occurrences of non-English text or untranslated phrases will be documented for correction.
+
+\end{enumerate}
+
+\subsubsection{Learning Requirements}
+
+\begin{enumerate}
+
+\item{STN-UHL-1\\}
+
+\textbf{Description:} There should be documentation that enables a new user to learn the system.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main interface and access to documentation through the support tab.
+
+\textbf{Input/Condition:} The user accesses the documentation while using the system for the first time.
+
+\textbf{Output/Result:} New users are able to understand and follow the documentation to perform basic tasks within the system.
+
+\textbf{How the test will be performed:} New users will be asked to complete a set of predefined tasks using the documentation. Observations will be made on whether users can successfully learn the system and complete tasks within half an hour.
+
+\item{STN-UHL-2\\}
+
+\textbf{Description:} The system controls should be intuitive and easy to understand such that a new user can easily understand how to operate it.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main user interface.
+
+\textbf{Input/Condition:} New users interact with the controls of the system for the first time.
+
+\textbf{Output/Result:} New users should be able to see a tutorial which will help them to operate the system without confusion, with no more than one question regarding how to use the controls.
+
+\textbf{How the test will be performed:} A group of new users will be observed as they navigate and use the system. Any questions or difficulties encountered during their interaction will be documented and analyzed.
+
+\end{enumerate}
+
+\subsubsection{Understandability and Politeness Requirements}
+
+\begin{enumerate}
+
+\item{STN-UHU-1\\}
+
+\textbf{Description:} The system will use language and terminology that can be understood by trained chemical engineers.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened, displaying the main interface with all relevant terminology.
+
+\textbf{Input/Condition:} Trained chemical engineers interact with the system and its documentation.
+
+\textbf{Output/Result:} All terminology used within the system should be understandable by chemical engineers with at least a bachelor’s degree.
+
+\textbf{How the test will be performed:} A focus group of trained chemical engineers will be invited to use the system and provide feedback on the clarity of the terminology. Their understanding will be assessed through a questionnaire.
+
+\end{enumerate}
+
+\subsubsection{Accessibility Requirements}
+
+\begin{enumerate}
+
+\item{STN-UHA-1\\}
+
+\textbf{Description:} The system can be used by any computer with a monitor, keyboard, and mouse, with all controls mapped to the keyboard and mouse.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is opened on a standard computer setup.
+
+\textbf{Input/Condition:} Users interact with the system using a monitor, keyboard, and mouse.
+
+\textbf{Output/Result:} All controls of the system must be accessible via the keyboard and mouse, and outputs must be displayed on the monitor.
+
+\textbf{How the test will be performed:} Testing will involve users of varying technical backgrounds using the system on different standard computer setups. All interactions and feedback on usability with basic peripherals will be documented.
+
+\end{enumerate}
+
+\subsubsection{Speed and Latency Requirements}
+
+\begin{enumerate}
+
+\item{STN-PS1\\}
+
+\textbf{Description:} User inputs/interactions into the system should have a less than 60 ms latency.
+
+\textbf{Type:} Performance, Dynamic, Automated
+
+\textbf{Initial State:} The software is running and ready for user interaction.
+
+\textbf{Input/Condition:} User performs actions such as adding, moving, or deleting nodes/edges on the canvas.
+
+\textbf{Output/Result:} The system should process user inputs with a latency of less than 60 ms.
+
+\textbf{How the test will be performed:} Automated scripts will measure the time from the moment an input is registered until the corresponding GUI output is displayed, ensuring it is less than 60 ms.
+
+\item{STN-PS2\\}
+
+\textbf{Description:} Saving a schema to a filesystem should take less than 1 second.
+
+\textbf{Type:} Performance, Dynamic, Automated
+
+\textbf{Initial State:} The software is running with a schema ready to be saved.
+
+\textbf{Input/Condition:} User initiates the save operation for a schema.
+
+\textbf{Output/Result:} The schema should be saved to the filesystem within 1 second.
+
+\textbf{How the test will be performed:} Automated tests will track the time taken from the initiation of the save operation to its completion, ensuring it is less than 1 second.
+
+\item{STN-PS3\\}
+
+\textbf{Description:} Restoring a schema from the filesystem should take less than 1 second.
+
+\textbf{Type:} Performance, Dynamic, Automated
+
+\textbf{Initial State:} The software is running and a previously saved schema is available.
+
+\textbf{Input/Condition:} User initiates the restore operation for a schema.
+
+\textbf{Output/Result:} The schema should be restored from the filesystem within 1 second.
+
+\textbf{How the test will be performed:} Automated tests will measure the time taken to complete the restore operation, ensuring it is less than 1 second.
+
+\item{STN-PS4\\}
+
+\textbf{Description:} Running the factory simulation model and getting outputs should take no longer than 10 seconds.
+
+\textbf{Type:} Performance, Dynamic, Automated
+
+\textbf{Initial State:} The software is running, and the simulation model is prepared for execution.
+
+\textbf{Input/Condition:} User initiates the simulation run for the factory model.
+
+\textbf{Output/Result:} The output from the simulation should be returned within 10 seconds.
+
+\textbf{How the test will be performed:} Automated scripts will measure the time taken from the start of the simulation until the output is generated, ensuring it is within the 10-second limit.
+
+\end{enumerate}
+
+\subsubsection{Precision or Accuracy Requirements}
+
+\begin{enumerate}
+
+\item{STN-PPA1\\}
+
+\textbf{Description:} All numerical user inputs will not be constrained or rounded by the system.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is open, allowing user input for numerical values.
+
+\textbf{Input/Condition:} User enters numerical values without any constraints.
+
+\textbf{Output/Result:} The system should accept and process all numerical inputs as entered.
+
+\textbf{How the test will be performed:} Testers will input various numerical values into the system and verify that no rounding or constraints are applied, ensuring that all inputs are passed directly to the external processing model.
+
+\item{STN-PPA2\\}
+
+\textbf{Description:} All graphical user inputs (creating/editing/deleting nodes and edges) that are shown via the GUI will be sent to the model as what’s shown on the canvas.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is open, and a canvas is being edited.
+
+\textbf{Input/Condition:} User creates, edits, or deletes nodes and edges on the canvas.
+
+\textbf{Output/Result:} The data sent to the processing model should match the graphical representation shown on the canvas.
+
+\textbf{How the test will be performed:} Testers will manipulate the canvas and then check the data sent to the external model to ensure it matches exactly with what is displayed on the canvas.
+
+\end{enumerate}
+
+\subsubsection{Robustness or Fault-Tolerance Requirements}
+
+\begin{enumerate}
+
+\item{STN-PRF1\\}
+
+\textbf{Description:} All failures or errors that the model produces will be displayed to the user with information regarding the error or failure.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is running, and the external processing model is operational.
+
+\textbf{Input/Condition:} An operation is performed that triggers an error in the external processing model.
+
+\textbf{Output/Result:} The user should see a context box displaying information about the error/failure.
+
+\textbf{How the test will be performed:} Testers will deliberately cause errors in the external model and verify that appropriate error messages are displayed to the user, including detailed information regarding the issue.
+
+\item{STN-PRF2\\}
+
+\textbf{Description:} All failures and errors from the system should be shown to the user with information regarding the error/failure.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is running, and a user is interacting with the system.
+
+\textbf{Input/Condition:} An error occurs within the system (not related to the external model).
+
+\textbf{Output/Result:} The user should see a context box with information about the error/failure.
+
+\textbf{How the test will be performed:} Testers will trigger various scenarios that result in system errors and check that the corresponding error messages are displayed to the user with clear, helpful information.
+
+\end{enumerate}
+
+\subsubsection{Capacity Requirements}
+
+\begin{enumerate}
+
+\item{STN-PC1\\}
+
+\textbf{Description:} The system should be able to handle schemas with up to 100 nodes and 1000 edges.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The software is open and ready for schema creation.
+
+\textbf{Input/Condition:} User creates a schema with up to 100 nodes and 1000 edges.
+
+\textbf{Output/Result:} The system should successfully handle the schema without performance degradation.
+
+\textbf{How the test will be performed:} Testers will create schemas that include 100 nodes and 1000 edges, monitoring the system’s performance and responsiveness during and after the creation process.
+
+\end{enumerate}
+
+\subsubsection{Scalability or Extensibility Requirements}
+
+\begin{enumerate}
+
+\item{STN-PSE1\\}
+
+\textbf{Description:} The system should only need to be scalable to handle a single user.
+
+\textbf{Type:} Performance, Dynamic, Automated
+
+\textbf{Initial State:} The software is running, simulating a single user environment.
+
+\textbf{Input/Condition:} Simulated user inputs are made to test the system’s performance.
+
+\textbf{Output/Result:} The system should handle all user inputs without performance issues.
+
+\textbf{How the test will be performed:} Automated scripts will simulate user inputs and interactions with the system, testing its performance under load to ensure it can handle all inputs efficiently from a single user.
+
+\end{enumerate}
+
+\subsubsection{Longevity Requirements}
+
+\begin{enumerate}
+
+\item{STN-PL1\\}
+
+\textbf{Description:} The system should be maintainable without developer interference for at least 1 year.
+
+\textbf{Type:} Maintenance, Dynamic, Manual
+
+\textbf{Initial State:} The system is operational and ready for handover to the sponsor.
+
+\textbf{Input/Condition:} The system is used without developer support for a year.
+
+\textbf{Output/Result:} The system remains operational and usable after one year without significant issues.
+
+\textbf{How the test will be performed:} A long-term monitoring plan will be established to track the system’s performance and usability over the course of a year, assessing if it remains maintainable without developer intervention.
+
+\end{enumerate}
+
+\subsubsection{Expected Physical Environment}
+
+\begin{enumerate}
+
+\item{STN-OEEP1\\}
+
+\textbf{Description:} The product shall operate on standard web browsers such as Google Chrome, Mozilla Firefox, Microsoft Edge, and Safari, on both desktop and mobile devices.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The web application is deployed and accessible.
+
+\textbf{Input/Condition:} User accesses the web application on various supported browsers.
+
+\textbf{Output/Result:} The web application functions seamlessly without browser-specific issues.
+
+\textbf{How the test will be performed:} Testers will open the web application in the latest versions of Google Chrome, Firefox, Edge, and Safari on both desktop and mobile devices, verifying that all functionalities are accessible and working correctly.
+
+\item{STN-OEEP2\\}
+
+\textbf{Description:} The product shall be optimized for devices with a minimum of 4GB of RAM, and it shall function effectively on devices with at least a dual-core processor.
+
+\textbf{Type:} Performance, Dynamic, Automated
+
+\textbf{Initial State:} The web application is running on a device meeting the minimum hardware requirements.
+
+\textbf{Input/Condition:} User performs core functions, including modeling and simulation.
+
+\textbf{Output/Result:} The application performs without excessive delays.
+
+\textbf{How the test will be performed:} Automated scripts will monitor application performance metrics while performing modeling and simulation tasks on devices meeting the specified hardware requirements, ensuring that there are no significant performance issues.
+
+\item{STN-OEEP3\\}
+
+\textbf{Description:} The product shall provide a responsive interface, supporting screen resolutions from 1280x720 to 4K across different devices.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The web application is open on various devices with different screen resolutions.
+
+\textbf{Input/Condition:} User navigates through the application on devices with varying resolutions.
+
+\textbf{Output/Result:} The interface adapts to the screen resolution without compromising usability.
+
+\textbf{How the test will be performed:} Testers will open the web application on devices with screen resolutions ranging from 1280x720 to 4K, ensuring that all elements are properly displayed and functional.
+
+\end{enumerate}
+
+\subsubsection{Wider Environment Requirements}
+
+\begin{enumerate}
+
+\item{STN-OEWE1\\}
+
+\textbf{Description:} The product shall require a continuous internet connection to perform all modeling, simulation, and collaboration tasks.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The web application is running with an active internet connection.
+
+\textbf{Input/Condition:} User performs tasks such as model creation, simulation, and saving.
+
+\textbf{Output/Result:} The application should fail gracefully with appropriate error messages if the internet connection is lost.
+
+\textbf{How the test will be performed:} Testers will disconnect the internet while performing various tasks and verify that the application provides clear error messages indicating the loss of connection and prompts to reconnect.
+
+\item{STN-OEWE2\\}
+
+\textbf{Description:} The product shall use a local MongoDB database hosted on the user’s server or local machine for all data storage.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The web application is configured to connect to a local MongoDB instance.
+
+\textbf{Input/Condition:} User performs data storage and retrieval operations.
+
+\textbf{Output/Result:} The application successfully connects to the local MongoDB instance without external dependencies.
+
+\textbf{How the test will be performed:} Testers will verify the connection to the local MongoDB database and perform various data storage and retrieval operations, ensuring that all operations are successful without relying on cloud services.
+
+\end{enumerate}
+
+\subsubsection{Requirements for Interfacing with Adjacent Systems}
+
+\begin{enumerate}
+
+\item{STN-OEIA1\\}
+
+\textbf{Description:} The product shall allow users to export and import data using common formats such as CSV, Excel, and JSON.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The web application is running and a user has data available for export/import.
+
+\textbf{Input/Condition:} User exports/imports data in CSV, Excel, or JSON formats.
+
+\textbf{Output/Result:} Data should be successfully exported and imported without errors.
+
+\textbf{How the test will be performed:} Testers will export and import simulation data, model configurations, and results in various formats, verifying that the data remains intact and properly formatted.
+
+\item{STN-OEIA2\\}
+
+\textbf{Description:} The product shall support API integration for data exchange with third-party tools.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The web application is running and configured for API access.
+
+\textbf{Input/Condition:} User performs API calls to third-party tools.
+
+\textbf{Output/Result:} Data should be exchanged seamlessly with external tools.
+
+\textbf{How the test will be performed:} Testers will initiate API calls to third-party tools and verify that the application successfully sends and receives data, ensuring that integration works without manual data transfers.
+
+\end{enumerate}
+
+\subsubsection{Productization Requirements}
+
+\begin{enumerate}
+
+\item{STN-OEP1\\}
+
+\textbf{Description:} The product shall be distributed as a local executable that can be installed and run directly on a user’s device.
+
+\textbf{Type:} Functional, Static, Manual
+
+\textbf{Initial State:} The installer for the product is available.
+
+\textbf{Input/Condition:} User downloads and installs the product.
+
+\textbf{Output/Result:} The product should run directly from the user’s device without additional configurations.
+
+\textbf{How the test will be performed:} Testers will download and install the product, verifying that it runs successfully without requiring any additional server configurations or dependencies.
+
+\end{enumerate}
+
+\subsubsection{Release Requirements}
+
+\begin{enumerate}
+
+\item{STN-OER1\\}
+
+\textbf{Description:} The product shall be released with full documentation, including an online help center, API documentation, and user guides.
+
+\textbf{Type:} Functional, Static, Manual
+
+\textbf{Initial State:} The product is released.
+
+\textbf{Input/Condition:} User accesses the help center and documentation.
+
+\textbf{Output/Result:} All documentation should be available and complete.
+
+\textbf{How the test will be performed:} Testers will navigate through the online help center, API documentation, and user guides, ensuring that all sections are accessible and provide complete information.
+
+\end{enumerate}
+
+\subsubsection{Maintenance Requirements}
+
+\begin{enumerate}
+
+\item{STN-MSM1\\}
+
+\textbf{Description:} All system maintenance must be completed at least one week prior to the release or any critical deployment.
+
+\textbf{Type:} Functional, Static, Manual
+
+\textbf{Initial State:} The system is in the pre-release phase, with a scheduled deployment date.
+
+\textbf{Input/Condition:} The deployment date is set, and no updates, patches, or changes are applied within one week of this date.
+
+\textbf{Output/Result:} No system updates, patches, or changes are made within one week of a critical release or deployment.
+
+\textbf{How the test will be performed:} Review the change logs and maintenance records to confirm that no modifications to the system occurred within one week of the scheduled release or critical deployment date.
+
+\item{STN-MSM2\\}
+
+\textbf{Description:} Maintenance tasks shall be logged and tracked using an issue management system such as GitHub Issues.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} Maintenance tasks are ongoing and require tracking.
+
+\textbf{Input/Condition:} Maintenance tasks are entered into the issue management system.
+
+\textbf{Output/Result:} At least 90\% of maintenance tasks are logged in the issue management system, with status updates visible to developers and users.
+
+\textbf{How the test will be performed:} Review the issue management system and calculate the percentage of maintenance tasks logged, ensuring at least 90\% of tasks are documented with current statuses.
+
+\end{enumerate}
+
+\subsubsection{Supportability Requirements}
+
+\begin{enumerate}
+
+\item{STN-MSS1\\}
+
+\textbf{Description:} Comprehensive technical documentation shall be provided, covering installation, configuration, usage, troubleshooting, and best practices.
+
+\textbf{Type:} Functional, Static, Manual
+
+\textbf{Initial State:} The documentation is available to users after the system release.
+
+\textbf{Input/Condition:} Users are asked to operate the system solely based on the provided documentation.
+
+\textbf{Output/Result:} At least 80\% of users report they can operate the system independently based on the documentation.
+
+\textbf{How the test will be performed:} Conduct a post-release survey of users to gather feedback on their experience using the documentation, aiming to achieve at least 80\% satisfaction in users' ability to operate the system independently.
+
+\end{enumerate}
+
+\subsubsection{Adaptability Requirements}
+
+\begin{enumerate}
+
+\item{STN-MSA1\\}
+
+\textbf{Description:} The system shall be modular, allowing future developers to add new features or make changes to the existing codebase with minimal effort.
+
+\textbf{Type:} Functional, Dynamic, Manual
+
+\textbf{Initial State:} The system is operational, and new feature integration is being considered.
+
+\textbf{Input/Condition:} A new module or feature is developed and integrated into the existing codebase.
+
+\textbf{Output/Result:} The new module or feature integrates into the system without requiring major changes to existing code.
+
+\textbf{How the test will be performed:} Review developer inspection reports and codebase changes related to the integration, verifying that major code modifications were not necessary and modularity is maintained.
+
+\item{STN-MSA2\\}
+
+\textbf{Description:} The system shall be built using industry-standard tools and frameworks to ensure future developers can easily adapt and work on the project.
+
+\textbf{Type:} Functional, Static, Manual
+
+\textbf{Initial State:} The system is fully built and operational.
+
+\textbf{Input/Condition:} Developers assess the tools and frameworks used in the system.
+
+\textbf{Output/Result:} The system uses widely recognized technologies, facilitating future maintenance and adaptability.
+
+\textbf{How the test will be performed:} Review the system's technology stack to confirm it utilizes widely adopted tools such as React, Node.js, and MongoDB, ensuring new developers can familiarize themselves with the project quickly.
+
+\end{enumerate}
+
+\subsubsection{Access Requirements}
+
+\begin{enumerate}
+
+\item{STN-SEC-ACC1\\}
+
+\item \textcolor{blue}{\sout{STN-SEC-ACC1\\}}
+
+\textbf{\textcolor{blue}{Description:}} \textcolor{blue}{\sout{The system shall enforce role-based access control (RBAC) to restrict access based on user roles.}}
+
+\textbf{\textcolor{blue}{Type:}} \textcolor{blue}{\sout{Functional, Dynamic, Manual}}
+
+\textbf{\textcolor{blue}{Initial State:}} \textcolor{blue}{\sout{The system is operational with predefined roles (Administrator, Operator, Viewer).}}
+
+\textbf{\textcolor{blue}{Input/Condition:}} \textcolor{blue}{\sout{Attempt access with different user roles to verify access restrictions.}}
+
+\textbf{\textcolor{blue}{Output:}} \textcolor{blue}{\sout{Each role can only access features and data relevant to its permissions.}}
+
+\textbf{\textcolor{blue}{How the test will be performed:}} \textcolor{blue}{\sout{Log in as different roles and attempt to access restricted features and data. Verify that access is limited according to each role’s permissions.}}
+
+\textbf{\textcolor{blue}{We are removing the above test since adding role based access control is no longer a requirement and is not within scope of this project}}
+
+\end{enumerate}
+
+\subsubsection{Integrity Requirements}
+
+\begin{enumerate}
+
+\item{STN-SEC-INT1\\}
+
+\textbf{Description:} The system shall ensure data integrity by validating and sanitizing all input fields.
+
+\textbf{Type:} Functional, Dynamic, Automated
+
+\textbf{Initial State:} Input fields are empty.
+
+\textbf{Input/Condition:} Enter various valid and invalid data (e.g., scripts, special characters, SQL statements) into input fields.
+
+\textbf{Output/Result:} Invalid or potentially harmful inputs are sanitized or rejected according to validation rules.
+
+\textbf{How the test will be performed:} Execute automated tests to validate and sanitize inputs. Manually test edge cases to ensure scripts and SQL injection attempts are rejected.
+
+\item{STN-SEC-INT2\\}
+
+\textbf{Description:} The system shall implement version control for configuration files and database entries.
+
+\textbf{Type:} Functional, Static, Automated
+
+\textbf{Initial State:} Configuration files and database entries are tracked.
+
+\textbf{Input/Condition:} Modify configuration files and database entries.
+
+\textbf{Output/Result:} Changes are tracked with timestamps, unique identifiers, and can be reverted if necessary.
+
+\textbf{How the test will be performed:} Review version control logs for changes. Confirm that each change has a timestamp and unique identifier and verify the ability to revert to previous versions.
+
+\end{enumerate}
+
+\subsubsection{Privacy Requirements}
+
+\begin{enumerate}
+
+\item{STN-SEC-PRI1\\}
+
+\textbf{Description:} The system shall implement data encryption for sensitive user information in transit and at rest.
+
+\textbf{Type:} Functional, Static, Automated
+
+\textbf{Initial State:} System with sensitive data (e.g., user credentials).
+
+\textbf{Input/Condition:} Attempt data transmission and access storage to verify encryption.
+
+\textbf{Output/Result:} Sensitive data is encrypted using AES-256 at rest and SSL/TLS during transmission.
+
+\textbf{How the test will be performed:} Inspect the encryption setup in the system for AES-256 and SSL/TLS configurations. Attempt to intercept data during transit and retrieve data from storage to verify encryption.
+
+\end{enumerate}
+
+\subsubsection{Audit Requirements}
+
+\begin{enumerate}
+
+\item{STN-SEC-AUD1\\}
+
+\textbf{Description:} The system shall log relevant user actions, including login attempts, data access, and modifications.
+
+\textbf{Type:} Functional, Dynamic, Automated
+
+\textbf{Initial State:} The system is in use with active users.
+
+\textbf{Input/Condition:} Perform user actions, such as logging in, accessing data, and making modifications.
+
+\textbf{Output/Result:} Actions are logged with timestamps, user IDs, IP addresses, and action types, stored securely for periodic review.
+
+\textbf{How the test will be performed:} Check the system logs for records of each user action, including all required information. Confirm that logs are securely stored and accessible for audit purposes.
+
+\end{enumerate}
+
+\subsubsection{Immunity Requirements}
+
+\begin{enumerate}
+
+\item{STN-SEC-IMM1\\}
+
+\textbf{Description:} The system shall employ secure coding practices and automated security testing to detect and prevent vulnerabilities.
+
+\textbf{Type:} Functional, Dynamic, Automated
+
+\textbf{Initial State:} System codebase is accessible for testing.
+
+\textbf{Input/Condition:} Run security testing tools (e.g., SAST, DAST) on the codebase.
+
+\textbf{Output/Result:} No critical vulnerabilities are found in the code, and all identified issues are resolved before release.
+
+\textbf{How the test will be performed:} Integrate SAST and DAST tools into the development process, generating security reports. Verify that no critical issues remain unresolved.
+
+\end{enumerate}
+
+\subsubsection{Cultural Requirements}
+
+\begin{enumerate}
+
+\item{STN-CR1\\}
+
+\textbf{Description:} The product shall consider cultural practices in an industrial setting, with English as the interface language and appropriate symbols, colors, and terminology.
+
+\textbf{Type:} Functional, Static, Manual
+
+\textbf{Initial State:} The system interface is finalized.
+
+\textbf{Input/Condition:} Review interface symbols, colors, and terminology.
+
+\textbf{Output/Result:} All elements are appropriate for an industrial environment and understandable by English-speaking users.
+
+\textbf{How the test will be performed:} Conduct a cultural review of the interface to ensure compliance, consulting with industry experts if necessary.
+
+\end{enumerate}
+
+\subsubsection{Legal Requirements}
+
+\begin{enumerate}
+
+\item{STN-LR1\\}
+
+\textbf{Description:} The product shall comply with IP protection laws, transferring IP to Dr. Mahalec under a proprietary license and ensuring data security compliance.
+
+\textbf{Type:} Non-Functional, Static, Manual
+
+\textbf{Initial State:} Product is ready for final release.
+
+\textbf{Input/Condition:} Conduct a legal review for IP transfer and data security compliance.
+
+\textbf{Output/Result:} IP is transferred under a proprietary license, and no unauthorized data access is possible.
+
+\textbf{How the test will be performed:} Consult with a legal team to confirm IP compliance and review security documentation to verify that data security standards are met.
+
+\item{STN-LR2\\}
+
+\textbf{Description:} The system shall not use any copyrighted or patented technology without proper licensing or permission.
+
+\textbf{Type:} Non-Functional, Static, Manual
+
+\textbf{Initial State:} All third-party components are documented.
+
+\textbf{Input/Condition:} Review third-party licenses and permissions for all integrated technologies.
+
+\textbf{Output/Result:} Documentation confirms all third-party components are properly licensed for commercial use.
+
+\textbf{How the test will be performed:} Conduct a thorough review of third-party licenses, verifying all are documented and properly licensed for commercial use.
+
+\end{enumerate}
+
+\subsubsection{Standards Compliance Requirements}
+
+\begin{enumerate}
+
+\item{No Specific Standards Compliance Requirement\\}
+
+\textbf{Description:} Since no specific industry or software standards apply, no standard compliance testing is required.
+
+\textbf{Type:} Not Applicable
+
+\textbf{Initial State:} Not Applicable
+
+\textbf{Input/Condition:} Not Applicable
+
+\textbf{Output/Result:} Not Applicable
+
+\textbf{How the test will be performed:} Not Applicable
+
+\end{enumerate}
+
+
+\subsection{Traceability Between Test Cases and Requirements}
+
+\begin{table}[H]
+  \centering
+  \caption{Functional Requirements Traceability Matrix}
+  \begin{tabular}{@{}>{\raggedright}p{2.5cm} | *{10}{>{\centering\arraybackslash}p{0.8cm}}@{}}
+  \toprule
+  \textbf{Test Cases} & \textbf{FR1} & \textbf{FR2} & \textbf{FR3} & \textbf{FR4} & \textbf{FR5} & \textbf{FR6} & \textbf{FR7} & \textbf{FR8} & \textbf{FR9} & \textbf{FR10} \\
+  \midrule
+  STN-FR1 & \checkmark &  &  &  &  &  &  &  &  &  \\
+  \midrule
+  STN-FR2 & \checkmark &  &  &  &  &  &  &  &  &  \\
+  \midrule
+  STN-FR3 & \checkmark&  &  &  &  &  &  &  &  &  \\
+  \midrule
+  TSTN-FR4 &  & \checkmark &  &  &  &  &  &  &  &  \\
+  \midrule
+  STN-FR5 &  &   \checkmark& &  &  &  &  &  &  &  \\
+  \midrule
+  STN-FR6 &  &  & \checkmark &  &  &  &  &  &  &  \\
+  \midrule
+  STN-FR7 &  &  &  & \checkmark &  &  &  &  &  &  \\
+  \midrule
+  STN-FR8 &  &  &  &  & \checkmark &  &  &  &  &  \\
+  \midrule
+  STN-FR9 &  &  &  &  &  &  \checkmark&  &  &  &  \\
+  \midrule
+  STN-FR10 &  &  &  &  &  &  & \checkmark &  &  &  \\
+  \midrule
+  STN-FR11 &  &  &  &  &  &  &  & \checkmark &  &  \\
+  \midrule
+  STN-FR12 &  &  &  &  &  &  &  &  &  \checkmark&  \\
+  \midrule
+  STN-FR13 &  &  &  &  &  &  &  &  &  &  \checkmark\\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \begin{table}[H]
+    \centering
+    \caption{Non-Functional Requirements Traceability Matrix (Part 1)}
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tabular}{|p{3cm}|c|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    \textbf{Test Cases} & \textbf{LAFAR1} & \textbf{LAFAR2} & \textbf{LAFAR3} & \textbf{LAFSR1} & \textbf{LAFSR2} & \textbf{LAFSR3} & \textbf{UHE1} & \textbf{UHE2} & \textbf{UHPI1} & \textbf{UHL1} & \textbf{UHL2} & \textbf{UHU1} \\ 
+    \hline
+    STN-LAFAR-1 & \checkmark &  &  &  &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-LAFAR-2 &  & \checkmark &  &  &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-LAFAR-3 &  &  & \checkmark &  &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-LAFSR-1 &  &  &  & \checkmark &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-LAFSR-2 &  &  &  &  & \checkmark &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-LAFSR-3 &  &  &  &  &  & \checkmark &  &  &  &  &  &  \\ 
+    \hline
+    STN-UHE-1 &  &  &  &  &  &  & \checkmark &  &  &  &  &  \\ 
+    \hline
+    STN-UHE-2 &  &  &  &  &  &  &  & \checkmark &  &  &  &  \\ 
+    \hline
+    STN-UHPI-1 &  &  &  &  &  &  &  &  & \checkmark &  &  &  \\ 
+    \hline
+    STN-UHL-1 &  &  &  &  &  &  &  &  &  & \checkmark &  &  \\ 
+    \hline
+    STN-UHL-2 &  &  &  &  &  &  &  &  &  &  & \checkmark &  \\ 
+    \hline
+    STN-UHU-1 &  &  &  &  &  &  &  &  &  &  &  & \checkmark \\ 
+    \hline
+    \end{tabular}
+  \end{adjustbox}
+  \end{table}
+
+  
+  
+  \begin{table}[H]
+    \centering
+    \caption{Non-Functional Requirements Traceability Matrix (Part 2)}
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tabular}{|p{3cm}|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    \textbf{Test Cases} & \textbf{PS1} & \textbf{PS2} & \textbf{PS3} & \textbf{PS4} & \textbf{PPA1} & \textbf{PPA2} & \textbf{PRF1} & \textbf{PRF2} & \textbf{PC1} & \textbf{PSE1} & \textbf{PL1} & \textbf{UHU-1} & \textbf{UHA-1} \\ 
+    \hline
+    STN-PS1 & \checkmark &  &  &  &  &  &  &  &  &  &  &  &\\ 
+    \hline
+    STN-PS2 &  & \checkmark &  &  &  &  &  &  &  &  &  &  &\\ 
+    \hline
+    STN-PS3 &  &  & \checkmark &  &  &  &  &  &  &  &  &  &\\ 
+    \hline
+    STN-PS4 &  &  &  & \checkmark &  &  &  &  &  &  &  &  &\\ 
+    \hline
+    STN-PPA1 &  &  &  &  & \checkmark &  &  &  &  &  &  &  &\\ 
+    \hline
+    STN-PPA2 &  &  &  &  &  & \checkmark &  &  &  &  &  &  &\\ 
+    \hline
+    STN-PRF1 &  &  &  &  &  &  & \checkmark &  &  &  &  &  &\\ 
+    \hline
+    STN-PRF2 &  &  &  &  &  &  &  & \checkmark &  &  &  &  &\\ 
+    \hline
+    STN-PC1 &  &  &  &  &  &  &  &  & \checkmark &  &  &  &\\ 
+    \hline
+    STN-PSE1 &  &  &  &  &  &  &  &  &  & \checkmark &  &  &\\ 
+    \hline
+    STN-PL1 &  &  &  &  &  &  &  &  &  &  & \checkmark &  &\\ 
+    \hline
+    STN-UHU-1 & &  &  &  &  &  &  &  &  &  &  & \checkmark  &\\ 
+    \hline
+    STN-UHA-1 &  &  &  &  &  &  &  &  &  &  &  & & \checkmark  \\ 
+    \hline
+    \end{tabular}
+  \end{adjustbox}
+  \end{table}
+  
+
+  \begin{table}[H]
+    \centering
+    \caption{Non-Functional Requirements Traceability Matrix (Part 3)}
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tabular}{|p{3cm}|c|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    \textbf{Test Cases} & \textbf{OEEP1} & \textbf{OEEP2} & \textbf{OEEP3} & \textbf{OEWE1} & \textbf{OEWE2} & \textbf{OEIA1} & \textbf{OEIA2} & \textbf{OEP1} & \textbf{OER1} & \textbf{MSM1} & \textbf{MSM2} & \textbf{MSS1} \\ 
+    \hline
+    STN-OEEP1 & \checkmark &  &  &  &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-OEEP2 &  & \checkmark &  &  &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-OEEP3 &  &  & \checkmark &  &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-OEWE1 &  &  &  & \checkmark &  &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-OEWE2 &  &  &  &  & \checkmark &  &  &  &  &  &  &  \\ 
+    \hline
+    STN-OEIA1 &  &  &  &  &  & \checkmark &  &  &  &  &  &  \\ 
+    \hline
+    STN-OEIA2 &  &  &  &  &  &  & \checkmark &  &  &  &  &  \\ 
+    \hline
+    STN-OEP1 &  &  &  &  &  &  &  & \checkmark &  &  &  &  \\ 
+    \hline
+    STN-OER1 &  &  &  &  &  &  &  &  & \checkmark &  &  &  \\ 
+    \hline
+    STN-MSM1 &  &  &  &  &  &  &  &  &  & \checkmark &  &  \\ 
+    \hline
+    STN-MSM2 &  &  &  &  &  &  &  &  &  &  & \checkmark &  \\ 
+    \hline
+    STN-MSS1 &  &  &  &  &  &  &  &  &  &  &  & \checkmark \\ 
+    \hline
+    \end{tabular}
+  \end{adjustbox}
+  \end{table}
+
+  \begin{table}[H]
+    \centering
+    \caption{Non-Functional Requirements Traceability Matrix (Part 4)}
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tabular}{|p{3cm}|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    \textbf{Test Cases} & \textbf{MSA1} & \textbf{MSA2} & \textbf{SEC-ACC1} & \textbf{SEC-INT1} & \textbf{SEC-INT2} & \textbf{SEC-PRI1} & \textbf{SEC-AUD1} & \textbf{SEC-IMM1} & \textbf{CR1} & \textbf{LR1} & \textbf{LR2}  \\ 
+    \hline
+    STN-MSA1 & \checkmark &  &  &  &  &  &  &  &  &   &  \\ 
+    \hline
+    STN-MSA2 &  & \checkmark &  &  &  &  &  &  &  &    &  \\ 
+    \hline
+    \textcolor{blue}{\sout{STN-SEC-ACC1}} &  &  & \textcolor{blue}{\sout{\checkmark}} &  &  &  &  &  &    &  &  \\ 
+    \hline
+    STN-SEC-INT1 &  &  &  & \checkmark &  &  &  &  &    &  &  \\ 
+    \hline
+    STN-SEC-INT2 &  &  &  &  & \checkmark &  &  &  &   &  &  \\ 
+    \hline
+    STN-SEC-PRI1 &  &  &  &  &  & \checkmark &  &  &    &  &  \\ 
+    \hline
+    STN-SEC-AUD1 &  &  &  &  &  &  & \checkmark &  &    &  &  \\ 
+    \hline
+    STN-SEC-IMM1 &  &  &  &  &  &  &  & \checkmark &    &  &  \\ 
+    \hline
+    STN-CR1 &  &  &  &  &  &  &  &  & \checkmark &  &    \\ 
+    \hline
+    STN-LR1 &  &  &  &  &  &  &  &  &  & \checkmark &    \\ 
+    \hline
+    STN-LR2 &  &  &  &  &  &  &  &  &  &  & \checkmark  \\ 
+    \hline
+
+    \end{tabular}
+  \end{adjustbox}
+  \end{table}
+
+\section{Unit Test Description}
+\textcolor{blue}{\sout{This section will be filled out after the MIS (detailed design document) has been completed.} For unit testing we used jest to test our backend endpoints. This is because our backend was the easiest to test with unit testing since it has a clear set of inputs and outputs which allow us to define clear unit test cases. These unit test definitions can be found in the VnV report. The goal of our unit testing was to test every route with different types of inputs and then ensure that the outputs match the expected outputs.
+For the frontend we decided to do automated testing with selenium since frontend animations are more difficult to define clear inputs and outputs. We also used manual testing as defined in our planned test cases above. Our automated and manual tests are all recorded in our VnV report. For the automated tests we focused on testing core frontend functionality such as logging in, creating a user and creating a dashboard. The manual tests handle the more unique use cases such as actually drawing out a diagram.} 
+				
+
+\newpage
+
+\section*{Appendix --- Reflection}
+
+The information in this section will be used to evaluate the team members on the
+graduate attribute of Lifelong Learning.
+
+\input{../Reflection.tex}
+
+\begin{enumerate}
+  \item What went well while writing this deliverable? 
+  
+  Madhu: I was able to write effective tests since our requirements were well scoped and we knew exactly what we needed to verify for each test.\\
+  Kishor: Since our SRS document was well formatted and complete, it was easy to map the requirements to the tests.\\
+  Rasik: Our requirements and objectives were clear and easy to identify. \\
+  Dhrumil: I found that planning the testing strategies for our backend services went well. Since we had a clear idea of how data should flow between the frontend, backend, and databases, it was straightforward for me to outline how we'll verify that everything works as expected. Having a clear understanding of our what the system should produce made it easier to write this part of the plan.\\
+
+  \item What pain points did you experience during this deliverable, and how
+    did you resolve them?
+
+  Madhu: It was difficult to identify specific ways to test the service since we have not developed the full design just yet\\
+  Kishor: There were way too many non-functional requirements. It just got very boring after a bit.\\
+  Rasik: The work was tedious because we had a lot of different functional and non-functional requirements to go through.\\
+  Dhrumil: Researching the best tool for testing each of the component such as backend, frontend, security and db was a bit challenging. I had to go through multiple tools and their documentation to find the best one that fits our project.\\
+
+  \item What knowledge and skills will the team collectively need to acquire to
+  successfully complete the verification and validation of your project?
+  Examples of possible knowledge and skills include dynamic testing knowledge,
+  static testing knowledge, specific tool usage, Valgrind etc.  You should look to
+  identify at least one item for each team member.
+
+  Madhu: I will need to have dynamic testing knowledge in order to properly conduct system testing. Our system is very dynamic and can have multiple different contexts when being used and so its important that we have an effective suite of dynamic tests to ensure the project is complete. \\
+  Kishor: I will need to acquire knowledge about dynamic testing to effectively conduct system tests for the non-functional requirements of our project. Given the dynamic nature of our system, it is crucial to ensure that our testing covers all potential use cases and contexts in which the system might operate.\\
+  Rasik: I will focus on gaining static testing knowledge to assist in testing out the requirements for the system. I am also responsible for researching automated testing tools that could help us write and evaluate test cases for the system.\\
+  Dhrumil: I need to learn more about dynamic testing for backend services. Specifically, I want to understand how to test API endpoints and database operations thoroughly. I also need to get comfortable with testing tools like Mocha and Chai that are used for Node.js applications.
+  
+  \item For each of the knowledge areas and skills identified in the previous
+  question, what are at least two approaches to acquiring the knowledge or
+  mastering the skill?  Of the identified approaches, which will each team
+  member pursue, and why did they make this choice?
+  
+  Madhu: I will attempt to come up with dynamic tests on my own and then evaluate by trial and error how sucessful they are at covering all use cases of the software. I can then try to improve them before evaluating again. By constantly redoing this process until the tests have complete coverage I can ensure that my dynamic tests are effective. \\
+  Kishor: I will primarily pursue the hands-on practice approach. This choice is motivated by the need to apply theoretical knowledge in a practical context, which I believe will be more beneficial for understanding the intricacies of dynamic testing in our specific project environment. By actively engaging in testing, I can iteratively refine our testing strategies and ensure comprehensive coverage of the system's requirements.\\
+  Rasik: I will consult past course notes that covered the topic of static testing for example Software Testing. I will also conduct research online to learn updated information on the topic. To learn about the possible tools, I will use search engines to search for and evaluate tools to help in the requirement verification and validation process.\\
+  Dhrumil: To learn about testing backend services, I could:
+  \begin{enumerate}
+    \item Take online courses or watch tutorials that focus on testing in Node.js applications.
+    \item Start writing tests for our backend code as we develop it, learning through hands-on practice.  
+  \end{enumerate}
+
+\end{enumerate}
+
+\end{document}

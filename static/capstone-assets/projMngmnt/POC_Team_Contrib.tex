@@ -1,0 +1,154 @@
+\documentclass{article}
+
+\usepackage{float}
+\restylefloat{table}
+
+\usepackage{booktabs}
+
+\title{Team Contributions: POC\\\progname}
+
+\author{\authname}
+
+\date{}
+
+\input{../Comments}
+\input{../Common}
+
+\begin{document}
+
+\maketitle
+
+This document summarizes the contributions of each team member up to the POC
+Demo.  The time period of interest is the time between the beginning of the term
+and the POC demo.
+
+\section{Demo Plans}
+We plan on splitting the demo into two components, the backend demo and the frontend demo. We are currently working on these two components independently and we will link them together later once both components have a better foundation.
+\\\\
+For the backend demo, we will be demoing our migration script that is used to populate our databases based on data given to us via Excel by our capstone sponsor Dr. Mahalec. We will also demo the endpoint that will feed the database data to the client. This demo should give suitable confidence that our backend systems can reliably provide all system data needed to our frontend client. 
+\\\\
+For the frontend demo, we plan on showcasing a GUI where the user can select nodes based on dummy data, connect these nodes and finally select nodes and input node data based on the node's variables. This demo intends to show confidence in our ability to build a model-designing app that is data-driven and can be used to develop factory models with nodes, edges and variable data. 
+\\\\
+These demos will showcase a proof-of-concept version of our final application's core feature (factory model development). They should serve as evidence that we can develop the final version of the application by the project deadline.
+
+\section{Team Meeting Attendance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Student} & \textbf{Meetings}\\
+\midrule
+Total & 4\\
+Kishor Pandya & 4\\
+Dhrumil Pandya & 4\\
+Madhu Sivapragasam & 4\\
+Rasik Pokharel & 4\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All the team members have attended all the team meetings so far. During team meetings we discuss the progress of the project, assign tasks, discuss any issues that have come up and make a list of questions for the next supervisor meeting.
+
+\section{Supervisor/Stakeholder Meeting Attendance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Student} & \textbf{Meetings}\\
+\midrule
+Total & 5\\
+Kishor Pandya & 5\\
+Dhrumil Pandya & 5\\
+Madhu Sivapragasam & 5\\
+Rasik Pokharel & 5\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All the team members have attended all the supervisor meetings so far. During these meetings we discuss the progress of the project, ask questions, get feedback and discuss any issues that have come up on implemention or domain knowledge.
+
+\section{Lecture Attendance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Student} & \textbf{Meetings}\\
+\midrule
+Total & 6\\
+Kishor Pandya & 6\\
+Dhrumil Pandya & 5\\
+Madhu Sivapragasam & 6\\
+Rasik Pokharel & 6\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Dhrumil missed October 9th lecture due to a medical leave for surgery (communicated in advance with Dr. Smith, TA, Supervisor and the team members). He was able to catch up with the lecture material by discussing with the team members. Other than that, all the team members have attended all the lectures so far.
+
+\section{TA Document Discussion Attendance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Student} & \textbf{Lectures}\\
+\midrule
+Total & 3\\
+Kishor Pandya & 3\\
+Dhrumil Pandya & 2\\
+Madhu Sivapragasam & 3\\
+Rasik Pokharel & 3\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Dhrumil missed the October 7th TA meeting due to a medical leave for surgery (communicated in advance with Dr. Smith, TA, Supervisor and the team members). Other than that, all the team members have attended all the TA meetings so far.
+
+\section{Commits}
+
+For the commits we will be looking at the time period from September 1st 2024 to November 5th 2024. There are a total of a 53 commits made in this time period.\\
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Student} & \textbf{Commits} & \textbf{Percent}\\
+\midrule
+Total & 53 & 100\% \\
+Kishor Pandya & 16 & 30\% \\
+Dhrumil Pandya & 13 & 25\% \\
+Madhu Sivapragasam & 23 & 43\% \\
+Rasik Pokharel & 5 & 9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+There are 4 commits that are co-authored, which is why the indivitual commits add up to more than 53. Rasik has only a few commits, because most of his commits were big changes.
+
+\section{Issue Tracker}
+
+For the issues we will be looking at the time period from September 1st 2024 to November 5th 2024.
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Student} & \textbf{Authored (O+C)} & \textbf{Assigned (C only)}\\
+\midrule
+Kishor Pandya & 20 & 18 \\
+Dhrumil Pandya & 15 & 9 \\
+Madhu Sivapragasam & 10 & 8 \\
+Rasik Pokharel & 4 & 3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Same as above, Rasik has a lower number of issues since the scope of his issues were very large.
+
+\section{CICD}
+
+For CI/CD, we plan on implementing a testing and linting pipeline on GitHub using GitHub actions. The testing pipeline will run all tests within the codebase whenever a new commit is made within a feature branch to ensure that any new change is thoroughly tested before it's eventually merged into the main branch. The linting pipeline will be an ESLint (Typescript linter) check through all changes to ensure that the code quality is up to standards. We will not include a deploy pipeline since our capstone sponsor, Dr. Mahelec, does not want the project deployed to any cloud service provider and instead wants the full application run locally. This is why we are limiting our CI/CD pipeline to testing and linting and will not have any build or deploy steps in the short term. We will also not be implementing CI/CD for the proof of concept since the codebase is still limited and technology choices are still being finalized, there's also no testing yet and so having a CI/CD pipeline right now would not make a meaningful difference.
+
+\end{document}
