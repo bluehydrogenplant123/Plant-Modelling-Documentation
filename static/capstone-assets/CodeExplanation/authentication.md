@@ -1404,7 +1404,7 @@ return <div>{userData.firstName}</div>;
 
 **Cost:** 
 - Extra HTTP request per navigation
-- Typically <100ms but adds up
+- Typically less than 100 ms, but adds up
 
 **Optimization Options:**
 

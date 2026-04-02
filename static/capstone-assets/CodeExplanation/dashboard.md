@@ -1145,7 +1145,7 @@ setDiagrams((prev) => {
 
 **Benefit:** Prevents re-renders when data hasn't actually changed
 
-**Cost:** O(n) JSON serialization, but typically <10ms for diagram arrays
+**Cost:** O(n) JSON serialization, but typically less than 10 ms for diagram arrays
 
 ### 12.3 Conditional localStorage Updates
 
