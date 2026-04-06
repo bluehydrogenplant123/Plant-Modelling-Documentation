@@ -25,12 +25,18 @@
 - Rendering pipeline returns a `Navbar` with two button rows: primary row (all sections + core actions) and secondary row (contextual actions based on `activeSection`).
 
 ## Section Behavior (secondary row)
-- `Model`: create/open/import/export diagram, save as copy/subnetwork, verify, TP specs.
+- `Model`: create/open/import/export diagram, save as copy/subnetwork, verify, and **Base TP**.
+  - **Base TP button** opens a duration editor modal (`Duration` + `Duration Unit`).
+  - It updates diagram-level Base TP duration through backend API:
+    - `PUT /api/data/diagrams/:diagramId/base-duration`
+  - The button is disabled when Multi-TP ranges already exist (non `1-1` TP ranges found).
 - `Materials`: opens `MaterialEditor`; view/import material placeholders.
 - `Calc Type`: renders 4 buttons (Simulation / Optimization / DataRec / ParamUpdt). Clicking opens a confirmation modal if switching types.
 - `Set Run`: solver/algorithm dropdowns populated from `runConfigs`; selecting triggers `handleOpenRunConfig` and shows `RunConfigModal`.
 - `Run`: `ComputationButton` handles start/stop and exposes a display-only RunConfig modal. `Run Result` opens a history modal for prior runs, with delete actions for stored results.
-- `Multi-Time Period`: `TimePeriodViewer` (TP Node - Model Version Control) and `Global TP` for bulk time-period assignment; both are only visible after the diagram is verified. TP specs/data remain placeholders.
+- `Multi-Time Period`: `TimePeriodViewer` and `Global TP` for bulk TP/duration assignment; both are visible only after verification.
+  - `Global TP` now supports range-level `Duration` and `Duration Unit` editing.
+  - New TP ranges created in Global TP default to the current Base TP duration from `diagram.duration` / `diagram.durationUnit`.
 - `Advanced Analysis`: `MetabaseButton`, Configure/Edit stubs.
 - `System`: import sys materials and node definitions (respect disable rules).
 - `Help`: documentation/tutorial placeholders.

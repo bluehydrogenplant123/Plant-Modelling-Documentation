@@ -1,41 +1,65 @@
-# Global TP (Bulk Time Period Assignment)
+# Global TP (Bulk TP + Duration Assignment)
 
 ## Overview
 - **Location:** `src/src/frontend/src/components/header-bar/header-buttons/global-tp-button.tsx`
-- **Purpose:** A bulk editor that applies a single, unified Time Period segmentation to **all nodes** (main diagram + subnetworks) in one operation. It is the fast-path alternative to per-node editing in `TimePeriodViewer`.
-- **Visibility:** The button only renders after the diagram is verified (`state.canvas.verified === true`).
-- **Dependencies:** React-Bootstrap (`Modal`, `Button`), React Flow (`useReactFlow`), Redux (selectors), Axios, and standard React hooks.
+- **Purpose:** A bulk editor that applies one unified TP segmentation to all nodes (main diagram + subnetworks), and now also manages **duration** metadata per TP range.
+- **Visibility:** The button renders only after diagram verification (`state.canvas.verified === true`).
+- **Primary storage target:** MongoDB `tp_node_vers` (`duration`, `durationUnit` per TP range row).
 
-## Workflow
-1. **Open modal** and fetch main/sub diagrams and `TpNodeVers` rows.
-2. **Build Grid**
-   - Users enter add/delete counts to set a target TP total.
-   - The UI initializes a single canonical range `1..N`.
-3. **Range builder**
-   - Click **update** to stage a split for the selected range.
-   - **Confirm Update** replaces the canonical range with head/staged/tail segments.
-   - Validation enforces **continuous coverage** from `TP 1` to `TP N` (no gaps/overlaps).
-4. **Apply to All Nodes**
-   - Deletes all existing `TpNodeVers` rows for the nodes in scope.
-   - Recreates rows for every node using the same range set.
-   - Each range uses the node’s base model version (resolved by priority below).
-5. **Persist**
-   - Saves to `/api/data/tpnodevers` and triggers `saveDiagram()`.
+## What Changed
+The Global TP panel now includes two additional editable columns:
+- `Duration`
+- `Duration Unit`
 
-## Model Version Resolution
-For each node, the base model version is chosen in this order:
-1. Existing `TpNodeVers` base row (`fromTp = 1`).
-2. Node’s current `modelVersion`.
-3. Snapshot model versions from the diagram payload.
-4. Domain model versions.
-5. Fallback: `FLOW_FIXED`.
+Supported units:
+- `minutes`
+- `hours`
+- `days`
+- `weeks`
 
-Base versions are normalized with `initModelVersionWithCalcType(...)` and node edges when available.
+When users switch unit, the numeric duration is converted automatically (value-preserving conversion, rounded to 6 decimals). Decimal durations are supported.
 
-## Styling
-- Uses `tpeditor_style.css` for modal layout and table styling.
-- **Build Grid** uses `.tp-build-grid-btn`, matching the main menu’s outline-primary colors and hover state.
+## Data Flow
+1. Open modal:
+   - Fetch main diagram + subnetwork diagrams.
+   - Fetch `TpNodeVers` rows from all related diagrams.
+   - Fetch diagram-level Base TP duration (`diagram.duration`, `diagram.durationUnit`).
+2. Build Grid:
+   - User enters add/delete TP counts.
+   - System builds canonical TP ranges.
+3. Edit ranges:
+   - Split/confirm/cancel range rows.
+   - Edit `from tp`, `to tp`, `duration`, `duration unit`.
+4. Validate:
+   - Range coverage must be continuous and complete.
+   - Every range must have valid positive `duration`.
+5. Apply to All Nodes:
+   - Rewrites node TP ranges into `tp_node_vers`.
+   - Persists `duration` + `durationUnit` with each TP range row.
+
+## Default Duration Behavior
+For new TP ranges created from Global TP:
+- default duration comes from diagram-level **Base TP** duration (`diagram.duration`, `diagram.durationUnit`)
+- not from hardcoded null values anymore
+
+This keeps newly created multi-TP ranges aligned with Base TP settings.
+
+## Unit Conversion Rules
+- Conversion base internally uses hour-equivalent factors.
+- Conversion happens whenever `Duration Unit` changes.
+- Unsupported/invalid units fallback to `hours`.
+- Invalid/non-positive durations are rejected in validation.
+
+## Backend Compatibility
+Global TP depends on backend APIs that now accept and persist duration fields:
+- `POST /api/data/tpnodevers`
+- `PUT /api/data/tpnodevers`
+- `GET /api/data/tpnodevers`
+
+`durationUnit` validation now enforces the same allowed set:
+- `minutes`, `hours`, `days`, `weeks`
 
 ## Related Components
-- `TimePeriodViewer` (`TP Node - Model Version Control`) for fine-grained per-node edits.
-- `header-bar/index.tsx` for placement under the **Multi-Time Period** section.
+- `TimePeriodViewer` for per-node TP/model-version editing.
+- `Base TP` panel for diagram-level default duration management.
+- `header-bar/index.tsx` for button placement under **Multi-Time Period**.
