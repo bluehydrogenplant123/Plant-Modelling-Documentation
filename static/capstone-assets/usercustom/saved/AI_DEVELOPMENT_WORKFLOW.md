@@ -118,19 +118,139 @@
 
 ## 9. Database Debugging via CLI (Required for Compute/Data-Loss Bugs)
 
-When duplicated/imported networks fail to compute, do not rely only on UI state.
-Always verify database state directly from CLI.
+When duplicated/imported networks fail to compute, or when `compat-check`
+suspects Excel/library drift, do not rely only on UI state. Verify database
+state directly from CLI.
 
 ### 9.1 Quick Rule
 
-1. Reproduce in UI.
-2. Capture `diagramId`, `parentDiagramId`, `parentNodeId`, wrapper `nodeId`, and timestamp.
-3. Query Mongo DB from CLI and compare source vs duplicated/imported diagrams.
-4. Confirm whether failure is from missing/mismatched IDs, missing `parentConnections`, or missing node cache/modelVersion data.
+1. Identify the change classification first:
+   - `schema-only`
+   - `library-additive`
+   - `library-rename`
+   - `library-delete`
+   - `mixed`
+2. If Excel/library definitions changed, run `compat-check` before release or
+   shared testing.
+3. Decide how old diagram data will be handled before claiming the change is
+   safe:
+   - additive: only explicit `library refresh` / `upgrade` should add new vars
+     into persisted diagram data
+   - delete / rename: keep warning, auto-unverify, and require manual
+     reselection
+4. Treat Excel/library edits that affect saved-diagram compatibility as a new
+   compatibility version on the shared version axis, for example
+   `alpha4 -> alpha5`, even when the persisted shape does not change.
+5. Capture the minimum identifiers before querying:
+   - `diagramId`
+   - `nodeId`
+   - `modelName`
+   - `modelVersion`
+   - affected variable names when known
+6. Run a baseline DB truth check first:
+   - current Postgres truth for the changed model/version
+   - smallest relevant Mongo spot-check for one affected diagram/node
+7. Escalate only if the classification requires it.
+8. Keep Postgres truth and Mongo persisted truth separate in the report.
 
-### 9.2 CLI Template (Prisma Mongo Client)
+### 9.2 Baseline Queries
 
 Run from `capstone/src`:
+
+```powershell
+@'
+const { PrismaClient: MongoClient } = require('./generated/mongodb-client');
+const { PrismaClient: PostgresClient } = require('./generated/postgres-client');
+const mongo = new MongoClient();
+const postgres = new PostgresClient();
+
+(async () => {
+  const [modelName, modelVersionName, diagramId, nodeId] = process.argv.slice(2);
+  if (!modelName || !modelVersionName) {
+    throw new Error('Usage: node script <modelName> <modelVersionName> [diagramId] [nodeId]');
+  }
+
+  const version = await postgres.modelVersion.findFirst({
+    where: {
+      model_version_name: modelVersionName,
+      models: { model_name: modelName },
+    },
+    include: {
+      models: { select: { model_name: true } },
+      ports: { select: { id: true, port_name: true, port_var_name: true, port_location: true } },
+      varNames: { select: { id: true, name: true, ports_id: true } },
+    },
+  });
+
+  let mongoSummary = null;
+  if (diagramId) {
+    const diagram = await mongo.diagram.findUnique({
+      where: { id: diagramId },
+      select: { id: true, name: true, type: true, canvas: true },
+    });
+
+    const node = nodeId
+      ? await mongo.node.findFirst({
+          where: { diagramId, nodeId },
+          select: { id: true, nodeId: true, modelVersion: true },
+        })
+      : null;
+
+    mongoSummary = { diagram, node };
+  }
+
+  console.log(JSON.stringify({
+    postgres: {
+      foundVersion: !!version,
+      modelName,
+      modelVersionName,
+      portCount: version?.ports?.length ?? 0,
+      varNameCount: version?.varNames?.length ?? 0,
+      ports: version?.ports ?? [],
+      varNames: version?.varNames ?? [],
+    },
+    mongo: mongoSummary,
+  }, null, 2));
+
+  await mongo.$disconnect();
+  await postgres.$disconnect();
+})().catch(async (e) => {
+  console.error(e);
+  await mongo.$disconnect();
+  await postgres.$disconnect();
+  process.exit(1);
+});
+'@ | node - MIXER BASE 69b1d0e2cbde4ff9dec80f37 507f1f77bcf86cd799439011
+```
+
+Use this baseline to answer:
+
+1. Does the current Postgres library truth match the expected change?
+2. Does one saved diagram/node already disagree with that truth?
+3. Is a deeper query actually necessary?
+
+### 9.3 `library-delete` Query Pattern
+
+Use this path when variables, ports, or versions should disappear.
+
+Required comparison:
+
+1. Postgres `Ports` and `VarNames` for the target model/version.
+2. Mongo `Node.modelVersion.ports_var` for the affected node.
+3. Mongo `TpChanges.portVarName` for the affected node.
+4. Mongo `TpNodeVers` only if version names also changed or TP selection is in
+   doubt.
+
+Expected interpretation:
+
+1. Postgres no longer contains the variable, Mongo still does:
+   `diagram stale`.
+2. Postgres still contains the removed variable:
+   `system-db stale`.
+3. Both Postgres and Mongo still contain it:
+   `mixed`.
+
+Minimal Mongo follow-up:
 
 ```powershell
 @'
@@ -138,42 +258,76 @@ const { PrismaClient } = require('./generated/mongodb-client');
 const db = new PrismaClient();
 
 (async () => {
-  const diagramId = process.argv[2];
-  if (!diagramId) throw new Error('Usage: node script <diagramId>');
+  const [diagramId, nodeId] = process.argv.slice(2);
+  if (!diagramId || !nodeId) {
+    throw new Error('Usage: node script <diagramId> <nodeId>');
+  }
 
-  const diagram = await db.diagram.findUnique({
-    where: { id: diagramId },
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      userId: true,
-      parentConnections: true,
-      canvas: true,
-      snapshot: { select: { id: true, domainId: true } }
-    }
+  const node = await db.node.findFirst({
+    where: { diagramId, nodeId },
+    select: { id: true, nodeId: true, modelVersion: true },
   });
 
-  const nodeCount = await db.node.count({ where: { diagramId } });
-  const sampleNodes = await db.node.findMany({
-    where: { diagramId },
-    select: { id: true, nodeId: true },
-    take: 10
+  const tpChanges = await db.tpChanges.findMany({
+    where: { diagramId, nodeId },
+    select: { timePeriodId: true, portName: true, portVarName: true, portLocation: true },
   });
 
-  console.log(JSON.stringify({ diagram, nodeCount, sampleNodes }, null, 2));
+  const tpNodeVers = await db.tpNodeVers.findMany({
+    where: { diagramId, nodeId },
+    select: { timePeriodId: true, modelVersion: true, fromTp: true, toTp: true },
+  });
+
+  console.log(JSON.stringify({ node, tpChanges, tpNodeVers }, null, 2));
   await db.$disconnect();
 })().catch(async (e) => {
   console.error(e);
   await db.$disconnect();
   process.exit(1);
 });
-'@ | node - 69b1d0e2cbde4ff9dec80f37
+'@ | node - 69b1d0e2cbde4ff9dec80f37 507f1f77bcf86cd799439011
 ```
 
-### 9.3 Required Comparison for Duplicate/Import Bugs
+### 9.4 `library-rename` Query Pattern
 
-For each bug report, compare at least:
+Use this path when old and new names may coexist.
+
+Required comparison:
+
+1. Postgres current names for the target model/version.
+2. Mongo `Node.modelVersion.ports_var` names.
+3. Mongo `TpChanges.portVarName`.
+4. Mongo `TpNodeVers.modelVersion` if version labels changed.
+5. Any alias-handling code in the active reader/writer path.
+
+Expected interpretation:
+
+1. Postgres only has new names, Mongo still has old names, and no alias exists:
+   `diagram stale`.
+2. Postgres has both names unexpectedly:
+   `system-db stale`.
+3. Alias exists but save/export/import rewrites inconsistently:
+   `mixed`.
+
+### 9.5 `mixed` Query Pattern
+
+Use this when both persisted schema and runtime library contract changed.
+
+Rules:
+
+1. Keep schema evidence and library evidence separate.
+2. First prove the current Postgres truth for the target model/version.
+3. Then inspect only the Mongo layers touched by the risk:
+   - `Node.modelVersion`
+   - `TpChanges`
+   - `TpNodeVers` only when version-label drift matters
+   - diagram `canvas` / snapshot only when the schema side changed there
+4. Do not report one generic "pollution" label when two different causes are
+   present.
+
+### 9.6 Required Comparison for Duplicate/Import Bugs
+
+For duplicate/import bugs, compare at least:
 
 1. Source vs duplicated/imported diagram `canvas.nodes/edges` counts.
 2. Wrapper node `diagramId` and `blueprintDiagramId`.
@@ -181,11 +335,16 @@ For each bug report, compare at least:
 4. `node` table records for the instance diagram (`nodeId` existence and remapped ID match).
 5. Snapshot domain data required by translation/compute path.
 
-### 9.4 Report Format (Issue/PR)
+### 9.7 Report Format (Issue/PR)
 
 Include:
 
 1. Repro URL and exact IDs.
-2. CLI query output summary (counts + mismatched IDs only).
-3. Root-cause hypothesis.
-4. Fix diff and regression test scope.
+2. Classification used: `schema-only`, `library-additive`, `library-rename`,
+   `library-delete`, or `mixed`.
+3. CLI query output summary:
+   - Postgres truth
+   - Mongo truth
+   - smallest mismatch only
+4. Root-cause hypothesis.
+5. Fix diff and regression test scope.

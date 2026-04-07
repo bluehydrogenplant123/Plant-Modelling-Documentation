@@ -36,6 +36,14 @@ Notes:
 - `BASE_EXTERNAL_URL` must be publicly reachable by the real solver (for callback).
 - Do not include `/compute/callback/` in `BASE_EXTERNAL_URL`; backend appends it automatically.
 - Keep URLs without trailing slash if possible.
+- Do not forget the port mapping:
+  - local backend must run on `PORT=3000`
+  - the public callback/tunnel must forward to backend port `3000`
+  - the real solver URL is typically on port `8000`
+- If the port/tunnel setting is wrong, the usual symptom is:
+  - `/api/solve/` returns `processing`
+  - then the run stays in `computing` and ends as `timeout`
+  - `src/src/backend/routes/external/callback_response.json` does not get updated
 
 ## 5. Start the app
 
@@ -50,6 +58,7 @@ This starts backend and frontend together.
 - Trigger one compute from the UI.
 - Confirm request file is generated: `src/src/backend/services/solve_request.json`.
 - Confirm callback file is updated: `src/src/backend/routes/external/callback_response.json`.
+- If the request file updates but the callback file does not, check the public backend port/tunnel first.
 - Backend logs should show:
   - solver request URL (`.../api/solve/`)
   - callback status (`success` or `failed`)
