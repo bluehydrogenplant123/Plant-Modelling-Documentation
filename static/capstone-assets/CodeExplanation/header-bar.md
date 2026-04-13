@@ -35,6 +35,9 @@
 - `Set Run`: solver/algorithm dropdowns populated from `runConfigs`; selecting triggers `handleOpenRunConfig` and shows `RunConfigModal`.
 - `Run`: `ComputationButton` handles start/stop and exposes a display-only RunConfig modal. `Run Result` opens a history modal for prior runs, with delete actions for stored results.
 - `Multi-Time Period`: `TimePeriodViewer` and `Global TP` for bulk TP/duration assignment; both are visible only after verification.
+  - `TP Node - Model Version Control` button has been re-enabled in header-bar (previous hardcoded frontend disable removed).
+  - Current temporary frontend behavior in `TimePeriodViewer`: TP ranges are view-only, and only `model version` is editable.
+  - TP structure editing (split/add/delete/range mutation) remains implemented in code but gated by a frontend flag in `time-period-viewer.tsx`.
   - `Global TP` now supports range-level `Duration` and `Duration Unit` editing.
   - New TP ranges created in Global TP default to the current Base TP duration from `diagram.duration` / `diagram.durationUnit`.
 - `Advanced Analysis`: `MetabaseButton`, Configure/Edit stubs.

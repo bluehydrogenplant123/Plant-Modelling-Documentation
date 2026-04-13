@@ -1,57 +1,65 @@
 # Compatibility: Gaps and Simple Fixes
 
-Review of export/import, duplicate, subnetwork blueprints, and dashboard UX under the clean `6.0.0` baseline.
+Review of export/import, duplicate, subnetwork blueprints, and dashboard UX.
 
-## 1. Export Version Bug
+---
 
-`Export` should record the actual diagram version, not blindly stamp the current version.
+## 1. Export Version Bug — FIXED
 
-Status:
-- Fixed by using the stored canvas version for export metadata.
+**Issue:** Export always set `version: CURRENT_SCHEMA_VERSION` even when the diagram canvas was old.
+
+**Fix applied:** Export and duplicate now use `getCanvasVersion(diagram.canvas)` so the snapshot reflects the actual data version. Duplicate also runs `migrateToLatest` before import so the copy is upgraded.
+
+---
 
 ## 2. Duplicate
 
-`Duplicate` still runs through export plus import.
+**Status:** Duplicate uses export → import. After fixing export version (above), duplicate will work correctly: source diagram version is preserved in the snapshot, and import runs migration.
 
-Status:
-- Works with the clean baseline because export preserves the source version and import only upgrades supported legacy payloads.
+**No extra change needed.**
+
+---
 
 ## 3. Subnetwork Blueprints
 
-Blueprints are still ordinary diagrams plus a `SubnetworkBlueprint` record.
+**Status:** Blueprints are diagrams (type 1) with a `SubnetworkBlueprint` record. Our upgrade flow (GET /diagrams/:id) runs on any diagram. When a blueprint is opened, we create a backup and upgrade it. We do **not** copy the `SubnetworkBlueprint` record for the backup—the backup is for recovery only. The original blueprint diagram is upgraded and keeps its `SubnetworkBlueprint` link.
 
-Status:
-- Backups are recovery copies only; the original blueprint remains the canonical linked record.
+**No extra change needed.** Backup diagrams are not meant to be full blueprints; they are raw data backups.
 
-## 4. Nested Subnetwork Instances in Export
+---
 
-Nested `subnetworkInstances[].canvas` must stay aligned with the same migration rules as the root canvas.
+## 4. Subnetwork Instances in Export — FIXED
 
-Status:
-- Fixed by running the same migration helper on nested canvases during snapshot migration.
+**Issue:** Nested `subnetworkInstances[].canvas` were not migrated.
 
-## 5. Dashboard Upgrade UX
+**Fix applied:** `migrateToLatest` now recursively migrates each `subnetworkInstances[].canvas` via `migrateCanvasIfNeeded`.
 
-The dashboard should surface legacy diagrams before the user opens them.
+---
 
-Status:
-- `GET /diagrams/version-status` and `POST /diagrams/bulk-upgrade` remain useful for supported legacy diagrams.
-- Explicitly tagged unsupported versions should be rejected rather than bulk-upgraded.
+## 5. Dashboard: Proactive Upgrade — FIXED
 
-## 6. User Feedback
+**Issue:** If a diagram is not opened for a long time, it may need many migration steps (e.g. 1.0 → 6.0 → 6.1 → … → 6.5). Long chains increase the risk of failure. Upgrading when entering the dashboard would keep diagrams up to date.
 
-Useful feedback remains:
+**Fix applied:** Added `GET /diagrams/version-status` and `POST /diagrams/bulk-upgrade`. Dashboard fetches version-status on load, shows banner when `needsUpgradeCount > 0`, and "Upgrade All" button calls bulk-upgrade. Backend uses shared `performDiagramUpgrade()` for both single-load and bulk-upgrade.
 
-- Upgrade toast after a supported legacy diagram is upgraded
-- List badge for diagrams that still need upgrade
-- Import feedback showing `migratedFrom` when a supported legacy snapshot was upgraded
+---
+
+## 6. Other Small UX Tweaks — FIXED
+
+| Item | Status |
+|------|--------|
+| **Upgrade toast** | After opening an upgraded diagram (dashboard, open-network-modal, or App direct load), show: "Diagram upgraded from X to current. Backup saved as Y." |
+| **List badge** | GET /diagrams returns `schemaVersion` and `needsUpgrade` per diagram; dashboard shows "Upgrade" badge for diagrams needing upgrade. |
+| **Import feedback** | Import endpoint returns `migratedFrom` when migration occurred; dashboard and import-diagram-modal show "File was version X. Upgraded to current version." |
+
+---
 
 ## Implementation Priority
 
 | Priority | Item | Effort |
 |----------|------|--------|
-| 1 | Preserve actual export version | Low |
-| 2 | Keep nested canvas migration aligned | Low |
-| 3 | Surface version status in dashboard | Medium |
-| 4 | Show upgrade feedback clearly | Low |
-| 5 | Reject unsupported versions explicitly | Low |
+| 1 | Export version fix | ~5 min |
+| 2 | Recursive migrate for subnetworkInstances | ~10 min |
+| 3 | GET /diagrams/version-status + POST /diagrams/bulk-upgrade | ~30 min |
+| 4 | Upgrade toast on load | ~5 min |
+| 5 | List badge (optional) | ~15 min |
