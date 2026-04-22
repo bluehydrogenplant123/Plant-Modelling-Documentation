@@ -242,6 +242,10 @@ Rules:
 - write the public `3000` URL into `BASE_EXTERNAL_URL`
 - do not append `/compute/callback/`; the backend appends that automatically
 
+For the step-by-step VS Code **Ports** workflow, including how to add port `3000`, set visibility, and copy the forwarded URL, see:
+
+- [HYPRONET_INSTALLATION_GUIDE - Example Procedure](https://bluehydrogenplant123.github.io/Plant-Modelling-Documentation/docs/capstone/usercustom/HYPRONET_INSTALLATION_GUIDE#example-procedure)
+
 Example:
 
 ```env
