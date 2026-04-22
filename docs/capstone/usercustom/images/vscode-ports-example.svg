@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760">
+  <rect width="1600" height="760" fill="#1e1e1e"/>
+  <rect x="0" y="0" width="1600" height="90" fill="#252526"/>
+  <text x="60" y="58" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#d4d4d4">PROBLEMS</text>
+  <text x="230" y="58" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#d4d4d4">OUTPUT</text>
+  <text x="420" y="58" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#d4d4d4">DEBUG CONSOLE</text>
+  <text x="690" y="58" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#d4d4d4">TERMINAL</text>
+  <text x="920" y="58" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#d4d4d4">PORTS</text>
+  <circle cx="1042" cy="44" r="22" fill="#2aa5f7"/>
+  <text x="1035" y="53" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#ffffff">1</text>
+
+  <line x1="915" y1="90" x2="1045" y2="90" stroke="#2aa5f7" stroke-width="3"/>
+
+  <text x="90" y="165" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#f3f3f3">Port</text>
+  <text x="320" y="165" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#f3f3f3">Forwarded Address</text>
+  <text x="945" y="165" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#f3f3f3">Running Process</text>
+  <text x="1185" y="165" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#f3f3f3">Visibility</text>
+  <text x="1435" y="165" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700" fill="#f3f3f3">Origin</text>
+
+  <line x1="40" y1="205" x2="1560" y2="205" stroke="#303031" stroke-width="2"/>
+
+  <circle cx="45" cy="245" r="8" fill="none" stroke="#c5c5c5" stroke-width="3"/>
+  <text x="88" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#d4d4d4">3000</text>
+
+  <rect x="232" y="220" width="30" height="34" rx="4" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <circle cx="258" cy="228" r="4" fill="#d4d4d4"/>
+  <path d="M286 231 L300 245 L286 259" fill="none" stroke="#d4d4d4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="320" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#4fc1ff">https://9swl1bdz-3000.use.devtunnels.ms/</text>
+
+  <rect x="1070" y="215" width="36" height="40" rx="4" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <path d="M1080 215 C1080 205 1096 205 1096 215" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <path d="M1116 230 A15 15 0 1 1 1115.9 230" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <line x1="1116" y1="214" x2="1116" y2="246" stroke="#d4d4d4" stroke-width="3"/>
+  <line x1="1100" y1="230" x2="1132" y2="230" stroke="#d4d4d4" stroke-width="3"/>
+  <circle cx="1158" cy="230" r="15" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <path d="M1168 240 L1184 256" fill="none" stroke="#d4d4d4" stroke-width="3" stroke-linecap="round"/>
+  <rect x="1202" y="212" width="24" height="36" rx="3" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <rect x="1216" y="220" width="24" height="36" rx="3" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+
+  <circle cx="1185" cy="245" r="16" fill="none" stroke="#d4d4d4" stroke-width="3"/>
+  <path d="M1170 245 H1200 M1185 229 C1179 235 1179 255 1185 261 C1191 255 1191 235 1185 229" fill="none" stroke="#d4d4d4" stroke-width="2.5"/>
+  <text x="1215" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#d4d4d4">Public</text>
+
+  <text x="1435" y="255" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#d4d4d4">User Forwarded</text>
+
+  <rect x="90" y="300" width="210" height="70" rx="10" fill="#0e639c"/>
+  <text x="120" y="345" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#ffffff">Add Port</text>
+
+  <text x="72" y="430" font-family="Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#f3f3f3">Example VS Code Ports view</text>
+  <text x="72" y="472" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#d4d4d4">For a real solver engine, forward the solver's actual port, set Visibility to Public,</text>
+  <text x="72" y="508" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#d4d4d4">copy the Forwarded Address, and write that URL into BASE_SOLVER_ENGINE_URL in src/.env.</text>
+  <text x="72" y="562" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#ce9178">Note: this example shows port 3000 only to illustrate the VS Code workflow.</text>
+  <text x="72" y="596" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#ce9178">If your solver listens on port 8000 or another port, forward that port instead.</text>
+</svg>
