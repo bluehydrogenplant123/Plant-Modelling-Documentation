@@ -8,6 +8,8 @@ description: Detailed Windows and macOS installation, environment setup, workboo
 
 This guide explains how to install the required environment and run the current HyProNet application from the `Plant-Modelling` / `capstone` repository.
 
+If you only need the shortest path from clone to first launch, start with [STARTUP_GUIDE](./STARTUP_GUIDE.md). This page is the full version.
+
 The current workflow is:
 
 1. Clone the repository.
