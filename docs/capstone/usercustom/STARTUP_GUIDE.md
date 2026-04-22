@@ -122,18 +122,6 @@ Run:
 ./run-all.sh apr-6-2026.xlsx
 ```
 
-Replace `apr-6-2026.xlsx` with the latest system workbook stored in:
-
-```text
-src/excel-sheets/
-```
-
-This script:
-
-- starts MongoDB, PostgreSQL, and Redis
-- runs the Prisma migrations
-- imports the selected workbook into the databases
-
 If there are import errors, check:
 
 ```text
