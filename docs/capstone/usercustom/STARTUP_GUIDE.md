@@ -43,6 +43,8 @@ Optional:
 
 If you are using **Git Bash on Windows**, run these commands one at a time in **Git Bash**:
 
+Terminal: **Git Bash**
+
 ```bash
 echo 'export MSYS_NO_PATHCONV=1' >> ~/.bashrc
 source ~/.bashrc
@@ -91,8 +93,6 @@ Open Docker Desktop and wait until it reports that Docker is running.
 
 From the repository root:
 
-Terminal: **Git Bash** or **macOS Terminal**
-
 ```bash
 cd src
 npm install
@@ -117,6 +117,8 @@ cd ..
 ### Step 6: Import the Latest System Workbook and Prepare the Databases
 
 Run:
+
+Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
 ./run-all.sh apr-6-2026.xlsx
@@ -158,8 +160,6 @@ For a normal restart:
 3. Go to `src`.
 4. Start the app again.
 
-Terminal: **Git Bash** or **macOS Terminal**
-
 ```bash
 cd src
 npm run dev
@@ -193,6 +193,8 @@ cd src
 ```
 
 Then run:
+
+Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
 ./run-all.sh apr-6-2026.xlsx
