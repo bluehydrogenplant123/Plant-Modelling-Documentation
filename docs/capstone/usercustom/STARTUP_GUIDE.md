@@ -142,11 +142,6 @@ When the command finishes starting, open:
 http://localhost:5173
 ```
 
-Useful related endpoints:
-
-- API docs: `http://localhost:3000/api-docs`
-- Queue admin: `http://localhost:3000/admin/queues`
-
 ## 5. Stopping the Application
 
 To stop the app:
