@@ -1,35 +1,60 @@
 ---
 title: HyProNet Streamlined Guide
 sidebar_position: 3
-description: Short setup path for the current HyProNet application, from clone to first launch.
+description: Concise installation, first-time setup, startup, shutdown, and update guide for the current HyProNet application.
 ---
 
-This is the short version of the setup guide for the current HyProNet application.
+This page is the streamlined setup and startup guide for the current HyProNet application.
 
-If you need the full Windows/macOS walkthrough, use [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md).
+If you need the full Windows/macOS walkthrough with more background and troubleshooting, use [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md).
 
 ## 1. Prerequisites
 
-Install these first:
+Install the following before setting up the repository:
 
-- Git
+- Git Bash
+- Visual Studio Code
 - Node.js LTS
 - Docker Desktop
-- Bash
 
-Platform notes:
+Git Bash:
 
-- On Windows, use **Git Bash** or **WSL** for repository scripts.
-- On macOS, the normal Terminal is fine.
-- If you use **Git Bash on Windows**, run this before the repository scripts:
+- Windows: [Git for Windows download](https://git-scm.com/downloads/win)
+- macOS: Git is usually already installed, but installing the latest Git is still recommended if your local version is outdated
+
+Visual Studio Code:
+
+- [VS Code download](https://code.visualstudio.com/)
+
+Node.js:
+
+- [Node.js download](https://nodejs.org/en/download)
+
+Docker Desktop:
+
+- Windows: [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
+- macOS: [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/)
+
+Optional:
+
+- A database viewer such as DBGate can be useful if you want to inspect PostgreSQL or MongoDB manually.
+
+### Windows Git Bash Setup
+
+If you are using **Git Bash on Windows**, run these commands one at a time in **Git Bash**:
 
 ```bash
-export MSYS_NO_PATHCONV=1
+echo 'export MSYS_NO_PATHCONV=1' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-## 2. Clone the Repository and Switch to the Working Branch
+This prevents Git Bash from rewriting Linux-style Docker path arguments used by the repository scripts.
 
-Terminal: **Git Bash** or **macOS Terminal**
+## 2. Clone the Repository
+
+Choose the drive or folder where you want to keep the project, then open **Git Bash** or **macOS Terminal** there.
+
+Run:
 
 ```bash
 git clone https://github.com/bluehydrogenplant123/Plant-Modelling.git capstone
@@ -38,47 +63,117 @@ git fetch origin
 git switch -c stable-version6.1-apr-6 --track origin/feature/stable-version6.1-apr-6
 ```
 
-If you already have the repository:
+If GitHub asks you to log in, make sure you sign in with an account that has access to the repository.
+
+## 3. Create the `.env` File
+
+From the repository root, create `src/.env` by copying `src/.env.example`.
+
+Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
-git switch stable-version6.1-apr-6
-git pull
+cp src/.env.example src/.env
 ```
 
-## 3. Pick the Workbook You Want to Import
+Review `src/.env` before running the app, especially if you are using a real solver engine instead of the default local setup.
 
-Workbooks are stored in:
+## 4. First-Time Setup
 
-```text
-src/excel-sheets/
-```
+### Step 1: Open the Repository in VS Code
 
-For a first local run, you can use the repository example:
+Open VS Code and open the cloned `capstone` repository folder.
 
-```text
-apr-6-2026.xlsx
-```
+### Step 2: Start Docker Desktop
 
-## 4. Run the Fastest Setup Path
+Open Docker Desktop and wait until it reports that Docker is running.
+
+### Step 3: Install Backend Dependencies
 
 From the repository root:
 
 Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
-bash init.sh apr-6-2026.xlsx
+cd src
+npm install
 ```
 
-This script does the following:
+### Step 4: Install Frontend Dependencies
 
-- creates `src/.env` from `src/.env.example` if needed
-- installs dependencies in `src`
-- installs dependencies in `src/src/frontend`
-- starts MongoDB, PostgreSQL, and Redis with Docker
-- runs Prisma migrations
-- imports the Excel workbook into the databases
+Still in the repository terminal:
 
-Then start the app:
+```bash
+cd src/frontend
+npm install
+```
+
+### Step 5: Return to `src`
+
+```bash
+cd ..
+cd ..
+```
+
+### Step 6: Import the Latest System Workbook and Prepare the Databases
+
+Run:
+
+```bash
+./run-all.sh apr-6-2026.xlsx
+```
+
+Replace `apr-6-2026.xlsx` with the latest system workbook stored in:
+
+```text
+src/excel-sheets/
+```
+
+This script:
+
+- starts MongoDB, PostgreSQL, and Redis
+- runs the Prisma migrations
+- imports the selected workbook into the databases
+
+If there are import errors, check:
+
+```text
+src/excel-migration/logs/
+```
+
+### Step 7: Start the Application
+
+From `src`, run:
+
+```bash
+npm run dev
+```
+
+When the command finishes starting, open:
+
+```text
+http://localhost:5173
+```
+
+Useful related endpoints:
+
+- API docs: `http://localhost:3000/api-docs`
+- Queue admin: `http://localhost:3000/admin/queues`
+
+## 5. Stopping the Application
+
+To stop the app:
+
+1. In the terminal running `npm run dev`, press `Ctrl + C`.
+2. Open Docker Desktop and stop the containers if you do not want to keep the databases running.
+
+## 6. Running the Application Again
+
+For a normal restart:
+
+1. Open Docker Desktop and make sure the required containers are running.
+2. Open the project in a terminal.
+3. Go to `src`.
+4. Start the app again.
 
 Terminal: **Git Bash** or **macOS Terminal**
 
@@ -87,34 +182,65 @@ cd src
 npm run dev
 ```
 
-## 5. Open the Application
+## 7. Updating the Application from GitHub
 
-After `npm run dev` starts successfully, open:
+Be careful when resetting or deleting containers: current diagrams and local runtime data may be lost if you remove the existing databases.
 
-- GUI: `http://localhost:5173`
-- Swagger/API docs: `http://localhost:3000/api-docs`
-- Queue admin: `http://localhost:3000/admin/queues`
+Recommended update flow:
 
-## 6. Real Solver Setup
+### Step 1: Stop the Application
 
-If you want actual computations, check these two values in `src/.env`:
+Stop `npm run dev` with `Ctrl + C`.
+
+### Step 2: Pull the Latest Code
+
+From the repository root:
+
+```bash
+git switch stable-version6.1-apr-6
+git pull
+```
+
+### Step 3: Re-run the Workbook Import and Migrations
+
+Go to `src`:
+
+```bash
+cd src
+```
+
+Then run:
+
+```bash
+./run-all.sh apr-6-2026.xlsx
+```
+
+Again, replace `apr-6-2026.xlsx` with the latest workbook in `src/excel-sheets/`.
+
+Only remove containers first if you intentionally want a clean reset. If you do that, assume local diagrams and runtime data may be lost unless you have backed them up elsewhere.
+
+### Step 4: Start the Server Again
+
+```bash
+npm run dev
+```
+
+## 8. Real Solver Notes
+
+If you are using a real solver instead of the local default solver endpoint, review these values in `src/.env`:
 
 ```env
 BASE_SOLVER_ENGINE_URL=http://127.0.0.1:8000/api
 BASE_EXTERNAL_URL=http://localhost:3000/api/external
 ```
 
-What they mean:
+Rules:
 
-- `BASE_SOLVER_ENGINE_URL` is the solver engine API endpoint
-- `BASE_EXTERNAL_URL` is the public callback base URL for the HyProNet backend
-
-If you are using a real remote solver:
-
-- replace `BASE_SOLVER_ENGINE_URL` with the real solver API URL
-- if the solver needs to call back into your local backend, expose backend port `3000`
-- write the resulting public `3000` URL into `BASE_EXTERNAL_URL`
-- do not append `/compute/callback/`; the backend builds that path automatically
+- `BASE_SOLVER_ENGINE_URL` should point to the actual solver API
+- `BASE_EXTERNAL_URL` should point to the public callback base URL of the HyProNet backend
+- if you expose the backend through VS Code port forwarding, the relevant backend port is `3000`
+- write the public `3000` URL into `BASE_EXTERNAL_URL`
+- do not append `/compute/callback/`; the backend appends that automatically
 
 Example:
 
@@ -123,17 +249,9 @@ BASE_SOLVER_ENGINE_URL=https://<real-solver-host>/api
 BASE_EXTERNAL_URL=https://<public-3000-host>/api/external
 ```
 
-If you need the full callback and port-forwarding explanation, use [REAL_SERVER_QUICKSTART](./REAL_SERVER_QUICKSTART.md) and [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md).
+For more detail, see [REAL_SERVER_QUICKSTART](./REAL_SERVER_QUICKSTART.md).
 
-## 7. Quick Troubleshooting
-
-- If `bash init.sh ...` fails immediately, make sure Docker Desktop is open and fully started.
-- If Docker will not start on Windows, check WSL 2, hardware virtualization, and Docker Desktop memory settings.
-- If Git Bash rewrites Docker path arguments on Windows, set `MSYS_NO_PATHCONV=1`.
-- If the GUI opens but computations fail, check both `BASE_SOLVER_ENGINE_URL` and `BASE_EXTERNAL_URL`.
-- If workbook import fails, review the logs under `src/excel-migration/logs/`.
-
-## 8. Related Pages
+## 9. Related Pages
 
 - [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md)
 - [DUMMY_SERVER_QUICKSTART](./DUMMY_SERVER_QUICKSTART.md)
