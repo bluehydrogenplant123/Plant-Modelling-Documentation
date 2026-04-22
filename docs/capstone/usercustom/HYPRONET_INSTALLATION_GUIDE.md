@@ -785,8 +785,6 @@ Why:
 
 So if you are using VS Code port forwarding, the port you need to forward and make public is the **backend port `3000`**, and the resulting public URL should be written into `BASE_EXTERNAL_URL`.
 
-![VS Code Ports Example](./images/vscode-ports-example.svg)
-
 ### Example Procedure
 
 Assume:
