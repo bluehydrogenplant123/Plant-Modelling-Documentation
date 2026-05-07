@@ -6,13 +6,13 @@ description: Current entry point for HyProNet CodeExplanation pages, grouped by 
 
 ## Overview
 
-Use this page as the current entry point for HyProNet feature and workflow explanations. Current `CodeExplanation` pages live under:
+Use this page as the current entry point for HyProNet feature and workflow explanations. Current source `CodeExplanation` files live under:
 
 ```text
 docs/SetupInstructions/CodeExplanation/
 ```
 
-Current setup and installation guides live under `docs/SetupInstructions/Installation/` and are linked from the Import/Runtime section when runtime context is needed.
+Current source setup and installation guides live under `docs/SetupInstructions/Installation/` and are linked from the Import/Runtime section when runtime context is needed.
 
 In the published Docusaurus sidebar, the source folders appear as top-level groups: `Installation` and `CodeExplanation`. There is no visible `SetupInstructions` wrapper menu.
 

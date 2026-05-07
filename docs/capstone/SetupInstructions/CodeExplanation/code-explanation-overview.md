@@ -6,13 +6,13 @@ description: Overview of current HyProNet CodeExplanation coverage, reading orde
 
 ## Overview
 
-This page explains what the current HyProNet `CodeExplanation` set covers and how contributors should read it. The active documentation parent is:
+This page explains what the current HyProNet `CodeExplanation` set covers and how contributors should read it. The active source documentation parent is:
 
 ```text
 docs/SetupInstructions/
 ```
 
-Within that parent, current `CodeExplanation` pages live under `docs/SetupInstructions/CodeExplanation/`, and current setup guides live under `docs/SetupInstructions/Installation/`.
+Within that source parent, current `CodeExplanation` pages live under `docs/SetupInstructions/CodeExplanation/`, and current setup guides live under `docs/SetupInstructions/Installation/`.
 
 In the published Docusaurus sidebar, the source folders appear as top-level groups: `Installation` and `CodeExplanation`. Contributors should not expect or create a visible `SetupInstructions` wrapper menu.
 

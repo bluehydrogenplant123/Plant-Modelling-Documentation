@@ -48,7 +48,7 @@ Do not use `CodeExplanation` pages for:
 
 ## Placement
 
-The current active user-facing documentation parent is:
+The current active source documentation parent is:
 
 ```text
 docs/SetupInstructions/
@@ -76,7 +76,7 @@ docs-archive/PreviousDoc/CodeExplanation/
 
 Rules:
 
-- Treat `docs/SetupInstructions/` as the active current docs parent.
+- Treat `docs/SetupInstructions/` as the active current docs source parent.
 - Put setup and installation pages under `docs/SetupInstructions/Installation/`.
 - Put current `CodeExplanation` pages under `docs/SetupInstructions/CodeExplanation/`.
 - Keep the visible Docusaurus menu path as `CodeExplanation -> <page title>` for current CodeExplanation pages.
@@ -148,7 +148,7 @@ Do not skip `Source files`, `Data flow`, or `Known cautions`. In compact pages, 
 
 ## Frontmatter
 
-Current pages under `docs/SetupInstructions/` use frontmatter. New Docusaurus-rendered current docs should use frontmatter where the target docs surface expects it:
+Current source pages under `docs/SetupInstructions/` use frontmatter. New Docusaurus-rendered current docs should use frontmatter where the target docs surface expects it:
 
 ```markdown
 ---
