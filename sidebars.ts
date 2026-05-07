@@ -4,13 +4,21 @@ const sidebars: SidebarsConfig = {
   tutorialSidebar: [
     {
       type: 'category',
-      label: 'SetupInstructions',
+      label: 'Installation',
+      collapsible: true,
+      collapsed: false,
+      items: [
+        {type: 'doc', id: 'capstone/SetupInstructions/Installation/HYPRONET_INSTALLATION_GUIDE'},
+        {type: 'doc', id: 'capstone/SetupInstructions/Installation/STARTUP_GUIDE'},
+      ],
+    },
+    {
+      type: 'category',
+      label: 'CodeExplanation',
       collapsible: true,
       collapsed: false,
       items: [
         {type: 'doc', id: 'capstone/SetupInstructions/CodeExplanation/CODE_EXPLANATION_GUIDELINES'},
-        {type: 'doc', id: 'capstone/SetupInstructions/Installation/HYPRONET_INSTALLATION_GUIDE'},
-        {type: 'doc', id: 'capstone/SetupInstructions/Installation/STARTUP_GUIDE'},
         {type: 'doc', id: 'capstone/SetupInstructions/CodeExplanation/code-explanation-index'},
         {type: 'doc', id: 'capstone/SetupInstructions/CodeExplanation/code-explanation-overview'},
         {type: 'doc', id: 'capstone/SetupInstructions/CodeExplanation/dashboard-and-canvas'},
@@ -28,6 +36,7 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/SetupInstructions/CodeExplanation/excel-import-pipeline'},
       ],
     },
+
   ],
 };
 
