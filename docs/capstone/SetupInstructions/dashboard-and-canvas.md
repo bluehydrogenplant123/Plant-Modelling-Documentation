@@ -89,7 +89,7 @@ The Dashboard owns the first-step UI for choosing a diagram name, domain, calcul
 
 | UI State or Action | Source State or Props | Expected Result | Verification |
 | --- | --- | --- | --- |
-| Dashboard opens | Auth context `user`, fetched domains, diagrams, and blueprints | Shows "Welcome, <user>!", a Create New Network card, Verified Networks, Unverified Networks, and Subnetwork Blueprints. | Start app, log in, open the dashboard route. |
+| Dashboard opens | Auth context `user`, fetched domains, diagrams, and blueprints | Shows the signed-in user's welcome message, a Create New Network card, Verified Networks, Unverified Networks, and Subnetwork Blueprints. | Start app, log in, open the dashboard route. |
 | Type a diagram name | `canvasName`, `nameError`, `diagrams` | Input updates; duplicate error is cleared while typing. On blur, an exact duplicate name clears the field and shows "Diagram name must be unique.". | Type an existing diagram name, blur the field. |
 | Select a domain after entering form data | `domain`, `canvasName`, `description` | Temporary data is written to `localStorage` under `temp_diagram_<domainId>`. | Inspect browser local storage after changing the selector. |
 | Click Create Diagram with valid fields | Dashboard local state and Redux dispatches | Old canvas state is cleared, domain data fetch starts, name/description/calc type are stored, `verified` becomes `false`, and route changes to `/canvas/<domainId>`. | Create a network and confirm the canvas route opens. |
