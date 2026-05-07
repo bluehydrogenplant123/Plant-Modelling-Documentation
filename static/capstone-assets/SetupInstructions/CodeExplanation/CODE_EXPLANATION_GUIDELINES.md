@@ -66,6 +66,8 @@ Current `CodeExplanation` pages live under:
 docs/SetupInstructions/CodeExplanation/
 ```
 
+In the published Docusaurus sidebar, these source folders are flattened under the `SetupInstructions` menu. Do not add a separate visible `CodeExplanation` menu level.
+
 The legacy `CodeExplanation` reference surface is:
 
 ```text
@@ -77,6 +79,7 @@ Rules:
 - Treat `docs/SetupInstructions/` as the active current docs parent.
 - Put setup and installation pages under `docs/SetupInstructions/Installation/`.
 - Put current `CodeExplanation` pages under `docs/SetupInstructions/CodeExplanation/`.
+- Keep the visible Docusaurus menu path as `SetupInstructions -> <page title>` for current setup and CodeExplanation pages.
 - Treat `docs-archive/PreviousDoc/CodeExplanation/` as historical reference only.
 - Use legacy pages only for information density, useful topic coverage, and historical background.
 - Re-read the current source code before documenting behavior, APIs, data fields, component contracts, or verification commands.
@@ -84,7 +87,7 @@ Rules:
 - Ignore misplaced or generated `CodeExplanation` copies under `version6.1/`, including `version6.1/doc/docs/capstone/CodeExplanation/`, when deciding current placement or writing standards.
 - Do not add new current pages to the archive unless the task explicitly asks for historical preservation.
 - Do not add or modify `version6.1/` content when writing current `CodeExplanation` docs.
-- Keep this standards page under `docs/SetupInstructions/CodeExplanation/` so contributors can find the writing rules before creating new explanations.
+- Keep this standards page at `docs/SetupInstructions/CodeExplanation/CODE_EXPLANATION_GUIDELINES.md`; the published sidebar displays it directly under `SetupInstructions`.
 
 ## File Naming
 

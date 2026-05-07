@@ -14,6 +14,8 @@ docs/SetupInstructions/
 
 Within that parent, current `CodeExplanation` pages live under `docs/SetupInstructions/CodeExplanation/`, and current setup guides live under `docs/SetupInstructions/Installation/`.
 
+In the published Docusaurus sidebar, both source folders are flattened under `SetupInstructions`; contributors should not expect or create a separate visible `CodeExplanation` menu level.
+
 These pages form a maintenance map for the main application flows: dashboard and canvas entry, header controls, node and edge editing, diagram save and node cache persistence, subnetwork persistence, TP and Economic data, run configuration, backend data routes, compute dispatch, solver callbacks, translation, reverse translation, and Excel import setup.
 
 Use this overview for orientation, then use the [Code Explanation Index](./code-explanation-index.md) as the complete current link entry point.
@@ -44,7 +46,7 @@ If a feature is not covered here, inspect the source, then add or update a focus
 
 ## Current Surface and Legacy References
 
-Current `CodeExplanation` pages live in `docs/SetupInstructions/CodeExplanation/`. Contributors should start with the current pages in this folder and follow current links only. Installation and startup guides live in `docs/SetupInstructions/Installation/`.
+Current `CodeExplanation` source files live in `docs/SetupInstructions/CodeExplanation/`. In the published sidebar, they appear directly under `SetupInstructions`. Contributors should start with the current pages in this folder and follow current links only. Installation and startup guides live in `docs/SetupInstructions/Installation/`.
 
 The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical reference only. It can help with topic discovery or older context, but current behavior, API contracts, data ownership, and verification commands must come from the current source code and current docs.
 

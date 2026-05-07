@@ -14,6 +14,8 @@ docs/SetupInstructions/CodeExplanation/
 
 Current setup and installation guides live under `docs/SetupInstructions/Installation/` and are linked from the Import/Runtime section when runtime context is needed.
 
+In the published Docusaurus sidebar, both source folders are flattened under `SetupInstructions`; there is no separate visible `CodeExplanation` menu level.
+
 The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical reference only. Do not treat archive pages as current behavior unless the source code has been rechecked. Misplaced or generated CodeExplanation copies under `version6.1/`, including `version6.1/doc/docs/capstone/CodeExplanation/`, are intentionally not linked from this index.
 
 ## Standards
@@ -59,4 +61,4 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 ## Navigation Rule
 
-For current feature documentation, start in `docs/SetupInstructions/CodeExplanation/` and follow only current links from this index or from related current pages. Use `docs/SetupInstructions/Installation/` for install and runtime setup guides. Use `docs-archive/PreviousDoc/CodeExplanation/` only for historical comparison, and do not link new current docs to misplaced `version6.1/` CodeExplanation copies.
+For current feature documentation, start from the visible `SetupInstructions -> Code Explanation Index` page in Docusaurus, or from the source path `docs/SetupInstructions/CodeExplanation/` when editing files. Use `docs/SetupInstructions/Installation/` for install and runtime setup guides. Use `docs-archive/PreviousDoc/CodeExplanation/` only for historical comparison, and do not link new current docs to misplaced `version6.1/` CodeExplanation copies.
