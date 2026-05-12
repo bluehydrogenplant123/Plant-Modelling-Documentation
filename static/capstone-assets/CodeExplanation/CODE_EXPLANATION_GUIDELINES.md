@@ -502,6 +502,7 @@ Generated or diagnostic files include:
 ```text
 src/src/backend/services/solve_request.json
 src/src/backend/routes/external/callback_response.json
+src/excel-migration/logs/
 src/logs/
 src/generated/
 src/node_modules/
@@ -517,6 +518,18 @@ Rules:
 - Do not commit large generated diffs as documentation.
 - Do not hand-edit generated code or build output.
 - Do not base behavior, API, or field-ownership claims on generated artifacts alone.
+
+PR rule:
+
+- Do not include local runtime outputs in pull requests. This includes
+  solver request JSON, callback JSON, Excel import logs, generated CSV/output
+  folders, screenshots, local saved diagrams, and machine-specific
+  `docs/usercustom/` or `src/usercustom/` files.
+- If a JSON artifact is intentionally needed as a test fixture, move or copy it
+  into the relevant test fixture directory, shrink it to the smallest useful
+  case, and explain in the PR why it is a fixture instead of runtime output.
+- Before committing, run `git status --short` and exclude accidental changes to
+  runtime diagnostics such as `src/src/backend/services/solve_request.json`.
 
 ## Language and Style
 
