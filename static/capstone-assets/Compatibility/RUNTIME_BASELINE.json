@@ -1,9 +1,0 @@
-{
-  "schemaVersion": "6.0.0",
-  "excelFilePath": "src/excel-sheets/apr-6-2026.xlsx",
-  "excelFileName": "apr-6-2026.xlsx",
-  "workbookSha256": "c03c1f87c78f158ff6b2099f4d082cdf92fa8da5e0db1be2b5d80f2fe092edf9",
-  "runtimeBaselineRef": "apr-6-2026.xlsx#c03c1f87c78f158ff6b2099f4d082cdf92fa8da5e0db1be2b5d80f2fe092edf9",
-  "recordedAt": "2026-04-16",
-  "notes": "Accepted Excel baseline for the current shared compatibility/version line. Update this file when a merge accepts a newer dated Excel workbook."
-}
