@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/CodeExplanation/compute-solver-callback-and-results'},
         {type: 'doc', id: 'capstone/CodeExplanation/translation-and-reverse-translation'},
         {type: 'doc', id: 'capstone/CodeExplanation/excel-import-pipeline'},
+        {type: 'doc', id: 'capstone/CodeExplanation/test'},
       ],
     },
   ],
