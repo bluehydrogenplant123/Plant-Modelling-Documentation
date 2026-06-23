@@ -1,0 +1,72 @@
+# Header Bar
+
+## Overview
+- Location: `src/src/frontend/src/components/header-bar/index.tsx`
+- Purpose: Top-level navigation and action bar for the React Flow canvas, organized into primary sections with contextual secondary controls (including Run Result history access).
+- Dependencies: React-Bootstrap (`Navbar`, `Button`, `Dropdown`), Redux selectors (`RootState`), and multiple child button components (run/config/save/model actions).
+
+## Props (inputs/outputs)
+- `setMaterialEditor: Dispatch<SetStateAction<boolean>>` 鈥?required; toggles the material editor modal; returns void.
+- `setSaveConfirm: Dispatch<SetStateAction<boolean>>` 鈥?required; opens/closes the save-confirm modal before leaving; returns void.
+
+## Core State
+- `activeSection: string | null` 鈥?drives which secondary row is visible; defaults to `Model`.
+- `showRunConfigModal: boolean` / `selectedRunConfigType: string | null` 鈥?governs the shared Run Config modal.
+- `runConfigs` 鈥?read from Redux `domain.data.runConfigs`; maps solver/algorithm keys to config definitions.
+- `calcType` 鈥?active calculation mode (`Simulation`, `Optimization`, `DataRec`, `ParamUpdt`) from Redux.
+- Disable flags from `useComputingDisableRule` gate many buttons while computations run.
+
+## Core Functions
+- `handleOpenRunConfig(type: string)` 鈥?param: solver/algorithm key; return: void; opens modal and stores selected key.
+- `handleCloseRunConfig()` 鈥?return: void; hides run-config modal and clears selection.
+- `handleCalcTypeClick(nextCalcType)` 鈥?confirms switching calc type; if same type, opens TP Specs directly.
+- `handleConfirmCalcTypeSwitch()` 鈥?updates Redux `calcType` and opens TP Specs panel.
+- `setActiveSection(section)` 鈥?param: section label; return: void; switches visible secondary button group.
+- Rendering pipeline returns a `Navbar` with two button rows: primary row (all sections + core actions) and secondary row (contextual actions based on `activeSection`).
+
+## Section Behavior (secondary row)
+- `Model`: create/open/import/export diagram, save as copy/subnetwork, verify, and **Base TP**.
+  - **Base TP button** opens a duration editor modal (`Duration` + `Duration Unit`).
+  - It updates diagram-level Base TP duration through backend API:
+    - `PUT /api/data/diagrams/:diagramId/base-duration`
+  - The button is disabled when Multi-TP ranges already exist (non `1-1` TP ranges found).
+- `Materials`: opens `MaterialEditor`; view/import material placeholders.
+- `Calc Type`: renders 4 buttons (Simulation / Optimization / DataRec / ParamUpdt). Clicking opens a confirmation modal if switching types.
+- `Set Run`: solver/algorithm dropdowns populated from `runConfigs`; selecting triggers `handleOpenRunConfig` and shows `RunConfigModal`.
+- `Run`: `ComputationButton` handles start/stop and exposes a display-only RunConfig modal. `Run Result` opens a history modal for prior runs, with delete actions for stored results.
+- `Multi-Time Period`: `TimePeriodViewer` and `Global TP` for bulk TP/duration assignment; both are visible only after verification.
+  - `TP Node - Model Version Control` button has been re-enabled in header-bar (previous hardcoded frontend disable removed).
+  - Current temporary frontend behavior in `TimePeriodViewer`: TP ranges are view-only, and only `model version` is editable.
+  - TP structure editing (split/add/delete/range mutation) remains implemented in code but gated by a frontend flag in `time-period-viewer.tsx`.
+  - `Global TP` now supports range-level `Duration` and `Duration Unit` editing.
+  - New TP ranges created in Global TP default to the current Base TP duration from `diagram.duration` / `diagram.durationUnit`.
+- `Advanced Analysis`: `MetabaseButton`, Configure/Edit stubs.
+- `System`: import sys materials and node definitions (respect disable rules).
+- `Help`: documentation/tutorial placeholders.
+
+## Usage
+```tsx
+<HeaderBar
+  setMaterialEditor={setMaterialEditorOpen}
+  setSaveConfirm={setSaveConfirmOpen}
+/>
+```
+
+## Notes
+- Styling in `header-bar.css`; many child buttons have their own styles.
+- Disable rules from `useComputingDisableRule` should align with backend policy so UI and allowed actions stay consistent.
+- Logging of run configs is present for debugging; remove or guard for production.
+- `BackToParentNetwork` now uses the same `outline-primary` color scheme as the main menu buttons for visual consistency.
+
+## Run Result History
+
+Run history and deletion are surfaced via the `Run Result` button in the primary row, next to `Run`.
+
+Key files:
+- `src/src/frontend/src/components/header-bar/header-buttons/run-result-button.tsx`
+- `src/src/backend/routes/computeRoutes.ts`
+
+Behavior:
+1. Clicking `Run Result` fetches `/api/compute/history/:diagramId` and shows a modal table.
+2. Each row displays `runName`, `status`, and `runAt` (start time if present, else creation time).
+3. Delete triggers `/api/compute/results` and removes both PostgreSQL `ComputationResults` and MongoDB `computationTask` entries, then closes the modal.
