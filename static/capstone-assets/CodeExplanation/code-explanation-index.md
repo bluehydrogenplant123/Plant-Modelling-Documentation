@@ -44,6 +44,8 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 - [Time Period and Economic Flow Code Explanation](./time-period-and-economic-flow.md): base TP, global TP, TP viewer, TP specs, economic panels, cost data ownership, and solver payload handoff.
 - [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md): run-configuration modal fields, solver and algorithm ownership, computation-button behavior, backend start route, and TP/Economic handoff.
+- [Equation Writing Module Code Explanation](./equation-writing-module.md): equation modal state, imported variables, diagram equation persistence, and solver-facing `parameters.equations` handoff.
+- [Plant Measurements and Instrument Mapping Code Explanation](./plant-measurements-and-instrument-mapping.md): Plant Measurements modal, instrument sets, mapping rows, measurement import, MongoDB persistence, validation, and DataRec input generation.
 
 ## Backend/Data
 

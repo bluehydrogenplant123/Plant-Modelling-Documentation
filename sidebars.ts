@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/CodeExplanation/time-period-and-economic-flow'},
         {type: 'doc', id: 'capstone/CodeExplanation/run-config-and-computation-start'},
         {type: 'doc', id: 'capstone/CodeExplanation/equation-writing-module'},
+        {type: 'doc', id: 'capstone/CodeExplanation/plant-measurements-and-instrument-mapping'},
         {type: 'doc', id: 'capstone/CodeExplanation/save-diagram-and-node-cache'},
         {type: 'doc', id: 'capstone/CodeExplanation/custom-edge-and-stream-selection'},
         {type: 'doc', id: 'capstone/CodeExplanation/node-modal-and-variable-inputs'},
