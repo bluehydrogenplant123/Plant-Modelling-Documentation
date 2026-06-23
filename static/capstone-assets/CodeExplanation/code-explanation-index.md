@@ -21,6 +21,7 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 ## Standards
 
 - [CodeExplanation Writing Standards](./CODE_EXPLANATION_GUIDELINES.md): placement rules, required structure, frontmatter expectations, source-file standards, verification expectations, and generated-artifact cautions for current CodeExplanation pages.
+- [AI CodeExplanation Maintenance Workflow](./ai-codeexplanation-maintenance-workflow.md): subagent-based workflow for creating, updating, reviewing, and publishing current CodeExplanation documentation from source code.
 
 ## Orientation
 
