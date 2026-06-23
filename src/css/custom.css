@@ -91,6 +91,61 @@ h4,
   font-weight: 700;
 }
 
+.navbar-workflow-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.05rem;
+  margin-left: 0.35rem;
+  padding: 0.42rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.navbar-workflow-button:hover {
+  text-decoration: none;
+}
+
+.navbar-workflow-button--primary {
+  border-color: rgba(221, 107, 66, 0.28);
+  background: rgba(221, 107, 66, 0.12);
+  color: var(--site-color-primary);
+}
+
+.navbar-workflow-button--primary:hover {
+  border-color: rgba(221, 107, 66, 0.48);
+  background: rgba(221, 107, 66, 0.18);
+  color: var(--site-color-primary);
+}
+
+.navbar-workflow-button--download {
+  border-color: rgba(20, 54, 59, 0.18);
+  background: var(--site-color-ink);
+  color: #fffaf4;
+}
+
+.navbar-workflow-button--download:hover {
+  background: #1d4a51;
+  color: #fffaf4;
+}
+
+[data-theme='dark'] .navbar-workflow-button--download {
+  border-color: rgba(255, 250, 244, 0.18);
+  background: rgba(255, 250, 244, 0.1);
+}
+
+[data-theme='dark'] .navbar-workflow-button--download:hover {
+  background: rgba(255, 250, 244, 0.16);
+}
+
 .main-wrapper {
   position: relative;
 }
