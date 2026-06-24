@@ -402,7 +402,7 @@ Example workbook names already present in the repository may include:
 - `nov-19-2024.xlsx`
 - `jan-30-2026.xlsx`
 - `mar-18-2026.xlsx`
-- `apr-6-2026.xlsx`
+- `jun-16-2026.xlsx`
 
 ### Step 12: Initialize the Databases and Import the Workbook
 
@@ -419,7 +419,7 @@ Run the import script:
 Terminal: **Git Bash**
 
 ```bash
-bash run-all.sh apr-6-2026.xlsx
+bash run-all.sh jun-16-2026.xlsx
 ```
 
 This script will:
@@ -437,7 +437,7 @@ Terminal: **Git Bash**
 
 ```bash
 cd ~/Projects/capstone
-bash init.sh apr-6-2026.xlsx
+bash init.sh jun-16-2026.xlsx
 ```
 
 `init.sh` will:
@@ -493,7 +493,7 @@ cd ~/Projects/capstone/src/src/frontend
 npm install
 cd ~/Projects/capstone/src
 export MSYS_NO_PATHCONV=1
-bash run-all.sh apr-6-2026.xlsx
+bash run-all.sh jun-16-2026.xlsx
 npm run dev
 ```
 
@@ -705,7 +705,7 @@ Terminal: **macOS Terminal**
 
 ```bash
 cd ~/Projects/capstone/src
-bash run-all.sh apr-6-2026.xlsx
+bash run-all.sh jun-16-2026.xlsx
 ```
 
 This starts MongoDB, PostgreSQL, and Redis, runs Prisma migrations, and imports the workbook into the databases.
@@ -716,7 +716,7 @@ Terminal: **macOS Terminal**
 
 ```bash
 cd ~/Projects/capstone
-bash init.sh apr-6-2026.xlsx
+bash init.sh jun-16-2026.xlsx
 ```
 
 ### Step 12: Start the Application
@@ -757,7 +757,7 @@ npm install
 cd ~/Projects/capstone/src/src/frontend
 npm install
 cd ~/Projects/capstone/src
-bash run-all.sh apr-6-2026.xlsx
+bash run-all.sh jun-16-2026.xlsx
 npm run dev
 ```
 
@@ -948,7 +948,7 @@ If your platform exposes a memory limit there, increase it before rerunning:
 Terminal: **Git Bash**, **WSL**, or **macOS Terminal**
 
 ```bash
-bash run-all.sh apr-6-2026.xlsx
+bash run-all.sh jun-16-2026.xlsx
 ```
 
 Docker Desktop also has a **Resource Saver** feature that reduces CPU and memory usage when Docker is idle. This is useful normally, but if Docker has just resumed from idle, give it a moment to become responsive before retrying commands.
