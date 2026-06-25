@@ -21,10 +21,10 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Interface Overview',
-          link: {type: 'doc', id: 'capstone/UserGuide/interface-overview'},
           collapsible: true,
           collapsed: false,
           items: [
+            {type: 'doc', id: 'capstone/UserGuide/interface-overview', label: 'Overview'},
             {type: 'doc', id: 'capstone/UserGuide/primary-menus/model'},
             {type: 'doc', id: 'capstone/UserGuide/primary-menus/materials'},
             {type: 'doc', id: 'capstone/UserGuide/primary-menus/economic'},
