@@ -1,43 +1,61 @@
 ---
 title: Interface Overview
 sidebar_position: 2
-description: Identify the main areas of the HyProNet modeling workspace before using the feature tutorials.
+description: Identify the color-boxed areas, primary menus, secondary menus, palette, and canvas in the HyProNet modeling workspace.
 ---
 
 # Interface Overview
 
-Use this page when you first open the HyProNet modeling workspace and need to understand what each part of the screen is for.
+Use this page when you first open the HyProNet modeling workspace and need to understand the color-boxed regions and the top-level menu buttons.
 
-![HyProNet model workspace with module tabs, model toolbar, palette, canvas, save controls, zoom controls, and minimap](./images/model-interface-overview.png)
+![HyProNet model workspace with red primary menu box, orange secondary menu box, blue palette box, and green canvas box](./images/model-interface-overview.png)
 
-## Main Screen Areas
+## Color-Boxed Areas
 
-| Area | What You See | What It Is For |
+| Color Box | Area Category | What It Contains | What It Is For |
 | --- | --- | --- |
-| Module tabs | **Model**, **Materials**, **Economic**, **Calc Type**, **Analysis**, **Set Run**, **Run**, **Run Result**, **Multi-TP**, **TP Analysis**, **System**, **Display**, and **Help** | Switch between major working modes. The active tab controls which toolbar actions are shown below it. |
-| Model toolbar | **New Model**, **Open**, **Duplicate Network**, **Extract Selection**, **Subnetwork Editor**, **Import Subnetworks**, **Equation Writing**, **+Constr**, **SoluAlgoLib**, **Verify Model**, **Base TP**, **Specs**, **Import**, and **Export** | Start, open, duplicate, verify, import, export, or prepare the current model. |
-| Palette | The left panel labeled **Palette**, with unit types such as **ACC**, **AFT_BURN**, **ASU**, **ATR**, **BLOWER**, **COMBUST**, **COMPR**, and **DIVIDER** | Find the plant units that can be added to the model canvas. |
-| Canvas | The large dotted workspace in the center | Build and inspect the process network. In the screenshot, the canvas is empty because no nodes have been placed yet. |
-| Save and model state | **Save**, **Refresh Off**, the network name field such as **D1**, **Back**, and the last-saved message | Save the current network, check auto-save status, rename or identify the current diagram, and return to the previous page. |
-| Floating control | The dark floating bar near the upper-right side of the canvas | Shows a compact canvas control while working in the modeling area. |
-| Zoom controls | The controls at the bottom-left of the canvas | Zoom in, zoom out, reset the view, or use the available canvas view control. |
-| Minimap | The small overview panel at the bottom-right | Check where the visible canvas area sits inside the larger workspace. |
+| Red | Primary menu and status header | **Model**, **Materials**, **Economic**, **Calc Type**, **Analysis**, **Set Run**, **Run**, **Run Result**, **Multi-TP**, **TP Analysis**, **System**, **Display**, **Help**, plus **Save**, **Refresh Off**, diagram name, **Back**, and save status | Switch the major working mode or use always-visible status controls. |
+| Orange | Secondary menu | In this screenshot, the active **Model** menu shows **New Model**, **Open**, **Duplicate Network**, **Extract Selection**, **Subnetwork Editor**, **Import Subnetworks**, **Equation Writing**, **+Constr**, **SoluAlgoLib**, **Verify Model**, **Base TP**, **Specs**, **Import**, and **Export** | Use actions that belong to the selected primary menu. The buttons change when another primary menu is selected. |
+| Blue | Component palette | The left **Palette** panel with plant unit types such as **ACC**, **AFT_BURN**, **ASU**, **ATR**, **BLOWER**, **COMBUST**, **COMPR**, and **DIVIDER** | Pick the plant unit type you want to add to the model. |
+| Green | Modeling canvas | The dotted workspace, floating canvas control, and minimap | Build, inspect, pan, zoom, and navigate the process network. |
 
-## How To Orient Yourself
+## Primary Menu Buttons
 
-1. Start from the top module tabs and confirm the correct working mode is selected.
-2. Use the second toolbar row for actions that belong to the selected mode.
-3. Use the **Palette** when you need a plant unit for the model.
-4. Work in the dotted canvas area when building or inspecting the network.
-5. Watch the save status in the top-right corner after clicking **Save** or after auto-save runs.
-6. Use the zoom controls and minimap when the diagram becomes larger than the visible canvas.
+Click a primary menu name below to open its specific introduction page.
+
+| Primary Menu | Short Description | Detail Page |
+| --- | --- | --- |
+| **Model** | Create, open, duplicate, verify, import, export, and prepare the model. | [Model menu](./primary-menus/model) |
+| **Materials** | Open material editing tools for material data used by the model. | [Materials menu](./primary-menus/materials) |
+| **Economic** | Configure economic entities and mappings for costs, expenses, revenues, and objectives. | [Economic menu](./primary-menus/economic) |
+| **Calc Type** | Select the calculation mode used by node variables and specifications. | [Calc Type menu](./primary-menus/calc-type) |
+| **Analysis** | Open analysis tools such as Plant Measurements. | [Analysis menu](./primary-menus/analysis) |
+| **Set Run** | Choose solver and algorithm configuration before computation. | [Set Run menu](./primary-menus/set-run) |
+| **Run** | Start, stop, or inspect the computation action. | [Run button](./primary-menus/run) |
+| **Run Result** | Open saved computation history and result records. | [Run Result button](./primary-menus/run-result) |
+| **Multi-TP** | Configure multi-time-period workflows, TP node versions, TP specs, and Multi-TP economics. | [Multi-TP menu](./primary-menus/multi-tp) |
+| **TP Analysis** | Open visualization and dashboard tools for time-period analysis. | [TP Analysis menu](./primary-menus/tp-analysis) |
+| **System** | Import system-level material and node definition data. | [System menu](./primary-menus/system) |
+| **Display** | Filter which node types remain visible on the canvas. | [Display button](./primary-menus/display) |
+| **Help** | Access documentation and tutorial placeholders. | [Help menu](./primary-menus/help) |
+
+## How To Use The Layout
+
+1. Start in the red box and choose the primary menu for the task.
+2. Move to the orange box and choose the secondary action for the active primary menu.
+3. Use the blue **Palette** when you need to add plant units.
+4. Work in the green canvas when creating or reviewing the network.
+5. Watch the red-box save status after using **Save** or after auto-save runs.
 
 ## Result
 
-You can identify the main workspace regions before following the task-based tutorials for model creation, node editing, equations, economic data, plant measurements, time periods, and computation runs.
+You can identify the main workspace regions, understand what the colored boxes represent, and open the detailed introduction page for each primary menu button.
 
 ## Related Pages
 
+- [Model primary menu](./primary-menus/model)
+- [Materials primary menu](./primary-menus/materials)
+- [Economic primary menu](./primary-menus/economic)
 - [Create, open, save, import, and export models](./model-workflow)
 - [Edit node settings, streams, variables, and specs](./edit-node-variables)
 - [Configure and start a computation](./run-computation)
