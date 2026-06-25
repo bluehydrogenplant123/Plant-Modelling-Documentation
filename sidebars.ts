@@ -21,6 +21,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Interface Overview',
+          link: {type: 'generated-index', title: 'Interface Overview'},
           collapsible: true,
           collapsed: false,
           items: [
