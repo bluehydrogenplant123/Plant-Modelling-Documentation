@@ -14,6 +14,22 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'User Manual',
+      collapsible: true,
+      collapsed: false,
+      items: [
+        {type: 'doc', id: 'capstone/UserGuide/user-manual-overview'},
+        {type: 'doc', id: 'capstone/UserGuide/model-workflow'},
+        {type: 'doc', id: 'capstone/UserGuide/edit-node-variables'},
+        {type: 'doc', id: 'capstone/UserGuide/equation-writing'},
+        {type: 'doc', id: 'capstone/UserGuide/economic-data'},
+        {type: 'doc', id: 'capstone/UserGuide/plant-measurements'},
+        {type: 'doc', id: 'capstone/UserGuide/time-periods'},
+        {type: 'doc', id: 'capstone/UserGuide/run-computation'},
+      ],
+    },
+    {
+      type: 'category',
       label: 'CodeExplanation',
       collapsible: true,
       collapsed: false,
