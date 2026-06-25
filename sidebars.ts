@@ -18,7 +18,6 @@ const sidebars: SidebarsConfig = {
       collapsible: true,
       collapsed: false,
       items: [
-        {type: 'doc', id: 'capstone/UserGuide/user-manual-overview'},
         {type: 'doc', id: 'capstone/UserGuide/interface-overview'},
         {type: 'doc', id: 'capstone/UserGuide/primary-menus/model'},
         {type: 'doc', id: 'capstone/UserGuide/primary-menus/materials'},
