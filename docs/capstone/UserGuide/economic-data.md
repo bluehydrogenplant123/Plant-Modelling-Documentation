@@ -1,6 +1,6 @@
 ---
 title: Configure Economic Data
-sidebar_position: 5
+sidebar_position: 6
 description: Use Economic panels to manage costs, expenses, revenues, objectives, mappings, imports, exports, and TP ranges.
 ---
 

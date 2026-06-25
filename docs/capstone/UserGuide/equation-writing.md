@@ -1,6 +1,6 @@
 ---
 title: Create and Save Equations
-sidebar_position: 4
+sidebar_position: 5
 description: Use Equation Writing to build equations from network, node, port, variable, and time-period references.
 ---
 

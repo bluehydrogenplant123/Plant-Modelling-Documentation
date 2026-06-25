@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         {type: 'doc', id: 'capstone/UserGuide/user-manual-overview'},
+        {type: 'doc', id: 'capstone/UserGuide/interface-overview'},
         {type: 'doc', id: 'capstone/UserGuide/model-workflow'},
         {type: 'doc', id: 'capstone/UserGuide/edit-node-variables'},
         {type: 'doc', id: 'capstone/UserGuide/equation-writing'},

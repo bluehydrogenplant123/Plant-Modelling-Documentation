@@ -1,6 +1,6 @@
 ---
 title: Create, Open, Save, Import, and Export Models
-sidebar_position: 2
+sidebar_position: 3
 description: Use the Model toolbar to manage HyProNet diagrams and network files.
 ---
 

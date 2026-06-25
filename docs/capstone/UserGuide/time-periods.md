@@ -1,6 +1,6 @@
 ---
 title: Configure Time Periods
-sidebar_position: 7
+sidebar_position: 8
 description: Use Base TP, Global TP, TP Node, and TP Specs to manage time-period duration and node-specific TP data.
 ---
 

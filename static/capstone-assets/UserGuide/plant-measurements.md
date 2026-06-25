@@ -1,6 +1,6 @@
 ---
 title: Set Up Plant Measurements
-sidebar_position: 6
+sidebar_position: 7
 description: Create measurement sets, map instruments to variables, import measurement rows, and save validated plant data.
 ---
 

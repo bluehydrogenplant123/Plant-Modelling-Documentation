@@ -1,6 +1,6 @@
 ---
 title: Edit Node Settings, Streams, Variables, and Specs
-sidebar_position: 3
+sidebar_position: 4
 description: Use the node toolbar tabs to edit node names, stream values, node variables, and specification fields.
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Configure and Start a Computation
-sidebar_position: 8
+sidebar_position: 9
 description: Configure solver and algorithm options, start a computation, monitor status, stop a run, and review run results.
 ---
 
