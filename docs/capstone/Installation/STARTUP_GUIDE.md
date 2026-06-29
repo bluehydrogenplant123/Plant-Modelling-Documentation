@@ -121,7 +121,7 @@ Run:
 Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
-./run-all.sh jun-16-2026.xlsx
+./run-all.sh apr-6-2026.xlsx
 ```
 
 If there are import errors, check:
@@ -197,10 +197,10 @@ Then run:
 Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
-./run-all.sh jun-16-2026.xlsx
+./run-all.sh apr-6-2026.xlsx
 ```
 
-Again, replace `jun-16-2026.xlsx` with the latest workbook in `src/excel-sheets/` when a newer workbook is released.
+Again, replace `apr-6-2026.xlsx` with the latest workbook in `src/excel-sheets/`.
 
 Only remove containers first if you intentionally want a clean reset. If you do that, assume local diagrams and runtime data may be lost unless you have backed them up elsewhere.
 
