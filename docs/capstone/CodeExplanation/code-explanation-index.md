@@ -41,9 +41,8 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 ## TP/Economic/Run
 
-- [Time Period and Economic Flow Code Explanation](./time-period-and-economic-flow.md): base TP, global TP, Base-to-MTP value copy, TP viewer, Base/Multi-TP specs, economic panels, cost data ownership, and solver payload handoff.
-- [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md): run-configuration modal fields, solver/algorithm/log-level ownership, computation-button behavior, backend start route, and TP/Economic handoff.
-- [Metabase and Data Visualization Code Explanation](./metabase-and-data-visualization.md): Metabase embedding, TP Analysis dashboard viewing, dashboard/panel manager flows, generated SQL cards, backend binding APIs, and runtime setup.
+- [Time Period and Economic Flow Code Explanation](./time-period-and-economic-flow.md): base TP, global TP, TP viewer, TP specs, economic panels, cost data ownership, and solver payload handoff.
+- [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md): run-configuration modal fields, solver and algorithm ownership, computation-button behavior, backend start route, and TP/Economic handoff.
 
 ## Backend/Data
 

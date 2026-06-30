@@ -37,7 +37,6 @@ The solver API service owns the external HTTP contract. It appends `/solve/`, `/
 | `maxComputationTime` | `/api/compute/start` body or upload metadata | Stored as `configuration.max_computation_time`; `/start` rejects values below `COMPUTATION_CONSTANTS.MINIMUM_COMPUTATION_TIME`. |
 | `runName` | `/start`, `/upload/init`, `/results` | Stored on `computationTask` and used as part of the PostgreSQL result identity. |
 | `solverName`, `algorithmName` | `/start` or upload metadata | Looked up in snapshot `runConfigs` and stored in task `configuration`. |
-| `logLevel` | `/start` or upload metadata | Validated as `testing`, `development`, or `production`, stored as `configuration.Log_level`, and returned by `/details/:diagramId` as `computationInfo.logLevel`. |
 | `tpChanges` | Optional `/start` body plus persisted MongoDB `tpChanges` | Merged before translation so explicit user overrides can affect `parameters.tps_specs`. |
 | Chunk payload | `/upload/:sessionId/chunk` | Reassembled by `/upload/:sessionId/finalize` and queued as job metadata. |
 | Solver callback | `/api/external/compute/callback` | Updates task status and, on success, persists solver results. |
@@ -61,7 +60,6 @@ The solver API service owns the external HTTP contract. It appends `/solve/`, `/
   callback_url: `${BASE_EXTERNAL_URL}/compute/callback/`,
   configuration: {
     max_computation_time: number | null,
-    Log_level: "testing" | "development" | "production",
     solver: {
       solver_name: string,
       attributes: Array<{ attribute_name: string; value: string | number | null }>
@@ -93,7 +91,6 @@ Important exact fields:
 - `parameters` is the translated diagram payload stored on `diagram.parameters` before queue dispatch.
 - `parameters.tps_specs` is the main variable-spec array consumed by the solver and later matched against callback results.
 - `parameters.costs` is present when `computeRoutes.ts` passes a `costsPayload` into `translation(...)`; it contains sanitized `entities`, `mappings`, and `duration`.
-- `configuration.Log_level` is selected in the frontend Run modal, defaults to `development`, and is task-local solver metadata. It is not the application logger level.
 
 The worker loads `diagram.parameters` from MongoDB when processing the queue job. The queued `canvasWithModelVersions` is not the final solver payload in the current worker implementation.
 
@@ -126,7 +123,7 @@ The worker loads `diagram.parameters` from MongoDB when processing the queue job
 
 ## Data Flow
 
-1. The frontend calls `POST /api/compute/start` with `diagramId`, `maxComputationTime`, `runName`, `solverName`, `algorithmName`, and `logLevel`.
+1. The frontend calls `POST /api/compute/start` with `diagramId`, `maxComputationTime`, `runName`, `solverName`, and `algorithmName`.
 2. `computeRoutes.ts` loads the diagram, snapshot data, nodes, TP rows, persisted TP changes, cost entities, and cost mappings.
 3. `translation(...)` builds the solver-facing `parameters`, including `parameters.tps_specs` and optional `parameters.costs`.
 4. The route writes `parameters` back to the MongoDB diagram record.
@@ -208,7 +205,7 @@ MongoDB persistence happens in `handleComputationSuccess(...)`, not in `storeCom
 
 ## Error Handling and Edge Cases
 
-- `/start` rejects missing required fields, `maxComputationTime` below the configured minimum, and invalid `logLevel` values.
+- `/start` rejects missing required fields and `maxComputationTime` below the configured minimum.
 - `/start` rejects diagrams with missing persisted node model versions, duplicate stream instances after subnetwork expansion, or missing domain model definitions.
 - `/start` and upload finalize reject users who already have a processing task.
 - Upload finalize deletes the in-memory upload session after parse errors, authorization errors, missing diagrams, duplicate processing tasks, and successful queueing.
@@ -221,7 +218,6 @@ MongoDB persistence happens in `handleComputationSuccess(...)`, not in `storeCom
 
 - Add a new compute route in `computeRoutes.ts`, then decide whether it should create a MongoDB task, enqueue a Bull job, or only read status.
 - Add a new solver configuration field by updating snapshot `runConfigs`, `ComputationTaskService.translateComputationConfig(...)`, and callback/result documentation together.
-- Add a new solver log level by updating the frontend `LOG_LEVEL_OPTIONS`, backend `ComputationLogLevel` / validation helper, `/details` fallback behavior if needed, and this documentation.
 - Add a new solver payload field by updating `translation.ts`, verifying the final `parameters` shape, and extending tests under `src/tests/backend/utils/`.
 - Add a new callback status by updating `CallbackStatus`, `callbackToComputationStatusMap`, `isComputationProcessing` if needed, and `/details/:diagramId` response handling.
 - Change result storage only with `storeComputationResultUtils.ts`, PostgreSQL schema constraints, and result-history UI expectations in mind.

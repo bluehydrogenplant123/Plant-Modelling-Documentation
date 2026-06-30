@@ -158,58 +158,7 @@ The range validator enforces these rules:
 - Every range must have a positive duration.
 - `durationUnit` must be `minutes`, `hours`, `days`, or `weeks`.
 
-On apply, the component builds add, update, and delete sets for `/api/data/tpnodevers`. Structural changes can clear TP-specific values, computation results, and cache state. When new ranges are added, the component can clone existing Base TP or first-period values into the new ranges by writing sparse `/api/data/tpchanges` rows.
-
-### Base TP Value Copy to Multi-TP
-
-Global TP owns the automatic copy path for node variable values when the time structure expands. This is separate from Base Economic copy behavior.
-
-The copy decision is implemented in `src/src/frontend/src/components/header-bar/header-buttons/global-tp-utils.ts`:
-
-- `shouldCopyBaseTpValuesToNewRanges(initialTotalTPs, totalTPs)` returns `true` only when the network is converted from base-only TP (`initialTotalTPs === 1`) to Multi-TP (`totalTPs > 1`).
-- `shouldCopyTpValuesToNewRanges(initialTotalTPs, totalTPs)` returns `true` for Base-to-MTP conversion and for appending new ranges to an already Multi-TP network.
-- Existing Multi-TP range reshaping or reduction does not use Base TP as a source; those paths may clear affected TP values after confirmation.
-
-When converting from Base TP to Multi-TP, `GlobalTpButton` collects source snapshots from the node's Base TP model version and current Base TP Redux parameter overrides. It copies only effective human-input values:
-
-- The preferred `is_human_input` flag comes from the current Redux parameter override when present.
-- If there is no override flag, the model variable object's `is_human_input` flag is used.
-- Values whose effective source is not human input are skipped.
-- Non-numeric values are skipped.
-
-Each copied snapshot can include:
-
-```ts
-{
-  portName,
-  portVarName,
-  portLocation,
-  portVarValue,
-  lowerBound,
-  upperBound,
-  unit,
-  spec
-}
-```
-
-For every new non-base TP range, Global TP creates a `/api/data/tpchanges` payload using that snapshot. The result is a sparse Multi-TP override row, not a mutation of the Base TP model version.
-
-```mermaid
-flowchart TD
-    A[User applies Global TP ranges] --> B{initialTotalTPs = 1 and totalTPs > 1?}
-    B -- yes --> C[Use Base TP as copy source]
-    B -- no --> D{Appending to existing Multi-TP?}
-    D -- yes --> E[Use first existing TP range as copy source]
-    D -- no --> F[Do not copy; reset affected TP values if needed]
-    C --> G[Collect human-input Base TP snapshots]
-    E --> H[Collect first TP snapshots and overlay manual tpchanges]
-    G --> I[Build tpchanges clone payloads]
-    H --> I
-    I --> J[POST /api/data/tpchanges for new ranges]
-    J --> K[New MTP ranges display copied values]
-```
-
-When appending to an existing Multi-TP network, the source is not Base TP. The component reads the first existing TP range model version, overlays manual non-computed `tpchanges` for that first range, then copies those snapshots into appended ranges. This protects existing MTP semantics where TP-specific edits already supersede Base TP.
+On apply, the component builds add, update, and delete sets for `/api/data/tpnodevers`. Structural changes can clear TP-specific values, computation results, and cache state. When new ranges are added, the component can clone existing base or first-period TP changes into the new ranges.
 
 Global TP also prepares economic data for the new TP ranges. It calls:
 
@@ -233,9 +182,9 @@ The button renders only after verification state allows it. The header keeps the
 
 ## TP Specs
 
-`TPSpecsButton` edits node model variable specs and values, not TP range duration. It has separate Base and Multi-TP modes.
+`TPSpecsButton` edits node model variable specs and values, not TP range duration.
 
-Base mode is opened from `Model -> Specs`. It reads the diagram and node definitions, builds rows from model-version `ports_var` and `model_var_object`, and displays `From TP` and `To TP` as `1-1`.
+The panel reads the diagram and node definitions, builds rows from model-version `ports_var` and `model_var_object`, and displays `From TP` and `To TP` as current fixed values. In the current implementation those rows are built as `1-1`.
 
 On save it sends:
 
@@ -243,18 +192,7 @@ On save it sends:
 PUT /api/data/tp-specs/bulk-update
 ```
 
-with row-level value, spec, bounds, and selected unit updates for the node model version.
-
-Multi mode is opened from `Multi-TP -> TP Specs`. It additionally reads `/api/data/tpnodevers` and `/api/data/tpchanges/all`, expands rows per TP range, overlays existing `tp_changes`, and saves non-base edits back through:
-
-```http
-POST /api/data/tpchanges
-DELETE /api/data/tpchanges
-```
-
-Only rows whose `timePeriodId` is exactly `BASE_TP` use the base bulk-update route while the panel is in Multi mode. A `1-1` TP range in Multi mode is still treated as a Multi-TP row unless its `timePeriodId` is `BASE_TP`.
-
-If calculation type is included, it also updates:
+with row-level value, spec, bounds, and selected unit updates. If calculation type is included, it also updates:
 
 ```http
 PUT /api/data/diagrams/:diagramId
@@ -263,8 +201,6 @@ PUT /api/data/diagrams/:diagramId
 so `parameters.global_params.task_config.task_type` and existing `tps_specs.task` values stay aligned.
 
 At compute start, `translation.ts` rebuilds `parameters.tps_specs` from clean model definitions, connected streams, selected calculation type, and explicit user overrides.
-
-See `tp-specs-panel.md` for the full Base vs Multi-TP Specs behavior.
 
 ## Economic Panels
 
