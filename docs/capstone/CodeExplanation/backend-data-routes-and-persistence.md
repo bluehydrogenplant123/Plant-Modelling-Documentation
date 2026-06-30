@@ -62,7 +62,8 @@ All paths below include the `/api/data` prefix.
 | TP changes | `DELETE /tpchanges` | Deletes matching overrides after resolving canonical time-period context, and mirrors wrapper delete when possible. | Deletes Mongo `TpChanges`; may read Mongo `TpNodeVers`. |
 | TP changes | `GET /tpchanges` | Reads and dedupes overrides by required `diagramId` plus optional `nodeId`, `timePeriodId`, and `portLocation`; empty result returns 404. | Reads Mongo `TpChanges`. |
 | TP changes | `GET /tpchanges/all` | Reads and dedupes all overrides for a required diagram/node pair. | Reads Mongo `TpChanges`. |
-| TP specs | `PUT /tp-specs/bulk-update` | Mutates matching port variable objects inside each node `modelVersion`. | Reads/writes Mongo `Node`; reads Mongo `Diagram` for each matched node. |
+| TP specs | `PUT /tp-specs/bulk-update` | Mutates matching port variable objects inside each node `modelVersion`. Used by Base TP Specs rows and any explicit `BASE_TP` row. | Reads/writes Mongo `Node`; reads Mongo `Diagram` for each matched node. |
+| TP specs / Multi-TP | `POST /tpchanges`, `DELETE /tpchanges` | Multi-TP Specs rows save or clear sparse overrides instead of mutating node `modelVersion`. | Reads/writes Mongo `TpChanges`; may read Mongo `TpNodeVers` and `Node`. |
 | Snapshot | `GET /diagrams/:diagramId/export` | Builds a full-network snapshot from the authorized diagram. | Reads Mongo `Diagram`, `DomainSnapshot`, `Node`, `TpNodeVers`, `TpChanges`, `SubnetworkBlueprint`. |
 | Snapshot | `POST /diagrams/import` | Validates and migrates snapshot version, then recreates the network. | Writes Mongo `DomainSnapshot`, `Diagram`, `Node`, `TpNodeVers`, `TpChanges`, `SubnetworkBlueprint`. |
 | Snapshot | `POST /diagrams/:diagramId/duplicate` | Exports the source network and imports it under a copy name. | Reads and writes the same Mongo data as export/import. |

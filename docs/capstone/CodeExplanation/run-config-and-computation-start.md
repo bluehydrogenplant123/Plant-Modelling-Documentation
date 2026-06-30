@@ -1,14 +1,14 @@
 ---
 sidebar_position: 13
 title: Run Config and Computation Start
-description: Explains how run configuration data is loaded, edited in the header UI, and handed to compute start for solver and algorithm selection.
+description: Explains how run configuration data is loaded, edited in the header UI, and handed to compute start for solver, algorithm, log level, and task metadata selection.
 ---
 
 # Run Config and Computation Start Code Explanation
 
 ## Overview
 
-Run config and computation start are adjacent but separate flows. The current backend reads run configuration definitions from the PostgreSQL `RunConfigs` table, groups them as `runConfigs`, and returns them with domain data. The frontend lets users select solver and algorithm groups from that object, and compute start sends only the chosen names plus task metadata to `/api/compute/start`.
+Run config and computation start are adjacent but separate flows. The current backend reads run configuration definitions from the PostgreSQL `RunConfigs` table, groups them as `runConfigs`, and returns them with domain data. The frontend lets users select solver and algorithm groups from that object, choose a solver log level, and send the chosen names plus task metadata to `/api/compute/start`.
 
 The frontend also contains a save path that attempts to post edited run config values to `/api/data/run-configs/import`. The current backend route file does not define that route, so this is an implementation gap, not a working backend persistence contract.
 
@@ -33,10 +33,10 @@ For TP and Economic field ownership, see `time-period-and-economic-flow.md`.
 Run config and computation start are separate responsibilities:
 
 - Set Run edits stored solver and algorithm configuration attributes.
-- Run selects the solver, algorithm, run name, and maximum computation time for a new task.
+- Run selects the solver, algorithm, run name, maximum computation time, and solver log level for a new task.
 - The backend compute start route rebuilds solver parameters from the current diagram state and queues the computation task.
 
-Run config does not own TP ranges, durations, economic entities, economic mappings, or `parameters.costs`.
+Run config does not own TP ranges, durations, economic entities, economic mappings, or `parameters.costs`. The Run modal log-level dropdown also does not control browser console output or the Node/Winston logger; it is a solver-facing configuration value stored as `configuration.Log_level`.
 
 ## Field Ownership
 
@@ -47,6 +47,7 @@ Run config does not own TP ranges, durations, economic entities, economic mappin
 | Algorithm config attributes | `RunConfigModal` and `UniversalRunConfigPanel`. | Currently loaded from `RunConfigs`; frontend save attempts `/api/data/run-configs/import`, but the backend route is missing. | `ComputationTaskService.translateComputationConfig` uses the selected algorithm name. |
 | `runName` | `ComputationButton`. | Computation task row. | Required in `/api/compute/start`. |
 | `maxComputationTime` | `ComputationButton` UI, then backend route validation. | Computation configuration. | Passed to `translateComputationConfig`. |
+| `logLevel` / `Log_level` | `ComputationButton` UI, then backend route validation. | `computationTask.configuration.Log_level`. | Passed to `translateComputationConfig` and then to the solver request `configuration.Log_level`. |
 | `parameters.costs` | `computeRoutes.ts` and `translation.ts`. | `diagram.parameters.costs` after start. | Generated from `duration`, `durationUnit`, `tpNodeVers`, `costEntities`, and `costMappings`. |
 
 ## Data Flow
@@ -54,9 +55,9 @@ Run config does not own TP ranges, durations, economic entities, economic mappin
 1. The domain data route reads PostgreSQL `RunConfigs` through `buildRunConfigs()` and returns the grouped `runConfigs` object with the rest of the domain payload.
 2. The frontend stores `runConfigs` in Redux domain state and `HeaderBar` splits keys into solver and algorithm groups with `/algorithm/i`.
 3. `Set Run` opens `RunConfigModal` for the selected group. Editable saves currently attempt `/api/data/run-configs/import`; because the backend route is not present, treat that call as frontend intent that still needs backend implementation.
-4. `Run` opens `ComputationButton`, which chooses one solver key and one algorithm key from the same `runConfigs` object.
-5. The frontend posts `/api/compute/start` with `runName`, `solverName`, `algorithmName`, `maxComputationTime`, and `diagramId`.
-6. The backend start route rebuilds diagram parameters and uses `ComputationTaskService.translateComputationConfig(...)` to look up the selected solver and algorithm blocks from snapshot `runConfigs`.
+4. `Run` opens `ComputationButton`, which chooses one solver key and one algorithm key from the same `runConfigs` object and defaults the log level to `development`.
+5. The frontend posts `/api/compute/start` with `runName`, `solverName`, `algorithmName`, `maxComputationTime`, `logLevel`, and `diagramId`.
+6. The backend start route validates `logLevel` when provided, defaults invalid/missing internal values to `development`, rebuilds diagram parameters, and uses `ComputationTaskService.translateComputationConfig(...)` to look up the selected solver and algorithm blocks from snapshot `runConfigs`.
 7. A waiting computation task is created and queued for solver dispatch.
 
 ## Header Handoff
@@ -126,7 +127,40 @@ If a matching backend route is added and returns success, the frontend dispatche
 - `selectedSolver` to the first key that does not match `/algorithm/i`.
 - `selectedAlgorithm` to the first key that matches `/algorithm/i`.
 
-The computation modal lets the user choose run name, maximum computation time, solver, and algorithm. It can also open read-only `RunConfigModal` views for the selected solver or algorithm.
+The computation modal lets the user choose run name, maximum computation time, solver, algorithm, and log level. It can also open read-only `RunConfigModal` views for the selected solver or algorithm.
+
+### Log Level Dropdown
+
+`ComputationButton` defines the allowed log-level values as a frontend union:
+
+```ts
+type LogLevel = 'testing' | 'development' | 'production';
+```
+
+The dropdown defaults to `development` and renders:
+
+- `testing`
+- `development`
+- `production`
+
+When a computation is waiting, computing, or already has details available from `/api/compute/details/:diagramId`, the frontend syncs `selectedLogLevel` from `computationInfo.logLevel` only if the returned value is one of those three allowed values. This keeps the modal consistent after reloads, polling updates, and completed/failed task views.
+
+The field is disabled while computation is processing, just like run name, max execution time, solver, and algorithm. It is intentionally task-local: changing the dropdown affects the next `/api/compute/start` request and does not mutate `RunConfigs`.
+
+```mermaid
+flowchart TD
+    A[Open Run modal] --> B[Default selectedLogLevel = development]
+    B --> C{Existing task details returned?}
+    C -- yes --> D{details.logLevel is allowed?}
+    D -- yes --> E[Sync dropdown from task]
+    D -- no --> B
+    C -- no --> F[User selects testing/development/production]
+    E --> F
+    F --> G[POST /api/compute/start with logLevel]
+    G --> H[Backend validates allowed value]
+    H --> I[translateComputationConfig stores Log_level]
+    I --> J[Solver request configuration.Log_level]
+```
 
 Before posting a start request, the frontend guards against:
 
@@ -146,6 +180,7 @@ The start body is:
   "runName": "Run 1",
   "solverName": "Selected Solver",
   "algorithmName": "Selected Algorithm",
+  "logLevel": "development",
   "maxComputationTime": 50,
   "diagramId": "..."
 }
@@ -163,7 +198,7 @@ The frontend computes `maxComputationTime` from the UI value and selected unit b
 - `solverName`
 - `algorithmName`
 
-The route rejects missing required fields and computation times below the backend minimum.
+The route rejects missing required fields, computation times below the backend minimum, and any provided `logLevel` outside `testing`, `development`, or `production`. If `logLevel` is omitted, the backend normalizes it to `development`.
 
 After validation, the route:
 
@@ -179,10 +214,23 @@ After validation, the route:
 10. Builds `costsPayload`.
 11. Calls `translation(...)`.
 12. Writes the returned parameters back to the diagram.
-13. Builds the computation configuration from the selected solver and algorithm.
+13. Builds the computation configuration from the selected solver, algorithm, and normalized log level.
 14. Creates a waiting computation task.
 
-The compute route does not read solver parameters from the run config modal state directly. It receives only the selected solver and algorithm names, then delegates config construction to `ComputationTaskService.translateComputationConfig`.
+The compute route does not read solver parameters from the run config modal state directly. It receives only the selected solver and algorithm names plus task-level metadata, then delegates config construction to `ComputationTaskService.translateComputationConfig`.
+
+`translateComputationConfig(...)` stores the log level in the exact solver-facing key `Log_level`:
+
+```ts
+{
+  max_computation_time: maxComputationTime,
+  solver,
+  algorithm,
+  Log_level: logLevel
+}
+```
+
+`GET /api/compute/details/:diagramId` returns that stored value as `computationInfo.logLevel` for every task status branch. If the stored value is missing or invalid, the details route falls back to `development`.
 
 ## TP and Economic Handoff
 
@@ -252,4 +300,6 @@ git diff --check -- docs/CodeExplanation/time-period-and-economic-flow.md docs/C
 - `UniversalRunConfigPanel` converts numeric-looking strings on save, but deeper semantic validation belongs to the missing run config import/backend path.
 - The current frontend attempts `POST /api/data/run-configs/import`; the current backend does not define that route and only reads `RunConfigs` into domain data.
 - `parameters.costs` is produced at compute start from persisted diagram fields. It should not be treated as a manual editing surface.
+- `logLevel` is a solver-facing task configuration value. It does not control frontend console logging, backend Winston logging, or diagnostic debug `fetch(...)` calls.
+- Keep the frontend `LOG_LEVEL_OPTIONS`, backend `ComputationLogLevel`, backend `isComputationLogLevel(...)`, and documentation values synchronized if a new level is added.
 - `src/src/backend/services/solve_request.json` is not the current source of truth for this flow.
