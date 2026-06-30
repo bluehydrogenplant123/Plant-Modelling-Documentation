@@ -62,7 +62,13 @@ All paths below include the `/api/data` prefix.
 | TP changes | `DELETE /tpchanges` | Deletes matching overrides after resolving canonical time-period context, and mirrors wrapper delete when possible. | Deletes Mongo `TpChanges`; may read Mongo `TpNodeVers`. |
 | TP changes | `GET /tpchanges` | Reads and dedupes overrides by required `diagramId` plus optional `nodeId`, `timePeriodId`, and `portLocation`; empty result returns 404. | Reads Mongo `TpChanges`. |
 | TP changes | `GET /tpchanges/all` | Reads and dedupes all overrides for a required diagram/node pair. | Reads Mongo `TpChanges`. |
-| TP specs | `PUT /tp-specs/bulk-update` | Mutates matching port variable objects inside each node `modelVersion`. | Reads/writes Mongo `Node`; reads Mongo `Diagram` for each matched node. |
+| TP spec versions | `GET /diagrams/:diagramId/tp-spec-versions` | Lists TP spec versions for the resolved scope and requested calculation type, creating V1 when missing. | Reads/writes Mongo `TpSpecVersionSet` and `TpSpecVersionTable`; may stamp legacy `TpChanges`. |
+| TP spec versions | `POST /diagrams/:diagramId/tp-spec-versions` | Creates a new version for the current scope and calculation type only, copying sparse changes from the selected source version. | Writes Mongo `TpSpecVersionSet`, `TpSpecVersionTable`, `TpSpecBaseChange`, or version-scoped `TpChanges`. |
+| TP spec versions | `PATCH /tp-spec-versions/:versionSetId` | Renames a version display name. | Updates Mongo `TpSpecVersionSet`. |
+| TP spec versions | `POST /tp-spec-versions/:versionSetId/apply` | Makes one version active for its scope and calculation type. Other calculation types are not changed. | Updates Mongo `TpSpecVersionSet.isActive`. |
+| TP spec versions | `DELETE /tp-spec-versions/:versionSetId` | Deletes a non-default version and falls back to V1 when the deleted version was active. | Deletes Mongo `TpSpecVersionSet`, `TpSpecVersionTable`, `TpSpecBaseChange`, and version-scoped `TpChanges`. |
+| TP spec tables | `GET /diagrams/:diagramId/tp-spec-table` | Materializes one version table by overlaying sparse changes on model defaults and TP rows. | Reads Mongo `Diagram`, `Node`, `TpNodeVers`, `TpSpecBaseChange`, and `TpChanges`. |
+| TP spec tables | `PUT /tp-spec-tables/:versionTableId/changes` | Saves sparse row changes for the selected Base TP or Multi-TP version table. | Writes Mongo `TpSpecBaseChange` for Base TP, or version-scoped `TpChanges` for Multi-TP. |
 | Snapshot | `GET /diagrams/:diagramId/export` | Builds a full-network snapshot from the authorized diagram. | Reads Mongo `Diagram`, `DomainSnapshot`, `Node`, `TpNodeVers`, `TpChanges`, `SubnetworkBlueprint`. |
 | Snapshot | `POST /diagrams/import` | Validates and migrates snapshot version, then recreates the network. | Writes Mongo `DomainSnapshot`, `Diagram`, `Node`, `TpNodeVers`, `TpChanges`, `SubnetworkBlueprint`. |
 | Snapshot | `POST /diagrams/:diagramId/duplicate` | Exports the source network and imports it under a copy name. | Reads and writes the same Mongo data as export/import. |
@@ -76,7 +82,9 @@ All paths below include the `/api/data` prefix.
 
 Postgres is treated as the read-side catalog for imported domain knowledge: domains, model mappings, stream mappings, model/version/port/var metadata, system variable bounds/types, unit conversions, colors, task types, run config rows, and cost entity defaults. `dataRoutes.ts` reads this data through `postgresClient` and transforms it for the frontend; it does not write Postgres data.
 
-MongoDB is the user-state store. `Diagram` owns canvas JSON, translated `parameters`, optional Economic cost JSON, snapshot relation, verification state, type, parent connections, and base duration. `Node` owns persisted node `modelVersion` cache by diagram. `TpNodeVers` and `TpChanges` own MTP model-version rows and manual/computed per-port overrides. `DomainSnapshot` freezes the domain payload used when a diagram was saved. `SubnetworkBlueprint` owns reusable blueprint metadata and `portsMapping`.
+MongoDB is the user-state store. `Diagram` owns canvas JSON, translated `parameters`, optional Economic cost JSON, snapshot relation, verification state, type, parent connections, and base duration. `Node` owns persisted node `modelVersion` cache by diagram. `TpNodeVers` owns MTP model-version rows. `TpChanges` owns Multi-TP manual/computed per-port overrides and, for TP spec versions, stores version-scoped Multi-TP sparse changes. `TpSpecVersionSet` and `TpSpecVersionTable` own TP spec version metadata. `TpSpecBaseChange` owns sparse Base TP spec patches. `DomainSnapshot` freezes the domain payload used when a diagram was saved. `SubnetworkBlueprint` owns reusable blueprint metadata and `portsMapping`.
+
+PostgreSQL also stores computation result metadata for applied TP spec versions. `ComputationResults` includes `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table` so a stored run can be traced back to the applied version table.
 
 ## Data Flow
 
@@ -93,6 +101,7 @@ MongoDB is the user-state store. `Diagram` owns canvas JSON, translated `paramet
 - `buildNodeCacheRecordFromDiffs(...)`, `ensureNodeCacheCoverage(...)`, `remapCanvasWithNodeCache(...)`, `upsertDiagramNodesFromCacheAndCanvas(...)`, and `pruneDiagramNodes(...)`: keep canvas node IDs, Mongo `Node` rows, and cached `modelVersion` payloads consistent during save.
 - `getCachedModelVersion(...)`: reads a model version from a node cache map and falls back from document id to stored `nodeId` when callers pass the wrong identifier.
 - `translation(...)` and `buildSubnetworkPortMap(...)`: turn saved canvas, domain models, node cache, TP rows, TP changes, and subnetwork mappings into persisted diagram `parameters`.
+- `getActiveTpSpecContext(...)`, `listTpSpecVersionSets(...)`, and `getTpSpecContextByVersionSet(...)`: resolve TP spec versions by diagram, scope, and calculation type; create V1 defaults; and return the active version table used by the network and solve request.
 - `processSubnetworkInstances(...)`, `duplicateBlueprintNodes(...)`, `applySubnetworkStreamsToInternalNodes(...)`, `propagateSubnetworkPortValuesFromNodeCache(...)`, and `propagateInstancePortValuesToParent(...)`: create/reuse subnetwork instance diagrams and keep parent/child port values aligned.
 - `buildFullNetworkSnapshotFromDiagram(...)` and `importFullNetworkSnapshotInternal(...)`: export/import complete networks, including recursive subnetwork data.
 - `normalizeBlueprintPortsMapping(...)`, `migrateToLatest(...)`, `migrateCanvasIfNeeded(...)`, and `getCanvasVersion(...)`: keep blueprint mappings and snapshot/canvas schema metadata compatible.
@@ -105,6 +114,7 @@ MongoDB is the user-state store. `Diagram` owns canvas JSON, translated `paramet
 - Debug ingest calls to `http://127.0.0.1:7242/ingest/...` are suppressed by a local fetch wrapper unless `DEBUG_INGEST=true`; they are diagnostics, not persistence.
 - Schema upgrade endpoints currently report no pending upgrades and skip bulk upgrades. Import still rejects unknown snapshot versions and calls `migrateToLatest(...)` for known older versions.
 - TP change creation can recover a missing `portVarValue` from an existing manual override or the node model default; if no value can be resolved, creation returns 400.
+- TP spec version reads create V1 defaults automatically. V1 cannot be deleted. Saving a non-active version persists sparse changes but does not change the active network state until the version is applied.
 - Subnetwork blueprint reads normalize legacy `portsMapping` and write the normalized JSON back when migration is detected.
 
 ## Known Cautions
@@ -114,6 +124,8 @@ MongoDB is the user-state store. `Diagram` owns canvas JSON, translated `paramet
 - `DELETE /diagrams/:diagramId` sends a 403 for unauthorized diagrams but does not return before calling cleanup in the current source. Treat that as a source caution before changing or relying on delete behavior.
 - Node routes can be ambiguous because `nodeId` is not globally unique across diagrams. Pass `diagramId` when reading, updating, or deleting a node.
 - Save endpoints are performance-sensitive. `nodeCacheDiffs`/`nodeCacheFull`, `ensureNodeCacheCoverage`, and selective node upserts are used to avoid rewriting every node model version on every save.
+- TP spec versions are scoped by both TP mode and calculation type. A query or update that omits `calcType` can accidentally read or mutate the wrong version family.
+- Base TP spec version data and Multi-TP spec version data use different sparse stores. Do not move Base TP patches into `TpChanges`, and do not store Multi-TP version rows in `TpSpecBaseChange`.
 - Do not document behavior from `src/src/backend/services/solve_request.json`; it is a generated runtime artifact and is outside this persistence API source of truth.
 
 ## Testing and Verification

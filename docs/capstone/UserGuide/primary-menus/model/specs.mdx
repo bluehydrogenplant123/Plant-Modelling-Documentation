@@ -8,7 +8,7 @@ import tpSpecsDialog from './images/tp-specs-dialog.png';
 
 # Specs
 
-Use **Specs** when you need to edit base specification values for the model.
+Use **Specs** when you need to review, version, apply, or edit base specification values for the model.
 
 ## Where To Find It
 
@@ -17,7 +17,7 @@ Use **Specs** when you need to edit base specification values for the model.
 
 ## What It Opens
 
-The **Specs** button opens the shared specification panel in base mode. It loads diagram node data and lets you edit specification rows for the base time period.
+The **Specs** button opens the shared TP Specs panel in Base TP mode. It loads diagram node data and lets you edit specification rows for the base time period.
 
 <figure style={{ maxWidth: '980px', margin: '1.5rem auto' }}>
   <img
@@ -33,13 +33,37 @@ The **Specs** button opens the shared specification panel in base mode. It loads
 ## Basic Steps
 
 1. Open **Specs**.
-2. Review the loaded specification rows.
-3. Edit the required base specification values.
-4. Click **Save**.
+2. Select the calculation type tab: **Simulation**, **Optimization**, **DataRec**, or **ParamUpdt**.
+3. Select the version to inspect from the version menu.
+4. Edit the required base specification values.
+5. Click **Save** to persist changes to the selected version.
+6. Click **Apply** when you want that version to become the version used by the network and the next solve request.
+
+## Version Management
+
+Base TP specs are versioned separately for each calculation type. Creating **V2** under **Simulation** creates only the Simulation version table; it does not create V2 for Optimization, DataRec, or ParamUpdt.
+
+Default Base TP tables use these names:
+
+| Calculation type | Default table |
+| --- | --- |
+| Simulation | `TPSPECV1` |
+| Optimization | `TPSPECOPTV1` |
+| DataRec | `TPSPECDRV1` |
+| ParamUpdt | `TPSPECPEV1` |
+
+Version behavior:
+
+- **V1 Default** is created automatically and cannot be deleted.
+- **New** copies the currently selected version for the current calculation type.
+- **Rename** changes the display name shown in the version menu.
+- **Delete** removes the selected non-default version. If the deleted version was active, the panel falls back to V1 for that calculation type.
+- **Save** stores edits in the selected version. If that version is not active, the network is not updated until **Apply** is clicked.
+- **Apply** makes the selected version active for the current calculation type, refreshes the panel, and updates the values used by the network.
 
 ## Result
 
-Base specification changes are saved for the current diagram.
+Base specification changes are saved for the current diagram and version. The active Base TP spec version is included in the solve request metadata as `tp_spec_scope`, `tp_spec_version`, and `active_tp_spec_table`.
 
 ## Related Pages
 

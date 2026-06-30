@@ -25,8 +25,12 @@ Current behavior was checked in these source files:
 - `src/src/frontend/src/components/header-bar/index.tsx`
 - `src/src/backend/routes/dataRoutes.ts`
 - `src/src/backend/routes/computeRoutes.ts`
+- `src/src/backend/utils/tpSpecVersionUtils.ts`
 - `src/src/backend/utils/economicCosts.ts`
 - `src/src/backend/utils/translation.ts`
+- `src/src/backend/utils/storeComputationResultUtils.ts`
+- `src/src/backend/prisma/mongodb/schema.prisma`
+- `src/src/backend/prisma/postgres/schema.prisma`
 - `src/tests/backend/utils/economicCosts.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
 
@@ -52,6 +56,8 @@ The UI does not edit `parameters.costs` directly. `parameters.costs` is generate
 | --- | --- | --- | --- |
 | `duration` | Base TP owns diagram-level base duration. Global TP owns TP-row duration. | `diagram.duration`; `tpNodeVers.duration` | `computeRoutes.ts` builds `parameters.costs.duration`. |
 | `durationUnit` | Base TP owns diagram-level base unit. Global TP owns TP-row unit. | `diagram.durationUnit`; `tpNodeVers.durationUnit` | `computeRoutes.ts` normalizes to `DurationUnit`. |
+| Base TP spec versions | The TP Specs panel in Base TP mode. | `tp_spec_version_sets`, `tp_spec_version_tables`, and sparse `tp_spec_base_changes`. | `computeRoutes.ts` resolves the active Base TP version for the current calculation type before translation. |
+| Multi-TP spec versions | The TP Specs panel in Multi-TP mode. | `tp_spec_version_sets`, `tp_spec_version_tables`, and version-scoped `tp_changes`. | `computeRoutes.ts` resolves the active MTP version for the current calculation type before translation. |
 | `costEntities` | Base Economic and Multi-TP Economic panels. Backend MTP initialization may seed or stretch rows. | `diagram.costEntities` | `translation.ts` sanitizes into `parameters.costs.entities`. |
 | `costMappings` | Base Economic and Multi-TP Economic panels. Backend MTP initialization may stretch rows. | `diagram.costMappings` | `translation.ts` sanitizes into `parameters.costs.mappings`. |
 | `parameters.costs` | Backend compute start route and translation layer. | `diagram.parameters.costs` after `/api/compute/start` | Solver-facing payload. Not the source of truth for editing. |
@@ -60,12 +66,14 @@ The UI does not edit `parameters.costs` directly. `parameters.costs` is generate
 
 1. Base TP edits save `duration` and `durationUnit` to the diagram through `/api/data/diagrams/:diagramId/base-duration`.
 2. Global TP edits read and write `tpNodeVers` rows for the current network, including TP ranges, durations, units, and model versions.
-3. Base Economic and Multi-TP Economic edits save `costEntities` and `costMappings` to the diagram through `/api/data/diagrams/:diagramId/costs`.
-4. Multi-TP initialization or range changes may call `/api/data/diagrams/:diagramId/costs/initialize-mtp` so economic rows match the current TP structure.
-5. When `/api/compute/start` runs, `computeRoutes.ts` loads the diagram, TP rows, cost entities, and cost mappings.
-6. `computeRoutes.ts` builds `costsPayload` from persisted diagram fields plus `buildCostDurationPayload(...)`.
-7. `translation.ts` sanitizes that payload and writes solver-facing `parameters.costs`.
-8. The backend saves the generated `parameters` back to the diagram before queueing the computation task.
+3. TP Specs edits are stored as versioned sparse changes. Base TP specs use `tp_spec_base_changes`; Multi-TP specs use version-scoped `tp_changes`.
+4. Applying a TP spec version marks that version active only for its scope and calculation type.
+5. Base Economic and Multi-TP Economic edits save `costEntities` and `costMappings` to the diagram through `/api/data/diagrams/:diagramId/costs`.
+6. Multi-TP initialization or range changes may call `/api/data/diagrams/:diagramId/costs/initialize-mtp` so economic rows match the current TP structure.
+7. When `/api/compute/start` runs, `computeRoutes.ts` loads the diagram, TP rows, active TP spec version, cost entities, and cost mappings.
+8. `computeRoutes.ts` builds `costsPayload` from persisted diagram fields plus `buildCostDurationPayload(...)`.
+9. `translation.ts` sanitizes that payload and writes solver-facing `parameters.costs`.
+10. The backend saves the generated `parameters` back to the diagram before queueing the computation task.
 
 Saved economic entity rows use this storage shape:
 
@@ -182,25 +190,91 @@ The button renders only after verification state allows it. The header keeps the
 
 ## TP Specs
 
-`TPSpecsButton` edits node model variable specs and values, not TP range duration.
+`TPSpecsButton` edits node model variable specs and values, not TP range duration. It is version-aware and works in two separate scopes:
 
-The panel reads the diagram and node definitions, builds rows from model-version `ports_var` and `model_var_object`, and displays `From TP` and `To TP` as current fixed values. In the current implementation those rows are built as `1-1`.
+- Base TP scope for single-period specs.
+- Multi-TP scope for time-period-specific specs.
 
-On save it sends:
+Each scope is also separated by calculation type. Simulation, Optimization, DataRec, and ParamUpdt each have their own version list and active version. Creating `V2` while the Simulation tab is selected creates only the Simulation version table; it does not create matching V2 tables for the other calculation types.
 
-```http
-PUT /api/data/tp-specs/bulk-update
+Default Base TP logical table names are:
+
+| Calculation type | Table name |
+| --- | --- |
+| Simulation | `TPSPECV1` |
+| Optimization | `TPSPECOPTV1` |
+| DataRec | `TPSPECDRV1` |
+| ParamUpdt | `TPSPECPEV1` |
+
+Default Multi-TP logical table names use the same suffixes with an `M` prefix:
+
+| Calculation type | Table name |
+| --- | --- |
+| Simulation | `MTPSPECV1` |
+| Optimization | `MTPSPECOPTV1` |
+| DataRec | `MTPSPECDRV1` |
+| ParamUpdt | `MTPSPECPEV1` |
+
+The version metadata is stored in MongoDB:
+
+```ts
+TpSpecVersionSet {
+  diagramId,
+  scope,
+  calcType,
+  versionNo,
+  code,
+  displayName,
+  isDefault,
+  isActive
+}
+
+TpSpecVersionTable {
+  diagramId,
+  versionSetId,
+  scope,
+  calcType,
+  logicalName
+}
 ```
 
-with row-level value, spec, bounds, and selected unit updates. If calculation type is included, it also updates:
+Large TP spec tables are not duplicated in full. The backend stores only sparse user changes:
+
+- Base TP changes are stored in `TpSpecBaseChange` with a JSON patch for value/spec/bounds/unit fields.
+- Multi-TP changes are stored in `TpChanges` with `tpSpecVersionSetId`, `tpSpecVersionTableId`, `calcType`, and `changeSource`.
+
+The frontend uses these version endpoints:
 
 ```http
-PUT /api/data/diagrams/:diagramId
+GET /api/data/diagrams/:diagramId/tp-spec-versions
+POST /api/data/diagrams/:diagramId/tp-spec-versions
+PATCH /api/data/tp-spec-versions/:versionSetId
+POST /api/data/tp-spec-versions/:versionSetId/apply
+DELETE /api/data/tp-spec-versions/:versionSetId
+GET /api/data/diagrams/:diagramId/tp-spec-table
+PUT /api/data/tp-spec-tables/:versionTableId/changes
 ```
 
-so `parameters.global_params.task_config.task_type` and existing `tps_specs.task` values stay aligned.
+`Save` and `Apply` are intentionally different:
 
-At compute start, `translation.ts` rebuilds `parameters.tps_specs` from clean model definitions, connected streams, selected calculation type, and explicit user overrides.
+- `Save` persists edits to the selected version table. Saving a non-active version does not change the network.
+- `Apply` marks the selected version active for the current scope and calculation type, refreshes the TP Specs panel, and updates the values used by the network and the next solve request.
+- `V1 Default` is created automatically and cannot be deleted. If an active non-default version is deleted, that scope and calculation type fall back to V1.
+
+At compute start, `computeRoutes.ts` resolves the active TP spec context with `getActiveTpSpecContext(...)`, overlays the active sparse changes, and attaches version metadata to `parameters.global_params.task_config`:
+
+```ts
+{
+  tp_spec_scope,
+  tp_spec_version,
+  tp_spec_version_name,
+  active_tp_spec_table,
+  active_tp_spec_version_set_id,
+  active_tp_spec_version_table_id
+}
+```
+
+Callback result storage copies this metadata into PostgreSQL `ComputationResults` columns `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table` so run results can be traced back to the version used for the solve.
 
 ## Economic Panels
 
@@ -231,7 +305,7 @@ It accepts TP aliases such as `fromTp`, `fromTP`, `from_tp`, and `From TP`, and 
 
 ## Compute Start Handoff
 
-When `/api/compute/start` runs, `computeRoutes.ts` builds:
+When `/api/compute/start` runs, `computeRoutes.ts` resolves the active TP spec version, then builds:
 
 ```ts
 const costsPayload = {
@@ -249,6 +323,8 @@ const costsPayload = {
 - Multi-TP entities are grouped with `timePeriodCosts`.
 - `mappings` drop `scope`, `fromTp`, and `toTp`; the solver receives network/node/port/var/entity only.
 - `duration` is emitted as an array with `From TP`, `To TP`, `Duration`, and `DurationUnit`.
+
+The same compute-start pass writes TP spec version metadata into `parameters.global_params.task_config`. The solver request therefore identifies both the calculation type and the applied TP spec table. The callback storage path persists that metadata with computation results for later run-history filtering and display.
 
 ## Testing
 
@@ -271,3 +347,5 @@ npx.cmd jest tests/backend/utils/economicCosts.test.ts tests/backend/utils/trans
 - Base TP is intentionally blocked once real Multi-TP ranges exist.
 - `TimePeriodViewer` contains save code for TP rows, but the current UI disables TP structure editing with `TP_STRUCTURE_EDITING_ENABLED = false`.
 - Legacy unscoped `1-1` cost rows are base rows for compatibility. New Multi-TP rows should use explicit `scope: "mtp"`.
+- Do not treat a saved TP spec version as applied unless `isActive` is true for that exact scope and calculation type.
+- Saving a non-active TP spec version is allowed, but it must not update node cache, active `tp_changes`, or solve request metadata until the user clicks `Apply`.
