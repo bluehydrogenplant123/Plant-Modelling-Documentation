@@ -73,6 +73,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         {type: 'doc', id: 'capstone/CodeExplanation/CODE_EXPLANATION_GUIDELINES'},
+        {type: 'doc', id: 'capstone/CodeExplanation/ai-codeexplanation-maintenance-workflow'},
         {type: 'doc', id: 'capstone/CodeExplanation/code-explanation-index'},
         {type: 'doc', id: 'capstone/CodeExplanation/code-explanation-overview'},
         {type: 'doc', id: 'capstone/CodeExplanation/dashboard-and-canvas'},
