@@ -6,22 +6,27 @@ description: Introduction to the Calc Type primary menu.
 
 # Calc Type Menu
 
-The **Calc Type** primary menu sets the calculation mode for the current network. The selected mode affects node variables and specification behavior.
+The **Calc Type** primary menu sets the calculation mode for the current network. The selected mode affects which node variable specifications are used in **TP Specs**.
 
 ## Secondary Buttons
 
+Click a button name to open the detailed page for that calculation type.
+
 | Button | What It Is For |
 | --- | --- |
-| **Simulation** | Use simulation mode. |
-| **Optimization** | Use optimization mode. |
-| **DataRec** | Use data reconciliation mode. |
-| **ParamUpdt** | Use parameter update mode. |
+| **[Simulation](./calc-type/simulation)** | Use simulation mode. |
+| **[Optimization](./calc-type/optimization)** | Use optimization mode. |
+| **[DataRec](./calc-type/data-rec)** | Use data reconciliation mode. |
+| **[ParamUpdt](./calc-type/param-updt)** | Use parameter update mode. |
 
-When you choose a different calculation type, the application asks you to confirm the switch.
+Clicking the selected type opens **TP Specs**. Clicking a different type opens **Switch Calc Type** first, then changes the mode after confirmation.
+
+Calc Type buttons can be disabled while computation-related read-only rules are active.
 
 ## Related Pages
 
 - [Model menu](./model)
+- [Specs](./model/specs)
 - [Set Run menu](./set-run)
 - [Run button](./run)
 - [Back to interface overview](../interface-overview)
