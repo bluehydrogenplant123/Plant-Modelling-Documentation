@@ -4,6 +4,8 @@ sidebar_position: 14
 description: Use the Export secondary button from the Model menu.
 ---
 
+import exportDataDialog from './images/export-data-dialog.png';
+
 # Export
 
 Use **Export** when you need to download diagram data from the current network.
@@ -16,6 +18,17 @@ Use **Export** when you need to download diagram data from the current network.
 ## What It Opens
 
 The **Export Data** dialog lets you choose **Full Data**, **Solver Data**, or **Algorithm Data**. For **Full Data**, you can enter an **Export File Name**. The app adds `.json` automatically when needed.
+
+<figure style={{ maxWidth: '560px', margin: '1.5rem auto' }}>
+  <img
+    src={exportDataDialog}
+    alt="Export Data dialog with export type options, file name field, and Export button"
+    style={{ width: '100%', height: 'auto', borderRadius: '6px' }}
+  />
+  <figcaption style={{ fontSize: '0.9rem', color: 'var(--ifm-color-emphasis-700)', textAlign: 'center', marginTop: '0.5rem' }}>
+    Choose the export data type, enter a file name when needed, then click <strong>Export</strong>.
+  </figcaption>
+</figure>
 
 ## Basic Steps
 

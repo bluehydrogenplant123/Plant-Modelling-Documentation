@@ -4,6 +4,8 @@ sidebar_position: 5
 description: Use the Subnetwork Editor secondary button from the Model menu.
 ---
 
+import subnetworkEditorDialog from './images/subnetwork-editor-dialog.png';
+
 # Subnetwork Editor
 
 Use **Subnetwork Editor** when you need to define or edit a reusable subnetwork from the current model context.
@@ -16,6 +18,17 @@ Use **Subnetwork Editor** when you need to define or edit a reusable subnetwork 
 ## What It Opens
 
 The **Subnetwork Editor** dialog includes fields for **Name** and **Icon SVG**, an icon **Preview**, **Upload Icon**, and a **Port Mappings** section. Port mappings define how internal nodes and ports are exposed on the subnetwork.
+
+<figure style={{ maxWidth: '980px', margin: '1.5rem auto' }}>
+  <img
+    src={subnetworkEditorDialog}
+    alt="Annotated Subnetwork Editor dialog showing subnetwork name, port mappings, and Save button"
+    style={{ width: '100%', height: 'auto', borderRadius: '6px' }}
+  />
+  <figcaption style={{ fontSize: '0.9rem', color: 'var(--ifm-color-emphasis-700)', textAlign: 'center', marginTop: '0.5rem' }}>
+    Name the subnetwork, add port mappings for exposed ports, then click <strong>Save</strong>.
+  </figcaption>
+</figure>
 
 ## Basic Steps
 
