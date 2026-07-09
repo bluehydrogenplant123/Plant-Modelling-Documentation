@@ -16,7 +16,7 @@ Within that source parent, current `CodeExplanation` pages live under `docs/Code
 
 In the published Docusaurus sidebar, the source folders appear as top-level groups: `Installation` and `CodeExplanation`. Contributors should not expect or create another visible wrapper menu above them.
 
-These pages form a maintenance map for the main application flows: dashboard and canvas entry, header controls, node and edge editing, diagram save and node cache persistence, subnetwork persistence, TP and Economic data, run configuration, backend data routes, compute dispatch, solver callbacks, translation, reverse translation, and Excel import setup.
+These pages form a maintenance map for the main application flows: dashboard and canvas entry, header controls, equation writing, node and edge editing, diagram save and node cache persistence, subnetwork persistence, TP and Economic data, run configuration, Plant Measurements and DataRec input, backend data routes, compute dispatch, solver callbacks, translation, reverse translation, and Excel import setup.
 
 Use this overview for orientation, then use the [Code Explanation Index](./code-explanation-index.md) as the complete current link entry point.
 
@@ -26,7 +26,8 @@ The current `CodeExplanation` set represents the core source areas a contributor
 
 - It maps the primary frontend editing path from dashboard load to React Flow canvas interaction.
 - It follows important state handoffs between React components, Redux slices, backend routes, MongoDB diagrams and nodes, PostgreSQL reference data, and local storage.
-- It explains the main persistence flows for saved diagrams, dirty node cache data, subnetwork blueprints, subnetwork instances, TP changes, and computation results.
+- It explains the main persistence flows for saved diagrams, dirty node cache data, subnetwork blueprints, subnetwork instances, equation definitions, TP changes, and computation results.
+- It documents Plant Measurements as the Analysis workflow that maps model variables to instruments, imports measurement rows, persists them in MongoDB, and exposes DataRec-ready rows.
 - It documents the solver-facing boundary: compute start, Bull queue dispatch, solver request construction, callback handling, reverse translation, and result storage.
 - It documents the import boundary that turns system Excel workbooks into normalized CSV contracts and PostgreSQL catalog data.
 
@@ -57,23 +58,26 @@ Ignore misplaced or generated `CodeExplanation` copies under `version6.1/`, incl
 1. Start with [CodeExplanation Writing Standards](./CODE_EXPLANATION_GUIDELINES.md) to understand placement, page structure, generated-artifact rules, and verification expectations.
 2. Use the [Code Explanation Index](./code-explanation-index.md) to locate the current page for a feature or workflow.
 3. Read [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md), then [Header Bar Code Explanation](./header-bar.md), to understand the main frontend shell.
-4. Read [Shape Node and Ports Code Explanation](./shape-node-and-ports.md), [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md), and [Node Modal and Variable Inputs Code Explanation](./node-modal-and-variable-inputs.md) for canvas element editing.
-5. Read [Save Diagram and Node Cache Code Explanation](./save-diagram-and-node-cache.md) before changing persistence, save metadata, dirty node cache behavior, or canonical node ID remapping.
-6. Read [Subnetwork Blueprint and Instance Flow Code Explanation](./subnetwork-blueprint-and-instance-flow.md) before changing reusable blueprint or wrapper-instance behavior.
-7. Read [Time Period and Economic Flow](./time-period-and-economic-flow.md) and [Run Config and Computation Start](./run-config-and-computation-start.md) before changing run setup, TP data, Economic data, or compute-start handoff.
-8. Read [Backend Data Routes and Persistence Code Explanation](./backend-data-routes-and-persistence.md) before changing Express data routes, authentication behavior, MongoDB diagram/node persistence, or PostgreSQL catalog reads.
-9. Read [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md) and [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md) before changing solver request shape, queue behavior, callbacks, generated parameters, or result persistence.
-10. Read [Excel Import Pipeline Code Explanation](./excel-import-pipeline.md) before changing workbook normalization, importer scripts, Prisma setup, or reference-data loading.
+4. Read [Equation Writing Module Code Explanation](./equation-writing-module.md) before changing Model-row equation authoring, diagram equation persistence, or solver `parameters.equations` handoff.
+5. Read [Shape Node and Ports Code Explanation](./shape-node-and-ports.md), [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md), and [Node Modal and Variable Inputs Code Explanation](./node-modal-and-variable-inputs.md) for canvas element editing.
+6. Read [Save Diagram and Node Cache Code Explanation](./save-diagram-and-node-cache.md) before changing persistence, save metadata, dirty node cache behavior, or canonical node ID remapping.
+7. Read [Subnetwork Blueprint and Instance Flow Code Explanation](./subnetwork-blueprint-and-instance-flow.md) before changing reusable blueprint or wrapper-instance behavior.
+8. Read [Time Period and Economic Flow](./time-period-and-economic-flow.md) and [Run Config and Computation Start](./run-config-and-computation-start.md) before changing run setup, TP data, Economic data, or compute-start handoff.
+9. Read [Plant Measurements and Instrument Mapping Code Explanation](./plant-measurements-and-instrument-mapping.md) before changing Analysis-row plant measurement UI, instrument mappings, measurement import, MongoDB measurement rows, or `datarec-input`.
+10. Read [Backend Data Routes and Persistence Code Explanation](./backend-data-routes-and-persistence.md) before changing Express data routes, authentication behavior, MongoDB diagram/node persistence, or PostgreSQL catalog reads.
+11. Read [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md) and [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md) before changing solver request shape, queue behavior, callbacks, generated parameters, or result persistence.
+12. Read [Excel Import Pipeline Code Explanation](./excel-import-pipeline.md) before changing workbook normalization, importer scripts, Prisma setup, or reference-data loading.
 
 ## Page Map by Functional Domain
 
 | Functional domain | Read first | Main boundary explained |
 | --- | --- | --- |
 | Documentation standards | [CodeExplanation Writing Standards](./CODE_EXPLANATION_GUIDELINES.md), [Code Explanation Index](./code-explanation-index.md) | Current docs placement, page shape, verification expectations, and link entry points. |
-| Frontend shell | [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md), [Header Bar Code Explanation](./header-bar.md) | Dashboard actions, canvas route state, React Flow shell, header controls, and high-level edit guards. |
+| Frontend shell and model authoring | [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md), [Header Bar Code Explanation](./header-bar.md), [Equation Writing Module Code Explanation](./equation-writing-module.md) | Dashboard actions, canvas route state, React Flow shell, header controls, high-level edit guards, and Model-row equation authoring. |
 | Canvas element editing | [Shape Node and Ports Code Explanation](./shape-node-and-ports.md), [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md), [Node Modal and Variable Inputs Code Explanation](./node-modal-and-variable-inputs.md) | Node rendering, port resolution, stream edge selection, modal edits, Redux updates, and node cache handoff. |
 | Save and subnetworks | [Save Diagram and Node Cache Code Explanation](./save-diagram-and-node-cache.md), [Subnetwork Blueprint and Instance Flow Code Explanation](./subnetwork-blueprint-and-instance-flow.md) | Diagram save payloads, dirty node persistence, canonical ID remapping, blueprint save, wrapper instances, and MongoDB persistence. |
 | TP, Economic, and run setup | [Time Period and Economic Flow](./time-period-and-economic-flow.md), [Run Config and Computation Start](./run-config-and-computation-start.md) | Base TP, Multi-TP data, Economic cost ownership, run config selection, compute-start payload inputs, and generated parameter handoff. |
+| Analysis and DataRec input | [Plant Measurements and Instrument Mapping Code Explanation](./plant-measurements-and-instrument-mapping.md) | Analysis-row Plant Measurements UI, model-variable-to-instrument mappings, measurement import/validation, MongoDB persistence, and backend `datarec-input` output. |
 | Backend data API | [Backend Data Routes and Persistence Code Explanation](./backend-data-routes-and-persistence.md) | Express route mounting, authentication, MongoDB user data, PostgreSQL reference data, and route fallback behavior. |
 | Compute and solver | [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md), [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md) | Task creation, queue dispatch, solver request construction, callback status, reverse translation, and result persistence. |
 | Import and setup boundary | [Excel Import Pipeline Code Explanation](./excel-import-pipeline.md), [HyProNet Installation Guide](../Installation/HYPRONET_INSTALLATION_GUIDE.md), [HyProNet Streamlined Guide](../Installation/STARTUP_GUIDE.md) | Workbook-to-CSV normalization, Prisma setup, Docker services, PostgreSQL catalog writes, and local runtime setup. |
@@ -85,8 +89,10 @@ Use the page set as a boundary map when choosing where to make a change.
 - Data and API boundary: start from [Backend Data Routes and Persistence Code Explanation](./backend-data-routes-and-persistence.md), then move to the feature page that owns the frontend or workflow input.
 - Persistence boundary: start from [Save Diagram and Node Cache Code Explanation](./save-diagram-and-node-cache.md) for diagram and node cache writes, or [Subnetwork Blueprint and Instance Flow Code Explanation](./subnetwork-blueprint-and-instance-flow.md) for blueprint and instance persistence.
 - Solver boundary: start from [Run Config and Computation Start](./run-config-and-computation-start.md), then follow [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md) and [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md).
+- Equation boundary: start from [Equation Writing Module Code Explanation](./equation-writing-module.md) before changing equation tokens, diagram `equations` persistence, route sanitization, or solver `parameters.equations`.
+- Plant measurement boundary: start from [Plant Measurements and Instrument Mapping Code Explanation](./plant-measurements-and-instrument-mapping.md) before changing instrument sets, mapping rows, imported measurement rows, validation, Mongo persistence, or `datarec-input`.
 - Import boundary: start from [Excel Import Pipeline Code Explanation](./excel-import-pipeline.md), then use the setup guides only for local environment and execution context.
-- Frontend interaction boundary: start from [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md) and [Header Bar Code Explanation](./header-bar.md), then follow the specific node, edge, modal, TP, Economic, or save page.
+- Frontend interaction boundary: start from [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md) and [Header Bar Code Explanation](./header-bar.md), then follow the specific equation, node, edge, modal, TP, Economic, Analysis, or save page.
 
 ## Common Maintenance Paths
 
@@ -96,9 +102,15 @@ For a saved-data bug, read the save page first, then the backend data page, and 
 
 For a solver payload or result bug, read the run configuration page, compute page, and translation page together. Generated files such as `src/src/backend/services/solve_request.json` can confirm runtime behavior, but they are read-only debugging output, not the source contract.
 
+For an equation-writing bug, read the Equation Writing page first, then inspect the backend data page for diagram route persistence and the compute/translation pages for solver payload handoff.
+
+For a Plant Measurements or DataRec input bug, read the Plant Measurements page first, then inspect the backend data page for route mounting and authentication context.
+
 For an importer or catalog-data bug, read the Excel import page first, then inspect the backend data page for how imported PostgreSQL data is read by the application.
 
 ## Related Pages
 
 - [CodeExplanation Writing Standards](./CODE_EXPLANATION_GUIDELINES.md)
 - [Code Explanation Index](./code-explanation-index.md)
+- [Equation Writing Module Code Explanation](./equation-writing-module.md)
+- [Plant Measurements and Instrument Mapping Code Explanation](./plant-measurements-and-instrument-mapping.md)
