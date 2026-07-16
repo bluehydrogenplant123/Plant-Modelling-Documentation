@@ -31,7 +31,6 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 - [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md): dashboard create/load/delete flows, canvas shell routing, React Flow setup, sidebar drag-and-drop, display filtering, and high-level edit guards.
 - [Header Bar Code Explanation](./header-bar.md): top-level canvas navigation, secondary controls, save metadata, display filtering, run configuration entry points, and computation-aware UI guards.
-- [Equation Writing Module Code Explanation](./equation-writing-module.md): Model-row equation editor, equation persistence on diagrams, solver handoff through `parameters.equations`, and token/import behavior.
 - [Shape Node and Ports Code Explanation](./shape-node-and-ports.md): shape-node rendering, port resolution, rotation behavior, modal handoff, Redux updates, node cache updates, and save-flow integration.
 - [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md): orthogonal stream edge rendering, stream-property selection, validation, connected-node hydration, and edge-level interaction contracts.
 - [Node Modal and Variable Inputs Code Explanation](./node-modal-and-variable-inputs.md): node modal tabs, stream and info variables, specs, TP overrides, Redux state, and node-cache coordination.
@@ -45,10 +44,6 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 - [Time Period and Economic Flow Code Explanation](./time-period-and-economic-flow.md): base TP, global TP, TP viewer, TP specs, economic panels, cost data ownership, and solver payload handoff.
 - [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md): run-configuration modal fields, solver and algorithm ownership, computation-button behavior, backend start route, and TP/Economic handoff.
-
-## Analysis/DataRec
-
-- [Plant Measurements and Instrument Mapping Code Explanation](./plant-measurements-and-instrument-mapping.md): Analysis-row Plant Measurements UI, model-variable-to-instrument mappings, measurement import and validation, MongoDB persistence, and backend `datarec-input` output.
 
 ## Backend/Data
 

@@ -22,8 +22,6 @@ All routes listed here use `authenticateToken`. The middleware accepts `Authoriz
 - `src/src/backend/middleware/auth.ts`: JWT authentication and `req.user` population.
 - `src/src/backend/prisma/mongodb/schema.prisma`: MongoDB user-owned persistence models.
 - `src/src/backend/prisma/postgres/schema.prisma`: PostgreSQL reference/catalog models.
-- `src/src/backend/services/instrumentMappingService.ts`: service layer for Plant Measurement instrument sets, mappings, measurements, import preview, and DataRec input.
-- `src/src/backend/utils/instrumentMappingValidation.ts`: validation and normalization helpers for Plant Measurement mapping rows, measurement rows, and DataRec rows.
 - `src/src/backend/utils/canvasModelVersionUtils.ts`: model-version lookup and canvas attach/detach helpers.
 - `src/src/backend/utils/schemaMigrations.ts`: current schema version, version checks, and snapshot/canvas migration hooks.
 
@@ -48,13 +46,6 @@ All paths below include the `/api/data` prefix.
 | Diagram settings | `PUT /diagrams/:diagramId/base-duration` | Validates duration/unit and updates the selected network graph's base duration. | Updates Mongo `Diagram.duration` and `durationUnit` for collected network diagrams. |
 | Economic data | `PUT /diagrams/:diagramId/costs` | Sanitizes and stores Economic entities/mappings. | Updates Mongo `Diagram.costEntities` and `costMappings`. |
 | Economic data | `POST /diagrams/:diagramId/costs/initialize-mtp` | Builds MTP Economic rows from base costs, or returns `initialized: false` with `reason: "base_missing"`. | Reads/writes Mongo diagram cost JSON; reads Postgres cost config only when seeding base rows. |
-| Plant measurements | `GET /diagrams/:diagramId/instrument-sets` | Lists measurement sets for the diagram. | Reads Mongo `InstrumentSet`; detailed owner page: [Plant Measurements and Instrument Mapping](./plant-measurements-and-instrument-mapping.md). |
-| Plant measurements | `POST /diagrams/:diagramId/instrument-sets` | Creates or gets a measurement set for the diagram network and set name. | Upserts Mongo `InstrumentSet`. |
-| Plant measurements | `DELETE /instrument-sets/:instrumentSetId` | Deletes a measurement set and its child rows. | Deletes Mongo `PlantMeasurement`, `VariableInstrumentMapping`, and `InstrumentSet` rows in a transaction. |
-| Plant measurements | `GET/PUT /instrument-sets/:instrumentSetId/mappings` | Lists or whole-set replaces variable-instrument mappings. | Reads/writes Mongo `VariableInstrumentMapping`; revalidates saved `PlantMeasurement` rows after replace. |
-| Plant measurements | `POST /instrument-sets/:instrumentSetId/measurements/import-preview` | Validates imported plant measurement rows without persistence. | Reads mappings and returns preview DTOs; no Mongo write. |
-| Plant measurements | `GET/PUT /instrument-sets/:instrumentSetId/measurements` | Lists or whole-set replaces plant measurement rows. | Reads/writes Mongo `PlantMeasurement`. |
-| Plant measurements | `GET /instrument-sets/:instrumentSetId/datarec-input` | Builds DataRec-ready rows from included, mapped, error-free saved measurements. | Reads Mongo mappings and measurements. |
 | Subnetwork instances | `POST /diagrams/:diagramId/subnetwork-instance` | Ensures one wrapper node has an instance diagram and writes the processed parent canvas. | Reads/writes Mongo `Diagram`; helper may create instance diagrams/nodes/snapshots. |
 | Nodes | `GET /nodes/:nodeId` | Reads a node; optional `?diagramId=` avoids ambiguity. Multiple authorized matches return 409. | Reads Mongo `Node` and `Diagram`. |
 | Nodes | `GET /nodes/diagram/:diagramId` | Reads all nodes for one authorized diagram. | Reads Mongo `Diagram` and `Node`. |
@@ -93,8 +84,6 @@ Postgres is treated as the read-side catalog for imported domain knowledge: doma
 
 MongoDB is the user-state store. `Diagram` owns canvas JSON, translated `parameters`, optional Economic cost JSON, snapshot relation, verification state, type, parent connections, and base duration. `Node` owns persisted node `modelVersion` cache by diagram. `TpNodeVers` owns MTP model-version rows. `TpChanges` owns Multi-TP manual/computed per-port overrides and, for TP spec versions, stores version-scoped Multi-TP sparse changes. `TpSpecVersionSet` and `TpSpecVersionTable` own TP spec version metadata. `TpSpecBaseChange` owns sparse Base TP spec patches. `DomainSnapshot` freezes the domain payload used when a diagram was saved. `SubnetworkBlueprint` owns reusable blueprint metadata and `portsMapping`.
 
-Plant Measurements adds three Mongo user-state models under the data API: `InstrumentSet`, `VariableInstrumentMapping`, and `PlantMeasurement`. See [Plant Measurements and Instrument Mapping](./plant-measurements-and-instrument-mapping.md) for the detailed UI, validation, replace-write, and `datarec-input` contract.
-
 PostgreSQL also stores computation result metadata for applied TP spec versions. `ComputationResults` includes `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table` so a stored run can be traced back to the applied version table.
 
 ## Data Flow
@@ -109,7 +98,6 @@ PostgreSQL also stores computation result metadata for applied TP spec versions.
 
 - `transformData(...)`, `transformModel(...)`, `transformModelVersion(...)`, `buildFullStreams(...)`, `mergeGenericDomain(...)`, and `getAllUnits(...)`: build frontend domain payloads from Postgres rows and normalize stream/property/unit data.
 - `buildRunConfigs(...)`, `parseDefaultValue(...)`, `parseOptions(...)`, and `buildCostsConfig(...)`: transform Postgres config tables into frontend run and Economic config shapes.
-- `listInstrumentSets(...)`, `replaceVariableInstrumentMappings(...)`, `previewPlantMeasurements(...)`, `replacePlantMeasurements(...)`, and `getDataRecInput(...)`: own Plant Measurement set reads/writes, row validation, replace-style persistence, and DataRec output assembly.
 - `buildNodeCacheRecordFromDiffs(...)`, `ensureNodeCacheCoverage(...)`, `remapCanvasWithNodeCache(...)`, `upsertDiagramNodesFromCacheAndCanvas(...)`, and `pruneDiagramNodes(...)`: keep canvas node IDs, Mongo `Node` rows, and cached `modelVersion` payloads consistent during save.
 - `getCachedModelVersion(...)`: reads a model version from a node cache map and falls back from document id to stored `nodeId` when callers pass the wrong identifier.
 - `translation(...)` and `buildSubnetworkPortMap(...)`: turn saved canvas, domain models, node cache, TP rows, TP changes, and subnetwork mappings into persisted diagram `parameters`.

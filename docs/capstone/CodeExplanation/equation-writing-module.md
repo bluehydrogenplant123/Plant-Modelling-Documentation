@@ -17,7 +17,7 @@ Draft equations live in the frontend Redux `equationWriting` slice. Saved equati
 - `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`: modal UI, variable/operator selection, CSV import, equation tokenization, diagram hydration, save/delete API calls, and subnetwork variable discovery.
 - `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.css`: modal layout, editor, sidebar, toolbar, and term-list styling.
 - `src/src/frontend/src/features/equationWriting/equationWritingSlice.ts`: Redux state, equation draft reducers, active equation selection, imported variable deduplication, and loaded diagram tracking.
-- `src/src/frontend/src/components/header-bar/index.tsx`: renders `EquationWritingModule` in the Model secondary row.
+- `src/src/frontend/src/components/header-bar/index.tsx`: renders `EquationWritingModule` in the main header toolbar.
 - `src/src/frontend/src/store.ts`: registers the `equationWriting` reducer.
 - `src/src/backend/routes/dataRoutes.ts`: sanitizes and persists `diagram.equations`, deletes saved equations, and enforces diagram ownership.
 - `src/src/backend/workers/computationDispatchWorker.ts`: loads the saved diagram and passes `diagram.equations` into the solver request builder.
@@ -159,7 +159,7 @@ Important hooks and cleanup:
 
 ## Data Flow
 
-1. `header-bar/index.tsx` renders `EquationWritingModule` in the Model secondary row.
+1. `header-bar/index.tsx` renders `EquationWritingModule` in the main toolbar.
 2. The user opens the modal. If `diagramId` is present and the Redux drafts are not loaded for that diagram, the component fetches `/api/data/diagrams/:diagramId`.
 3. `normalizePersistedEquations(...)` converts `diagram.equations` into Redux `EquationDefinition[]`, defaulting `belongTo` to the canvas name and `equationType` to `Objective Function` when needed.
 4. The user creates or edits drafts. Button-driven edits append structured tokens; textarea edits parse text back into tokens.
