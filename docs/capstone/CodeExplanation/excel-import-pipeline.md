@@ -1,7 +1,7 @@
 ---
 title: Excel Import Pipeline Code Explanation
 sidebar_position: 32
-description: Explains how HyProNet imports system Excel workbooks, normalizes workbook sheets into legacy CSV contracts, runs Prisma database setup, and writes imported reference data.
+description: Explains how HyProNet imports system Excel workbooks, normalizes current workbook sheets into CSV contracts, runs Prisma database setup, and writes imported reference data.
 ---
 
 ## Overview
@@ -17,7 +17,7 @@ The Python importer converts workbook sheets to normalized CSV files, then reads
 - `src/package.json`: defines `migrate:postgres` and `migrate:mongodb`, which are called by `run-all.sh`.
 - `src/excel-migration/Dockerfile`: builds the Python container image by copying the importer scripts into `/app`.
 - `src/excel-migration/run_python_import.sh`: container-side import script that converts the workbook, redirects `migrate.py` output to a timestamped log, and removes temporary CSV output after success.
-- `src/excel-migration/excel_to_csv.py`: converts workbook sheets into legacy CSV filenames and headers expected by the importer.
+- `src/excel-migration/excel_to_csv.py`: converts workbook sheets into CSV filenames and headers expected by the importer.
 - `src/excel-migration/migration_normalization.py`: shared cleanup helpers for model rows, unit rows, cost rows, and stream property aliases.
 - `src/excel-migration/migrate.py`: reads `csv_outputs/*.csv` and writes imported reference/configuration data into PostgreSQL.
 - `src/excel-migration/requirements.txt`: Python package versions used by the importer container.
@@ -31,7 +31,7 @@ This pipeline owns initial database preparation and workbook-to-database import 
 
 - starting the required local database services;
 - applying the current Prisma schemas;
-- converting accepted workbook sheet names and headers into the legacy CSV contract;
+- converting accepted workbook sheet names and headers into the current CSV contract;
 - importing domain, stream, model, port, variable, unit, run configuration, color, task type, and cost configuration data into PostgreSQL;
 - writing importer logs for migration failures.
 
@@ -60,7 +60,7 @@ It does not own frontend startup, user authentication data, saved diagrams, comp
 
 ### Workbook Sheet Contract
 
-`excel_to_csv.py` accepts current workbook sheet names and maps them back to legacy CSV output names:
+`excel_to_csv.py` accepts current workbook sheet names and maps the sheets still consumed by the importer to their CSV output names:
 
 | Workbook sheet | CSV output |
 | --- | --- |
@@ -68,8 +68,8 @@ It does not own frontend startup, user authentication data, saved diagrams, comp
 | `Comp Task Types` | `CompTaskTypes.csv` |
 | `System Variables` | `SYS System Variables.csv` |
 | `Domains` | `SYSDomains.csv` |
-| `Stream Properties` | `SYS Stream Properties.csv` |
-| `Stream Fractions` | `SYS Stream Fractions.csv` |
+| `Port Classes Database Mapping` | `Port Classes Database Mappings.csv` |
+| referenced `#Prop_*` / `#Comp_*` sheets | unchanged sheet name plus `.csv` |
 | `Node Variables` | `SYSNodeVariables.csv` |
 | `Node Model Library` or `SYS Node Model Library` | `SYSNodeModelLibrary.csv` |
 | `Port Classes and Vars` | `SYSPortClassesandVars.csv` |
@@ -77,7 +77,40 @@ It does not own frontend startup, user authentication data, saved diagrams, comp
 | `Node Ports Model Library` | `SYSNodePortsModelLibrary.csv` |
 | `Entity Specs` | `SYS Costs.csv` |
 
-The current `jun-16-2026.xlsx` workbook also contains sheets such as `EQ type` and `SYS Node Variable Spec`. `excel_to_csv.py` will export unmapped sheets using their original names, but `migrate.py` ignores them unless a current `process_*` function reads that CSV.
+The obsolete `Stream Properties` and `Stream Fractions` aliases are not part of the current importer contract. `migrate.py` imports materials through `Port Classes Database Mapping` and its referenced `#Prop_*` / `#Comp_*` sheets, and no longer reads `SYS Stream Properties.csv` or `SYS Stream Fractions.csv`. `System Variables` remains an active source sheet and is exported as `SYS System Variables.csv` for the PostgreSQL `SystemVariables` catalog.
+
+Unmapped sheets are exported using their original names, but `migrate.py` ignores them unless a current `process_*` function reads that CSV.
+
+### Issue #120 Workbook Evidence
+
+The accepted workbook shared in the July 14 Teams meeting is `jul-7-2026.xlsx`. The current Teams version (July 12, 11:15 PM) and the repo copy are byte-for-byte identical (`SHA256 417AB435E0170ED4EDAF68E352647A90C8126AA3EE05203678ACE9BA08BFB1CF`). Excel exposes these 22 visible sheets:
+
+```text
+Units
+Comp Task Types
+Comp Step Types
+System Variables
+Domains
+Node Variables
+Node Model Library
+Port Classes and Vars
+Run Configs
+Node Ports Model Library
+Entity Specs
+EQ type
+Solution Algorithm Library
+Port Classes Database Mapping
+#Prop_GSL_R
+#Comp_MES_R
+#Prop_MES_R
+#Prop_MES_HP
+#Comp_MES_HP
+#Prop_diesel_R
+#Prop_crude_R
+#Comp_crude_R
+```
+
+The workbook contains 23 sheets in total: `SYS Node Variable Spec` is present but hidden, which is why the Excel UI reports 22 worksheets. No importer reads that legacy authoring-helper sheet, but it remains unchanged so the repo preserves the exact accepted workbook. `Stream Properties` and `Stream Fractions` are absent, while `System Variables` remains present and active. The issue body statement that the accepted workbook also removed the SYS-variable source conflicts with the meeting record and every visible Teams version, so the deterministic regression omits only the two obsolete legacy stream sheets. The repo `jul-7-2026.xlsx` remains a compatibility check for `System Variables` and the current port-class material sheets.
 
 ### Header and Row Normalization
 
@@ -87,8 +120,7 @@ The current `jun-16-2026.xlsx` workbook also contains sheets such as `EQ type` a
 - `Target Unit` to `TargetUnit`
 - `Task Name` to `TaskName`
 - `Port Var Name` to `PortVar Name`
-- `Stream Database ID` to `StreamDatabaseId`
-- `Stream Content` to `StreamContent`
+- `Var Description` to `VarDescription`
 - `Model Version` to `ModelVersion`
 - `Hidden By Default` to `HiddenByDefault`
 - `Send to Calc` to `SendtoCalc`
@@ -115,7 +147,7 @@ Generated by, Entity Name, Cost, Unit, Type
 - `export_excel_to_csv(...)`: iterates workbook sheets, normalizes sheet names and headers, applies icon replacement for `SYSNodeModelLibrary`, and writes CSV files.
 - `load_icons_df(...)`: reads `icons.csv` from `/app/excel-sheets/icons.csv` in Docker or from the repo-local `src/excel-sheets/icons.csv` fallback for direct local runs.
 - `get_db_connection()`: connects `migrate.py` to PostgreSQL using `DATABASE_URL_POSTGRES`.
-- `process_streams(...)`: reads stream properties and stream fraction CSVs, builds JSON for `stream_fractions` and `properties`, upserts `Streams`, and links `DomainStreamsMapping`.
+- `process_streams(...)`: reads `Port Classes Database Mappings.csv` and its referenced `#Prop_*` / `#Comp_*` CSVs, builds JSON for `properties` and `stream_fractions`, upserts `Streams`, and links `DomainStreamsMapping`.
 - `process_models(...)`: imports `Models` and `ModelVersion` rows, including icon/shape data and phase metadata.
 - `process_ports(...)`: imports `Ports` from node variables, node-port mappings, and port class definitions.
 - `process_varnames(...)`: imports `VarNames` and attaches them to matching port/model-version rows.
@@ -215,6 +247,7 @@ npm run migrate:mongodb
 - `process_ports(...)` currently casts `HiddenByDefault` and `SendtoCalc` with `int(...)`, so those CSV values must be numeric-like, usually `0` or `1`. A workbook that uses `Y`, `N`, `Yes`, or `No` for those fields can fail during port import unless the converter is extended first.
 - Import reruns use a mix of `ON CONFLICT DO UPDATE`, `ON CONFLICT DO NOTHING`, and targeted cleanup. Treat reruns as upsert/update behavior, not as a full database reset that removes rows missing from the workbook.
 - Some process functions log an error and continue when a CSV is missing or malformed. Always inspect the latest log, not only the final terminal line, before trusting imported data.
+- Removing the obsolete workbook-only SYS inputs changes the Excel source contract only. It does not change persisted PostgreSQL/MongoDB, canvas, saved-diagram, or import/export structures, so Issue #120 requires no schema version bump.
 
 ## Extension Points
 
@@ -256,7 +289,7 @@ After a full import, inspect the newest `src/excel-migration/logs/log_<timestamp
 - `python-runner:latest` can be stale after changing `src/excel-migration/*.py`. Rebuild the image before testing importer code changes.
 - `src/generated/`, `src/node_modules/`, `src/dist/`, and `src/coverage/` are generated build or dependency artifacts and should not be used as import source documentation.
 - `src/src/backend/services/solve_request.json` is a solver runtime diagnostic, not an import artifact. Do not edit it or use it to infer workbook import behavior.
-- New workbook shape support should preserve the legacy CSV contract unless `migrate.py` and the database schema are intentionally updated together.
+- New workbook shape support should preserve the current CSV contract unless `migrate.py` and the database schema are intentionally updated together.
 - The Python importer assumes PostgreSQL schema compatibility. If Prisma schema changes and importer SQL are not updated together, imports can fail at runtime even when workbook conversion succeeds.
 
 ## Related Pages
