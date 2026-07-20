@@ -10,7 +10,7 @@ description: Explains how the Equation Writing modal builds, persists, and forwa
 
 The Equation Writing module lets users create named objective or constraint equations from diagram variables, imported variable rows, operators, and optional time-period suffixes. The main entry point is `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`, rendered from the canvas header.
 
-Draft equations live in the frontend Redux `equationWriting` slice. Saved equations are stored on the MongoDB diagram record as `diagram.equations`, then normalized into solver-facing `parameters.equations` when the computation dispatch worker builds the solve request.
+Draft equations live in the frontend Redux `equationWriting` slice. Saved equations are stored on the MongoDB diagram record as `diagram.equations`. They reach the solver only when they belong to an Objective Function or Constraint Set selected from the active Optimization/DataRec dropdown; saved standalone equations are not sent automatically.
 
 ## Source Files
 
@@ -20,8 +20,9 @@ Draft equations live in the frontend Redux `equationWriting` slice. Saved equati
 - `src/src/frontend/src/components/header-bar/index.tsx`: renders `EquationWritingModule` in the main header toolbar.
 - `src/src/frontend/src/store.ts`: registers the `equationWriting` reducer.
 - `src/src/backend/routes/dataRoutes.ts`: sanitizes and persists `diagram.equations`, deletes saved equations, and enforces diagram ownership.
-- `src/src/backend/workers/computationDispatchWorker.ts`: loads the saved diagram and passes `diagram.equations` into the solver request builder.
-- `src/src/backend/services/solverEngineApiService.ts`: normalizes saved equation records into `parameters.equations` before posting to the solver engine.
+- `src/src/backend/services/solveInputTranslationService.ts`: resolves selected set IDs against the diagram and snapshots only their equations.
+- `src/src/backend/workers/computationDispatchWorker.ts`: combines the queued selection snapshot with the translated diagram parameters.
+- `src/src/backend/services/solverEngineApiService.ts`: normalizes selected set equations inside `parameters.solve_inputs`.
 - `src/src/backend/prisma/mongodb/schema.prisma`: declares the MongoDB `Diagram.equations Json?` field.
 
 ## Purpose and Responsibility
@@ -30,7 +31,7 @@ The frontend module owns the user experience for writing equations: opening the 
 
 The Redux slice owns temporary editor state only. It does not validate mathematical correctness or call the solver.
 
-The backend data route owns persistence checks and storage sanitization. The computation worker and solver API service own the runtime handoff from stored diagram equations to the outbound solver payload. They do not let the Equation Writing UI edit `parameters.equations` directly.
+The backend data route owns persistence checks and storage sanitization. The computation worker and solver API service own the runtime handoff from stored diagram equations to the outbound solver payload. They do not let the Equation Writing UI add equations independently of a dropdown-selected set.
 
 ## Inputs and Outputs
 
@@ -53,7 +54,7 @@ The backend data route owns persistence checks and storage sanitization. The com
 | `PUT /api/data/diagrams/:diagramId/equations` | Backend data route | Persists all visible equation drafts for the diagram. |
 | `DELETE /api/data/diagrams/:diagramId/equations/:equationId` | Backend data route | Removes one persisted equation by id. |
 | `diagram.equations` | MongoDB diagram document | Stored JSON source of truth for saved equations. |
-| `parameters.equations` | Solver request body | Runtime normalized copy sent during compute dispatch. |
+| `parameters.solve_inputs` | Solver request body | Contains equations grouped under dropdown-selected Objective Function and Constraint Sets. |
 | Alerts | Redux alert slice | Shows load, save, delete, import, and validation feedback. |
 
 ## Core State and Data Structures
@@ -85,7 +86,7 @@ Persisted equations use this backend shape:
 }
 ```
 
-The solver request receives a flattened normalized shape inside `parameters.equations`:
+The solver request receives this normalized equation shape inside each selected set under `parameters.solve_inputs`:
 
 ```ts
 {
@@ -113,7 +114,7 @@ The solver request receives a flattened normalized shape inside `parameters.equa
 - `handleDeleteEquation(...)`: deletes from the backend first when a diagram id exists, then removes the local draft.
 - `handleImportedVariableFile(...)`: validates and imports CSV variable rows.
 - `sanitizeEquationDefinitionForStorage(...)`: backend sanitizer that trims fields, normalizes tokens, rebuilds expression text when needed, and defaults `equation_type` to `Objective Function`.
-- `buildSolveRequest(...)`: injects normalized equations into `parameters.equations`.
+- `buildSolveRequest(...)`: removes independent equation inputs and injects only the queued dropdown selection into `parameters.solve_inputs`.
 
 ## Rendered UI and Interaction Map
 
@@ -165,8 +166,9 @@ Important hooks and cleanup:
 4. The user creates or edits drafts. Button-driven edits append structured tokens; textarea edits parse text back into tokens.
 5. The user saves. `serializeEquationForPersistence(...)` wraps each draft under `expression` and sends `PUT /api/data/diagrams/:diagramId/equations`.
 6. `dataRoutes.ts` validates the diagram id, checks ownership, sanitizes the payload, rejects duplicate ids, and writes `diagram.equations` to MongoDB.
-7. During a compute dispatch, `computationDispatchWorker.ts` loads the diagram and calls `buildSolveRequest(configuration, diagram.parameters, diagram.equations)`.
-8. `solverEngineApiService.ts` normalizes the saved equations into `parameters.equations`.
+7. `/compute/start` resolves selected Objective Function and Constraint Set IDs against `diagram.sets` and stores an authoritative selection snapshot on the computation task.
+8. During dispatch, `computationDispatchWorker.ts` calls `buildSolveRequest(configuration, diagram.parameters)`.
+9. `solverEngineApiService.ts` strips any independently persisted equation fields and normalizes only the selected set equations inside `parameters.solve_inputs`.
 9. `createComputationTask(...)` posts the solve request to `BASE_SOLVER_ENGINE_URL/solve/`.
 
 ```mermaid
@@ -175,9 +177,10 @@ flowchart TD
   Modal --> Redux["equationWriting slice"]
   Modal --> SaveRoute["PUT /api/data/diagrams/:diagramId/equations"]
   SaveRoute --> Mongo["Mongo diagram.equations"]
-  Mongo --> Worker["computationDispatchWorker.ts"]
+  Mongo --> SelectedSet["Dropdown-selected set"]
+  SelectedSet --> Worker["computationDispatchWorker.ts"]
   Worker --> Builder["buildSolveRequest"]
-  Builder --> SolverPayload["parameters.equations"]
+  Builder --> SolverPayload["parameters.solve_inputs selected-set equations"]
   SolverPayload --> Solver["Solver engine /solve/"]
 ```
 
@@ -206,8 +209,8 @@ Storage rules in `dataRoutes.ts`:
 
 Solver request rules in `solverEngineApiService.ts`:
 
-- `parameters` is spread first, then `equations: normalizedEquations` is assigned, so the saved diagram equations override any existing `parameters.equations` value.
-- The outbound field is exactly `parameters.equations`.
+- Existing `parameters.equations`, set, constraint, instrument, and measurement fields are removed before selected inputs are attached.
+- The outbound field is `parameters.solve_inputs`; no duplicate top-level `parameters.equations` field is generated.
 - Each outbound equation contains `name`, `belong_to`, `equation_type`, `eq_type`, `expression`, and `tokens`.
 - Token normalization trims string fields and preserves only token records with `type` equal to `operator` or `variable`.
 
@@ -219,7 +222,7 @@ Solver request rules in `solverEngineApiService.ts`:
 - Saving writes the complete `diagram.equations` array in MongoDB.
 - Deleting writes a filtered `diagram.equations` array in MongoDB and then removes the local draft.
 - Importing CSV rows updates only Redux `importedVariables`; imported variable choices are not persisted unless they are used in saved equation tokens.
-- Compute dispatch sends saved equations to the external solver inside `parameters.equations`.
+- Compute dispatch sends only equations from dropdown-selected sets to the external solver.
 - When `SAVE_JSON_FILES=true`, `solverEngineApiService.ts` may write the generated solve request JSON for debugging; that file is generated output, not documentation source of truth.
 
 ## Error Handling and Edge Cases
@@ -238,7 +241,7 @@ Solver request rules in `solverEngineApiService.ts`:
 
 ## Extension Points
 
-- Add a new operator by updating `operatorButtons` in `equation-writing-module.tsx`, `EQUATION_OPERATOR_OPTIONS` in `dataRoutes.ts`, and any solver-side expectations for `parameters.equations.tokens`.
+- Add a new operator by updating `operatorButtons` in `equation-writing-module.tsx`, `EQUATION_OPERATOR_OPTIONS` in `dataRoutes.ts`, and any solver-side expectations for selected-set equation tokens under `parameters.solve_inputs`.
 - Add a new time-period preset by updating `timePeriodOptions`, the path suffix handling helpers, and manual checks for parsing/persistence.
 - Add a new equation metadata field by updating `EquationDefinition`, `serializeEquationForPersistence(...)`, `normalizePersistedEquations(...)`, `sanitizeEquationDefinitionForStorage(...)`, `normalizeSolveRequestEquations(...)`, and the solver contract.
 - Change variable discovery by editing `buildNodeOptionsFromCanvasNodes(...)`, `getVisiblePortVarsForNode(...)`, and the subnetwork-loading flow together.
@@ -276,7 +279,7 @@ Manual frontend verification matrix:
 | CSV import | Import a CSV with `Node,Port,Variable` headers and duplicate rows | Unique imported variables become selectable; invalid files show errors. | Import validation and deduplication. |
 | Save and reload | Save equations, close modal, reload diagram, reopen modal | Saved names, metadata, expression, and tokens rehydrate. | Frontend/backend storage contract. |
 | Delete saved equation | Delete an equation after saving | Backend delete succeeds and local active selection moves to a remaining equation. | Destructive persistence behavior. |
-| Compute handoff | Save equation and start a computation | Solver request includes normalized `parameters.equations`. | Solver payload shape. |
+| Compute handoff | Save an equation, assign it to a set, select that set, and start a computation | Solver request includes the selected set and its normalized equations only in `parameters.solve_inputs`. | Solver payload shape and selection boundary. |
 
 For backend payload confirmation, prefer source-level tests around `dataRoutes.ts` and `solverEngineApiService.ts`. Generated files such as `src/src/backend/services/solve_request.json` may confirm a local run when `SAVE_JSON_FILES=true`, but they should not be committed or treated as the source of truth.
 
@@ -284,11 +287,11 @@ For backend payload confirmation, prefer source-level tests around `dataRoutes.t
 
 - Saving equations replaces the entire `diagram.equations` array, so callers must send all equations that should remain.
 - The frontend and backend each maintain tokenizer/operator logic; update both sides together.
-- `parameters.equations` is generated during compute dispatch. Do not document or edit it as the equation-writing source of truth.
+- `parameters.equations` is removed during compute dispatch. Selected-set equations live only under `parameters.solve_inputs`.
 - The module is currently rendered without the header computation disable rule, unlike some other header actions.
 - Imported CSV variable choices are draft-only until they are included in an equation token and saved.
 - Subnetwork variable discovery may create or load subnetwork instances while the modal is open.
-- The solver request builder overwrites any existing `parameters.equations` with normalized `diagram.equations`.
+- The solver request builder removes any existing `parameters.equations` and does not recreate it.
 - There is currently no dedicated automated test coverage for the equation-writing UI or equation route sanitizer.
 
 ## Related Pages
