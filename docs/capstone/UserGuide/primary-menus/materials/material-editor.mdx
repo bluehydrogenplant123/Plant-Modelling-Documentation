@@ -1,41 +1,93 @@
 ---
 title: Material Editor
 sidebar_position: 1
-description: Use the Material Editor secondary button from the Materials menu.
+description: Review and import Domain + Port Class material groups from User Tables and inspect their Properties or Stream Fractions.
 ---
 
 # Material Editor
 
-Use **Material Editor** when you need to review, import, export, or clear material stream rows for the current diagram.
+Use the **Material Editor** to review the current domain's Generic and domain-specific materials, switch between Port Class groups, inspect Properties or Stream Fractions, import a workbook, export rows, or clear the current material state.
 
 ## Where To Find It
 
-1. Select the **Materials** primary menu.
-2. Click **Material Editor** in the secondary button row.
+1. Open a base-period model.
+2. Open **User Tables** in the top header.
+3. Select **Material Properties**.
+
+The **Material Properties** entry is disabled in Multi-TP mode. Computation rules can also disable the entry while material changes are not allowed.
 
 ## What It Opens/Does
 
-**Material Editor** opens a material editor overlay. The overlay contains **Delete All Streams**, **Import Streams**, **Export Streams**, and a stream table.
+The overlay identifies the selected **Domain** and active **Class**. A **Generic mapping** badge appears when the group comes from a Generic/common mapping.
 
-The import action opens a hidden file picker that accepts `.xlsx` and `.xls` workbook files. The table shows the current stream rows in an AgGrid view.
+The main controls are:
 
-![Material Editor Content overlay with stream table and import/export controls](../../images/material-editor-content.png)
+- **Delete All Streams**: removes the canvas edges and clears the current material list. This action is disabled in read-only mode.
+- **Import Streams**: accepts `.xlsx` and `.xls` files and merges imported rows into the current material state. This action is disabled in read-only mode.
+- **Export Streams**: downloads the current material rows as a workbook with `Properties` and `Fractions` sheets.
+- **Detail View**: switches the table between **Properties** and **Stream Fractions**.
+
+When more than one material group contains rows, tabs show the Port Class label and row count. The active summary shows the number of streams, visible detail-column count, domain source, and mapped database names. The table pins **Stream ID**, **Content**, and the selected detail action, then shows **Instance**, **Source**, and the scoped dynamic detail columns.
+
+Click **View (N)** on a row to open its detail panel. `N` is the number of non-empty values available for the selected detail view and active database scope.
+
+## Review Domain And Port Class Groups
+
+1. Confirm the **Domain** label matches the current model.
+2. Select a group tab such as a Generic/common class or a domain-specific Port Class.
+3. Check **Properties DB** and **Fractions DB** in the active summary when they are present.
+4. Switch **Detail View** between **Properties** and **Stream Fractions**.
+5. Use **View (N)** when you want a compact key/value list for one stream.
+
+Generic groups are shown before domain-specific groups. If only one group contains rows, the editor uses it directly and does not render a tab strip.
+
+## Import A Mapping Workbook
+
+The current mapping-aware workbook flow uses a sheet named **Port Classes Database Mapping** (accepted singular/plural aliases are also recognized). Each relevant row identifies a Domain, Port Class, Properties database, and optional Fractions/Composition database. The importer then reads the referenced sheets, such as `#Prop_MES_R` and `#Comp_MES_R`.
+
+1. Confirm that the mapping sheet includes the current domain or Generic rows.
+2. Confirm that every referenced Properties/Fractions sheet is present in the workbook.
+3. Click **Import Streams** and select the workbook.
+4. Check the success alert for the imported row count.
+5. Review the resulting group tabs and detail columns.
+6. Save the diagram if you want its updated snapshot and edge selections preserved.
+
+Imported rows use `source_type: user`. They merge with matching system rows by Port Class plus `stream_database_id`; if no database ID is available, the fallback identity uses Port Class, Content, and Instance. User values override or supplement matching system Properties/Fractions.
+
+If no mapping sheet exists, the editor keeps the older two-sheet import compatible: the first worksheet is treated as Properties and the optional second worksheet as Fractions. This fallback does not require, create, or read a `SYS Stream Properties` table.
+
+## Export Material Rows
+
+1. Choose **Export Streams**.
+2. Open the downloaded `<domain>_materials_<timestamp>.xlsx` file.
+3. Use the `Properties` and `Fractions` sheets for review or compatible two-sheet re-import.
+
+The export is a material-data workbook. It is not a replacement for the system workbook's **Port Classes Database Mapping** contract.
+
+## Clear The Material State
+
+1. Save or export anything you need to keep.
+2. Click **Delete All Streams**.
+3. Confirm that the success alert appears and the canvas edges are gone.
+
+This control removes all current canvas edges before clearing the material list. It is broader than deleting one Port Class group.
 
 ## Basic Steps
 
-1. Open **Material Editor**.
-2. Review the stream rows in the table.
-3. Click **Import Streams** to load stream data from an Excel workbook.
-4. Click **Export Streams** to download the current stream rows.
-5. Click **Delete All Streams** only when you need to clear the diagram's streams.
+1. Open **User Tables** and select **Material Properties**.
+2. Verify the Domain and active Port Class group.
+3. Select **Properties** or **Stream Fractions** and inspect the rows.
+4. Import or export a workbook when needed.
+5. Use **Delete All Streams** only when you intend to clear every current edge and material row.
 6. Close the overlay when finished.
 
 ## Result
 
-The current diagram's material streams are reviewed, imported, exported, or cleared. In read-only mode, stream editing, deleting, and importing are restricted.
+The current model uses a material view scoped by Domain, Port Class, and mapped databases. Imported user rows supplement or override matching system data, while Generic/common materials remain available with the selected domain. The editor does not add a Port Class filter to the node Palette and does not establish real-server solver support for a material class.
 
 ## Related Pages
 
-- [Materials Menu overview](../materials)
+- [Material Properties overview](../materials)
 - [Model Menu overview](../model)
 - [System Menu](../system)
+- [Excel Import Pipeline Code Explanation](../../../CodeExplanation/excel-import-pipeline.md)

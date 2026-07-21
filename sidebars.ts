@@ -52,8 +52,8 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'category',
-              label: "Materials Menu",
-              link: {type: 'generated-index', title: "Materials Menu"},
+              label: "Material Properties",
+              link: {type: 'generated-index', title: "Material Properties"},
               collapsible: true,
               collapsed: false,
               items: [
@@ -204,6 +204,7 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/CodeExplanation/run-config-and-computation-start'},
         {type: 'doc', id: 'capstone/CodeExplanation/equation-writing-module'},
         {type: 'doc', id: 'capstone/CodeExplanation/solve-request-selected-inputs'},
+        {type: 'doc', id: 'capstone/CodeExplanation/material-domain-editor-workflow'},
         {type: 'doc', id: 'capstone/CodeExplanation/save-diagram-and-node-cache'},
         {type: 'doc', id: 'capstone/CodeExplanation/custom-edge-and-stream-selection'},
         {type: 'doc', id: 'capstone/CodeExplanation/node-modal-and-variable-inputs'},

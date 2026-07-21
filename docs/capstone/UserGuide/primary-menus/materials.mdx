@@ -1,29 +1,42 @@
 ---
-title: Materials Menu
+title: Material Properties
 sidebar_position: 21
-description: Introduction to the Materials primary menu and its secondary button.
+description: Open the Domain and Port Class material workflow from the User Tables menu.
 ---
 
-# Materials Menu
+# Material Properties
 
-The **Materials** primary menu opens material stream tools used by the current model. Selecting **Materials** shows one secondary button.
+The current stable7 header opens material tools from **User Tables**. Select **Material Properties** to inspect the material library for the current domain and its mapped Port Classes.
 
-## Secondary Buttons
+## Menu Entry
 
-Click the button name to open the detailed page for that secondary button.
+Open the **User Tables** dropdown in a base-period model, then select the linked entry below.
 
-| Button | What It Is For |
+| Entry | What It Is For |
 | --- | --- |
-| **[Material Editor](./materials/material-editor)** | Open the material editor overlay for stream rows, import, and export. |
+| **[Material Properties](./materials/material-editor)** | Open the Material Editor for Domain + Port Class groups, Properties or Stream Fractions details, workbook import/export, and stream clearing. |
+
+**Material Properties** is disabled in the Multi-TP version of **User Tables**. It can also be disabled while computation rules prevent material changes.
 
 ## When To Use It
 
-Use **Materials** before building or running a model when stream definitions need to be checked, imported, exported, or cleared.
+Use **Material Properties** before selecting streams on edges or running a model when you need to:
 
-When the diagram is read-only during computation, the editor can still open, but editing, deleting, and importing are restricted.
+- compare Generic/common materials with the selected domain's material groups;
+- inspect stream Properties or Stream Fractions for a mapped Port Class;
+- import material rows from a mapping-based or compatible two-sheet workbook;
+- export the current material rows for review; or
+- remove the current material list and its canvas edges.
+
+## How The Current Domain Affects The Editor
+
+The domain API combines the selected domain with Generic/common mappings. The Material Editor then groups rows by Port Class and the mapped Properties/Fractions databases. If compatible Port Classes share the same database and stream set, their labels can appear together in one group.
+
+The group tabs are a material-library view. They do not filter node models in the **Palette**, and the presence of a material group does not by itself confirm that an external computation server supports that stream type.
 
 ## Related Pages
 
+- [Material Editor](./materials/material-editor)
 - [Model menu](./model)
 - [System menu](./system)
 - [Back to interface overview](../interface-overview)

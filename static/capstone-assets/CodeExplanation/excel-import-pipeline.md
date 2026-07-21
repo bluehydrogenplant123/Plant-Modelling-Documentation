@@ -296,5 +296,6 @@ After a full import, inspect the newest `src/excel-migration/logs/log_<timestamp
 
 - `docs/Installation/STARTUP_GUIDE.md`
 - `docs/Installation/HYPRONET_INSTALLATION_GUIDE.md`
+- `docs/CodeExplanation/material-domain-editor-workflow.md`
 - `docs/CodeExplanation/backend-data-routes-and-persistence.md`
 - `docs/CodeExplanation/compute-solver-callback-and-results.md`

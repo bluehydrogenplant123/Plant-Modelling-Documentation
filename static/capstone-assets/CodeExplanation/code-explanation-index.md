@@ -31,6 +31,7 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 - [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md): dashboard create/load/delete flows, canvas shell routing, React Flow setup, sidebar drag-and-drop, display filtering, and high-level edit guards.
 - [Header Bar Code Explanation](./header-bar.md): top-level canvas navigation, secondary controls, save metadata, display filtering, run configuration entry points, and computation-aware UI guards.
+- [Material Domain Editor Workflow Code Explanation](./material-domain-editor-workflow.md): User Tables entry, Domain + Port Class grouping, Generic/common materials, Properties/Fractions views, workbook import, API grouping, and solver sanitization boundaries.
 - [Shape Node and Ports Code Explanation](./shape-node-and-ports.md): shape-node rendering, port resolution, rotation behavior, modal handoff, Redux updates, node cache updates, and save-flow integration.
 - [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md): orthogonal stream edge rendering, stream-property selection, validation, connected-node hydration, and edge-level interaction contracts.
 - [Node Modal and Variable Inputs Code Explanation](./node-modal-and-variable-inputs.md): node modal tabs, stream and info variables, specs, TP overrides, Redux state, and node-cache coordination.
