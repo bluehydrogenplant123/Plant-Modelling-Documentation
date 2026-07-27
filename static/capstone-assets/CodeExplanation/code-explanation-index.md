@@ -35,6 +35,9 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 - [Shape Node and Ports Code Explanation](./shape-node-and-ports.md): shape-node rendering, port resolution, rotation behavior, modal handoff, Redux updates, node cache updates, and save-flow integration.
 - [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md): orthogonal stream edge rendering, stream-property selection, validation, connected-node hydration, and edge-level interaction contracts.
 - [Node Modal and Variable Inputs Code Explanation](./node-modal-and-variable-inputs.md): node modal tabs, stream and info variables, specs, TP overrides, Redux state, and node-cache coordination.
+- [Equation Writing Module Code Explanation](./equation-writing-module.md): equation authoring, tokenization, Add Variable metadata, Dimension/Unit conversion, Mongo persistence, and solver equation normalization.
+- [Constraint Module Code Explanation](./constraint-module.md): `+Constr` set and collection layout, Redux draft cache, equation membership assignment, deletion guards, and Mongo persistence.
+- [Solution Algorithm Library Module Code Explanation](./solution-algo-library-module.md): SoluAlgoLib table editing, PostgreSQL base rows, Mongo diagram selections, Algorithm dropdown integration, and solver configuration payload.
 
 ## Save/Subnetwork
 

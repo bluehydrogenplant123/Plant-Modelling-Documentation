@@ -8,69 +8,65 @@ description: Explains how the Equation Writing modal builds, persists, and forwa
 
 ## Overview
 
-The Equation Writing module lets users create named objective or constraint equations from diagram variables, imported variable rows, operators, and optional time-period suffixes. The main entry point is `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`, rendered from the canvas header.
+The Equation Writing module lets users create objective-function and constraint equations from diagram variables, manually typed variable paths, imported CSV rows, operators, and time-period suffixes. The main frontend entry point is `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`.
 
-Draft equations live in the frontend Redux `equationWriting` slice. Saved equations are stored on the MongoDB diagram record as `diagram.equations`. They reach the solver only when they belong to an Objective Function or Constraint Set selected from the active Optimization/DataRec dropdown; saved standalone equations are not sent automatically.
+Draft equations live in Redux while the modal is open. Saved equations are written to MongoDB under `diagram.equations`. During computation, the backend reads those saved equations, normalizes their tokens, converts variable bounds to base units, and includes them in the solver request when they are relevant to the active run.
 
 ## Source Files
 
-- `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`: modal UI, variable/operator selection, CSV import, equation tokenization, diagram hydration, save/delete API calls, and subnetwork variable discovery.
-- `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.css`: modal layout, editor, sidebar, toolbar, and term-list styling.
-- `src/src/frontend/src/features/equationWriting/equationWritingSlice.ts`: Redux state, equation draft reducers, active equation selection, imported variable deduplication, and loaded diagram tracking.
-- `src/src/frontend/src/components/header-bar/index.tsx`: renders `EquationWritingModule` in the main header toolbar.
+- `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`: modal UI, equation list, token editing, Add Variable popover, Dimension/Unit conversion behavior, CSV import, save/delete calls, and subnetwork variable discovery.
+- `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.css`: layout and sizing for the modal, equation sidebar, editor, Add Variable popover, operator pad, and terms panel.
+- `src/src/frontend/src/features/equationWriting/equationWritingSlice.ts`: Redux draft state for equations, active equation id, imported variable rows, and loaded diagram id.
+- `src/src/frontend/src/components/header-bar/index.tsx`: renders the Equation Writing button in the header.
 - `src/src/frontend/src/store.ts`: registers the `equationWriting` reducer.
-- `src/src/backend/routes/dataRoutes.ts`: sanitizes and persists `diagram.equations`, deletes saved equations, and enforces diagram ownership.
-- `src/src/backend/services/solveInputTranslationService.ts`: resolves selected set IDs against the diagram and snapshots only their equations.
-- `src/src/backend/workers/computationDispatchWorker.ts`: combines the queued selection snapshot with the translated diagram parameters.
-- `src/src/backend/services/solverEngineApiService.ts`: normalizes selected set equations inside `parameters.solve_inputs`.
-- `src/src/backend/prisma/mongodb/schema.prisma`: declares the MongoDB `Diagram.equations Json?` field.
+- `src/src/backend/routes/dataRoutes.ts`: sanitizes and persists `diagram.equations`, deletes saved equations, and loads domain-level equation metadata.
+- `src/src/backend/workers/computationDispatchWorker.ts`: loads PostgreSQL unit conversion rows and passes diagram equations into the solver request builder.
+- `src/src/backend/services/solverEngineApiService.ts`: converts equation tokens into solver payload shape and converts non-base bound values into base units.
+- `src/src/backend/prisma/mongodb/schema.prisma`: declares the `Diagram.equations Json?` persistence field.
 
 ## Purpose and Responsibility
 
-The frontend module owns the user experience for writing equations: opening the modal, creating drafts, selecting an active equation, assembling tokens, parsing free-text edits, importing variable choices from CSV, and saving or deleting equations for the current diagram.
+The frontend module owns equation authoring: creating drafts, assigning equation type metadata, adding variable and operator tokens, parsing typed expression text, importing variable rows, and saving or deleting equations for the current diagram.
 
-The Redux slice owns temporary editor state only. It does not validate mathematical correctness or call the solver.
+The module does not validate whether an equation is mathematically solvable. It also does not decide which equations are active for optimization or data reconciliation; set and collection selection is handled by related modules and by the compute-start flow.
 
-The backend data route owns persistence checks and storage sanitization. The computation worker and solver API service own the runtime handoff from stored diagram equations to the outbound solver payload. They do not let the Equation Writing UI add equations independently of a dropdown-selected set.
+The backend route owns persistence validation and sanitization. The solver API service owns runtime conversion from stored equation JSON into the outbound solver payload.
 
 ## Inputs and Outputs
 
 | Input | Source | Used For |
 | --- | --- | --- |
 | `diagramId` | React Router params | Loads, saves, and deletes equations for the current diagram. |
-| `canvasName` | Redux `state.canvas.canvasName` | Defaults `belongTo` and appears in success alerts. |
-| `flowNodes` | React Flow store | Builds variable options from current diagram nodes. |
-| `state.domain.data.models` | Redux domain slice | Finds imported subnetwork model names. |
+| `canvasName` | Redux `state.canvas.canvasName` | Defaults the `belongTo` value. |
+| `flowNodes` | React Flow store | Builds available node, port, and variable options. |
+| `state.domain.data.models` | Redux domain slice | Provides model version metadata for visible node variables. |
 | `state.domain.data.eqTypesConfig` | Redux domain slice | Populates the `EQ Type` selector. |
-| `state.equationWriting` | Redux slice | Supplies equation drafts, active equation id, imported variables, and loaded diagram id. |
-| Model versions | `useNodeCache()` and embedded node data | Provides visible port and variable choices for nodes. |
-| Subnetwork instance diagrams | `/api/data/diagrams/:diagramId/subnetwork-instance` and `/api/data/diagrams/:instanceDiagramId` | Adds subnetwork variables and `belongTo` choices. |
-| CSV file | Hidden file input parsed with `xlsx` | Imports extra variable rows with `Node`, `Port`, and `Variable` columns. |
-| Saved diagram equations | `/api/data/diagrams/:diagramId` | Hydrates Redux drafts when the modal opens. |
+| `state.domain.data.units` | Redux domain slice, sourced from PostgreSQL `UnitConversion` | Populates Dimension and Unit controls in Add Variable. |
+| `state.equationWriting` | Redux slice | Supplies equation drafts, active equation id, imported variables, and loaded diagram guard. |
+| CSV import file | Hidden file input parsed by `xlsx` | Adds user-provided variable rows with `Node`, `Port`, and `Variable` columns. |
+| Saved diagram equations | `GET /api/data/diagrams/:diagramId` | Hydrates Redux drafts when the modal opens. |
 
 | Output | Destination | Notes |
 | --- | --- | --- |
 | `EquationDefinition[]` | Redux `state.equationWriting.equations` | Local draft state for the modal. |
 | `PUT /api/data/diagrams/:diagramId/equations` | Backend data route | Persists all visible equation drafts for the diagram. |
 | `DELETE /api/data/diagrams/:diagramId/equations/:equationId` | Backend data route | Removes one persisted equation by id. |
-| `diagram.equations` | MongoDB diagram document | Stored JSON source of truth for saved equations. |
-| `parameters.solve_inputs` | Solver request body | Contains equations grouped under dropdown-selected Objective Function and Constraint Sets. |
-| Alerts | Redux alert slice | Shows load, save, delete, import, and validation feedback. |
+| `diagram.equations` | MongoDB diagram document | Stores user-facing equation data, including the user-selected unit. |
+| `parameters.equations` | Solver request body | Contains normalized saved equations, with variable bounds converted to base units. |
+| `parameters.solve_inputs` | Solver request body | Contains selected run inputs. Set references inside this object use ids rather than full nested equations. |
 
 ## Core State and Data Structures
 
 - `EquationDefinition`: frontend draft record with `id`, `name`, `belongTo`, `equationType`, `eqType`, `expression`, and `tokens`.
-- `EquationToken`: either a `variable` token with `network`, `node`, `port`, `variable`, `tp`, and `path`, or an `operator` token with `value`.
-- `ImportedVariableDraft`: imported CSV row with `node`, `port`, and `variable`; the slice deduplicates rows case-insensitively by those three fields.
-- `loadedDiagramId`: Redux guard that prevents equations loaded for one diagram from appearing while another diagram is active.
-- `activeEquationId`: Redux pointer for the selected sidebar equation; deleting the active equation selects a neighbor or clears selection.
-- `showPanel`: local state that opens the modal and gates hydration/subnetwork loading effects.
-- `selectedNetwork`, `selectedNode`, `selectedPort`, `selectedVariable`, `selectedTimePeriod`: local selector state used to build the next variable token.
-- `isUserSelfDefine`: swaps node, port, and variable dropdowns for text inputs.
-- `isHydratingEquations`, `isSavingEquations`, `pendingDeleteEquationId`: local loading and disabled-state guards.
-- `subnetworkDiagramData`: local cache of loaded subnetwork instance diagram nodes.
+- `EquationToken`: discriminated token. Operator tokens store `value`; variable tokens store `type`, `name`, `path`, `network`, `node`, `port`, `variable`, `tp`, `lb`, `ub`, and `units`.
+- `AddVariableDraft`: local popover state for `name`, `lb`, `ub`, `dimension`, `units`, and Pyomo variable `type`.
+- `ImportedVariableDraft`: CSV-imported row with `node`, `port`, and `variable`; deduplicated case-insensitively.
+- `activeEquationId`: current sidebar equation.
+- `loadedDiagramId`: prevents drafts loaded from one diagram from leaking into another.
+- `isUserSelfDefine`: switches node, port, and variable controls into text inputs.
+- `showAddVariablePopover`: controls whether the metadata popover for Add Variable is open.
 
-Persisted equations use this backend shape:
+Persisted equations use this backend wrapper:
 
 ```ts
 {
@@ -79,60 +75,69 @@ Persisted equations use this backend shape:
   expression: {
     belong_to: string;
     equation_type: string;
-    eq_type: string;
+    eq_type: string | null;
     expression: string;
     tokens: StoredEquationToken[];
   };
 }
 ```
 
-The solver request receives this normalized equation shape inside each selected set under `parameters.solve_inputs`:
+Solver-normalized equation tokens use snake_case token fields:
 
 ```ts
 {
+  token_type: 'variable';
+  type: string | null;
   name: string;
-  belong_to: string;
-  equation_type: string;
-  eq_type: string;
-  expression: string;
-  tokens: Record<string, unknown>[];
+  network: string | null;
+  node: string | null;
+  port: string | null;
+  variable: string | null;
+  tp: string | null;
+  path: string;
+  lb: number | null;
+  ub: number | null;
+  units: string | null;
 }
 ```
 
 ## Main Functions and Components
 
-- `EquationWritingModule`: renders the header button and modal, reads Redux/router/React Flow state, and coordinates all editor actions.
-- `normalizePersistedEquations(...)`: converts saved records or legacy flat fields into frontend `EquationDefinition` drafts.
-- `serializeEquationForPersistence(...)`: converts a frontend draft into the backend `expression` wrapper shape.
-- `tokenizeExpressionSegments(...)` and `parseExpressionToTokens(...)`: split free-text expressions into operator and variable tokens while preserving bracketed time-period suffixes.
-- `buildVariableTokenFromPath(...)`: parses a variable path such as `Network.Node.Port.Variable[t+1]` into a structured variable token.
-- `buildNodeOptionsFromCanvasNodes(...)`: extracts node, port, and variable choices from canvas nodes and model versions.
-- `handleAddEquation()`: creates the next `eq_###` draft and makes it active.
-- `handleAddVariable()`: appends a selected or self-defined variable token and positions the cursor inside `[]` for self-defined time periods.
-- `handleExpressionChange(...)`: reparses manually typed text and keeps `expression` and `tokens` synchronized.
-- `handleSaveEquations()`: saves all visible drafts with `PUT /api/data/diagrams/:diagramId/equations`.
-- `handleDeleteEquation(...)`: deletes from the backend first when a diagram id exists, then removes the local draft.
-- `handleImportedVariableFile(...)`: validates and imports CSV variable rows.
-- `sanitizeEquationDefinitionForStorage(...)`: backend sanitizer that trims fields, normalizes tokens, rebuilds expression text when needed, and defaults `equation_type` to `Objective Function`.
-- `buildSolveRequest(...)`: removes independent equation inputs and injects only the queued dropdown selection into `parameters.solve_inputs`.
+- `EquationWritingModule`: renders the button and modal, coordinates state, and owns user interactions.
+- `normalizePersistedEquations(...)`: converts Mongo records into frontend drafts, supporting both current wrapped records and older flatter shapes.
+- `serializeEquationForPersistence(...)`: wraps a frontend equation under `expression` for MongoDB persistence.
+- `tokenizeExpressionSegments(...)` and `parseExpressionToTokens(...)`: split text expressions into variable/operator tokens while preserving bracketed time-period suffixes.
+- `buildVariableTokenFromPath(...)`: parses a typed path into a variable token when possible.
+- `buildNodeOptionsFromCanvasNodes(...)`: resolves visible node, port, and variable options from the canvas and model-version cache.
+- `buildAddVariableDraftFromSelection()`: seeds Add Variable metadata from the currently selected variable option.
+- `handleAddVariableDimensionChange(...)`: changes the Dimension dropdown, selects the first compatible unit, and clears `lb`/`ub` to avoid stale values.
+- `handleAddVariableUnitChange(...)`: converts the current `lb`/`ub` display values between units within the same dimension.
+- `handleConfirmAddVariable()`: validates variable selection and appends the structured variable token.
+- `handleExpressionChange(...)`: reparses manually typed expression text and synchronizes tokens.
+- `handleSaveEquations()`: saves the full visible equation list.
+- `handleDeleteEquation(...)`: deletes one saved equation and updates local state.
+- `handleImportedVariableFile(...)`: validates CSV headers and imports user variable choices.
+- `normalizeSolveRequestEquations(...)`: converts stored equations to solver shape and converts non-base bounds into base-unit values.
 
 ## Rendered UI and Interaction Map
 
-| UI State or Action | Source State or Props | Expected Result | Verification |
-| --- | --- | --- | --- |
-| Header `Equation Writing` button | `disabled` prop, default `buttonLabel` | Opens the modal unless disabled. | Click the header button. |
-| Modal opens for saved diagram | `diagramId`, `loadedDiagramId`, `/api/data/diagrams/:diagramId` | Shows `Loading saved equations...`, then saved equations or empty state. | Open a saved diagram with and without stored equations. |
-| `New Equation` | `visibleEquations`, hydration flags | Adds `eq_###`, names it `Equation N`, and selects it. | Click `New Equation`; sidebar and editor appear. |
-| Sidebar name input | Active equation draft | Updates `name` in Redux immediately. | Rename a draft and save. |
-| Sidebar delete button | `diagramId`, `pendingDeleteEquationId` | Calls delete route for saved diagrams, disables the deleting row, and selects the next draft. | Delete active and non-active equations. |
-| Network/node/port/variable controls | React Flow nodes, node cache, imported rows, self-define toggle | Selects a variable source; self-define mode changes dropdowns to text inputs. | Toggle `User Self Define` and compare controls. |
-| Time-period selector | `timePeriodOptions` | Adds no suffix, `[t]`, `[t+1]`, `[t-1]`, or `[]` to variable paths. | Add variables for each option. |
-| Operator buttons | `operatorButtons` | Appends operator tokens to the expression and terms list. | Click each operator and inspect expression text. |
-| Textarea edit | `handleExpressionChange` | Re-tokenizes free text and refreshes the terms panel. | Type `A.B.C.D[t] <= A.B.C.E[t+1]`. |
-| Terms panel delete | Active equation `tokens` | Removes one token and rebuilds expression text from remaining tokens. | Delete a middle term. |
-| Import button | Hidden `.csv` input | Imports unique variable choices with required headers. | Import valid and invalid CSV files. |
-| Clear button | `isSavingEquations` | Clears active equation expression and tokens. | Clear during normal state and while saving. |
-| Save Equation button | `diagramId`, `visibleEquations`, `isSavingEquations` | Persists all visible equations or alerts if the diagram has not been saved. | Save before and after creating a diagram. |
+| UI Area | Behavior |
+| --- | --- |
+| Header button | Opens the Equation Writing modal. |
+| Left equation sidebar | Lists equations, allows rename, displays read-only type badge `ObjecF` or `Const`, and deletes equations. |
+| Equation type selector | Stores `Objective Function` or `Constraint`; the sidebar badge is display-only and fixed-size. |
+| `Belong to` selector | Stores equation ownership context for the expression wrapper. |
+| `EQ Type` selector | Populated from PostgreSQL-backed EQ type config. |
+| Variable selectors | Build a variable path from network, node, port, variable, and TP values. |
+| `User Self Define` | Allows `Node/Port/Var`, `Node/Var`, or `Port/Var`, as long as `Var` is not empty. |
+| Add Variable popover | Captures name, lower bound, upper bound, Dimension, Unit, and type before inserting a token. |
+| Dimension dropdown | Lists dimensions from `UnitConversion`; changing it clears bounds and resets unit. |
+| Unit dropdown | Lists the base unit and target units for the selected dimension; changing it converts displayed bounds. |
+| Operator pad | Appends operator tokens such as `+`, `-`, `*`, `/`, `^`, `=`, `<`, `<=`, `>`, and `>=`. |
+| Text editor | Allows free text edits; changes are parsed back into tokens. |
+| Terms panel | Displays current tokens and allows term deletion. |
+| Import | Imports CSV rows as draft-only variable choices. |
+| Save Equation | Persists all equation drafts for the current diagram. |
 
 ## Component Contract
 
@@ -140,36 +145,23 @@ The solver request receives this normalized equation shape inside each selected 
 
 | Prop | Required | Behavior |
 | --- | --- | --- |
-| `disabled?: boolean` | No | Disables the header button and prevents opening the modal. Defaults to `false`. |
-| `buttonLabel?: string` | No | Overrides the header button text. Defaults to `Equation Writing`. |
+| `disabled?: boolean` | No | Disables the header button and prevents opening the modal. |
+| `buttonLabel?: string` | No | Overrides the header button text. |
 
-Important parent and child contracts:
-
-- `header-bar/index.tsx` renders `<EquationWritingModule />` without passing computation disable rules, so the module currently remains available from the header whenever the header renders it.
-- The component expects `RootState` to include `equationWriting`, `canvas`, and `domain`.
-- `useNodeCache()` must provide `getCachedModelVersion`, `isLoading`, and `loadModelVersion`; missing model versions trigger background loads while the modal is open.
-- React Bootstrap `Modal`, `Button`, `Form.Select`, `Form.Control`, and `Form.Check` provide the visible controls.
-- The hidden import input accepts `.csv,text/csv` and is triggered through `importInputRef`.
-
-Important hooks and cleanup:
-
-- The subnetwork-loading effect depends on `diagramId`, `showPanel`, and `subnetworkDiagramReferences`. It uses a `didCancel` flag to avoid setting state after unmount or close.
-- The equation-hydration effect depends on `currentBelongToDefault`, `diagramId`, `dispatch`, `isDiagramDraftReady`, and `showPanel`. It also uses `didCancel` and clears the loading flag when safe.
-- Selector reset effects clear invalid `selectedNetwork`, `selectedNode`, `selectedPort`, and `selectedVariable` values when available options change, unless self-define mode owns the text.
-- The missing-model-version effect loads node model versions only when the modal is open and the node is not already cached or loading.
+The component expects the Redux store to provide `domain`, `canvas`, and `equationWriting` slices. It also expects `useNodeCache()` to provide cached model versions or the ability to load missing versions while the modal is open.
 
 ## Data Flow
 
-1. `header-bar/index.tsx` renders `EquationWritingModule` in the main toolbar.
-2. The user opens the modal. If `diagramId` is present and the Redux drafts are not loaded for that diagram, the component fetches `/api/data/diagrams/:diagramId`.
-3. `normalizePersistedEquations(...)` converts `diagram.equations` into Redux `EquationDefinition[]`, defaulting `belongTo` to the canvas name and `equationType` to `Objective Function` when needed.
-4. The user creates or edits drafts. Button-driven edits append structured tokens; textarea edits parse text back into tokens.
-5. The user saves. `serializeEquationForPersistence(...)` wraps each draft under `expression` and sends `PUT /api/data/diagrams/:diagramId/equations`.
-6. `dataRoutes.ts` validates the diagram id, checks ownership, sanitizes the payload, rejects duplicate ids, and writes `diagram.equations` to MongoDB.
-7. `/compute/start` resolves selected Objective Function and Constraint Set IDs against `diagram.sets` and stores an authoritative selection snapshot on the computation task.
-8. During dispatch, `computationDispatchWorker.ts` calls `buildSolveRequest(configuration, diagram.parameters)`.
-9. `solverEngineApiService.ts` strips any independently persisted equation fields and normalizes only the selected set equations inside `parameters.solve_inputs`.
-9. `createComputationTask(...)` posts the solve request to `BASE_SOLVER_ENGINE_URL/solve/`.
+1. The header renders `EquationWritingModule`.
+2. Opening the modal fetches `GET /api/data/diagrams/:diagramId` when the current diagram's equations are not already hydrated.
+3. Saved equations are normalized into Redux drafts.
+4. The user edits the active equation through selectors, typed text, operator buttons, CSV imports, and the Add Variable popover.
+5. Add Variable stores user-facing metadata exactly as selected, including non-base units.
+6. Save sends all visible drafts to `PUT /api/data/diagrams/:diagramId/equations`.
+7. `dataRoutes.ts` validates ownership, sanitizes tokens, rejects duplicate equation ids, and writes `diagram.equations`.
+8. During computation, `computationDispatchWorker.ts` loads PostgreSQL `UnitConversion` rows and calls `buildSolveRequest(...)` with `diagram.equations`.
+9. `solverEngineApiService.ts` converts each variable token's `lb` and `ub` from the selected unit into the dimension base unit when a conversion row exists.
+10. The solver request contains base-unit equation bounds, while MongoDB still preserves the user-selected unit for future editing.
 
 ```mermaid
 flowchart TD
@@ -177,76 +169,65 @@ flowchart TD
   Modal --> Redux["equationWriting slice"]
   Modal --> SaveRoute["PUT /api/data/diagrams/:diagramId/equations"]
   SaveRoute --> Mongo["Mongo diagram.equations"]
-  Mongo --> SelectedSet["Dropdown-selected set"]
-  SelectedSet --> Worker["computationDispatchWorker.ts"]
+  Mongo --> Worker["computationDispatchWorker.ts"]
+  Worker --> Units["PostgreSQL UnitConversion"]
   Worker --> Builder["buildSolveRequest"]
-  Builder --> SolverPayload["parameters.solve_inputs selected-set equations"]
-  SolverPayload --> Solver["Solver engine /solve/"]
+  Builder --> Solver["Solver request parameters.equations"]
 ```
 
 ## Backend/Data-Flow Contract
 
-The persistence route accepts:
+The save route accepts `{ equations: unknown[] }`. Each equation may use the current wrapped `expression` shape or legacy flat fields. The sanitizer writes the current wrapper shape.
 
-```ts
-{
-  equations: unknown[]
-}
-```
+Important storage rules:
 
-Each equation may contain fields in the current wrapped shape or older flat fields. The sanitizer reads `expression.belong_to`, `expression.equation_type`, `expression.eq_type`, `expression.expression`, and `expression.tokens` first, then falls back to flat `belong_to`, `equation_type`, `eq_type`, `expression`, and `tokens`.
-
-Storage rules in `dataRoutes.ts`:
-
-- `diagramId` must be a Mongo ObjectId.
+- `diagramId` must be a valid MongoDB ObjectId.
 - The authenticated user must own the diagram.
 - `equations` must be an array.
-- Duplicate sanitized `id` values are rejected.
-- Operators are stored only as `{ type: 'operator', value }`; the backend trims but does not reject unknown operator values in existing operator tokens.
-- Variable tokens are rebuilt from `path` when available. Otherwise `network.node.port.variable` plus `tp` becomes the fallback path.
-- If token arrays are absent, the backend tokenizes `expression` text using the same operator list as the frontend.
-- The route writes the whole sanitized array to `diagram.equations`; it is not a patch-by-id save.
+- Duplicate sanitized equation ids are rejected.
+- Operator tokens are stored as operator tokens only.
+- Variable tokens require a usable `path`; tokens without one are dropped.
+- The route replaces the full `diagram.equations` array rather than patching a single equation.
 
-Solver request rules in `solverEngineApiService.ts`:
+Important solver rules:
 
-- Existing `parameters.equations`, set, constraint, instrument, and measurement fields are removed before selected inputs are attached.
-- The outbound field is `parameters.solve_inputs`; no duplicate top-level `parameters.equations` field is generated.
-- Each outbound equation contains `name`, `belong_to`, `equation_type`, `eq_type`, `expression`, and `tokens`.
-- Token normalization trims string fields and preserves only token records with `type` equal to `operator` or `variable`.
+- `buildSolveRequest(...)` removes older independent solve-input parameter keys before adding normalized fields.
+- `parameters.equations` is generated from `diagram.equations` when saved equations exist.
+- `parameters.solve_inputs` is generated from the computation configuration selection snapshot.
+- Selected set snapshots use ids for equation references, so duplicate display names do not confuse the solver.
+- Non-base variable bounds are converted with `(value - offset) / multiplier`; the outbound unit is the dimension base unit.
+- Tokens that do not have complete structured fields are treated as manually defined paths and currently emit null structured fields and null units in the solver payload.
 
 ## Side Effects
 
-- Opening the modal may call `/api/data/diagrams/:diagramId` to hydrate saved equations.
-- Opening the modal with subnetwork wrappers may call `/api/data/diagrams/:diagramId/subnetwork-instance` and `/api/data/diagrams/:instanceDiagramId` to discover subnetwork variables.
-- Missing model versions trigger `loadModelVersion(nodeId, sourceDiagramId)` through the node cache service.
-- Saving writes the complete `diagram.equations` array in MongoDB.
-- Deleting writes a filtered `diagram.equations` array in MongoDB and then removes the local draft.
-- Importing CSV rows updates only Redux `importedVariables`; imported variable choices are not persisted unless they are used in saved equation tokens.
-- Compute dispatch sends only equations from dropdown-selected sets to the external solver.
-- When `SAVE_JSON_FILES=true`, `solverEngineApiService.ts` may write the generated solve request JSON for debugging; that file is generated output, not documentation source of truth.
+- Opening the modal may fetch the current diagram.
+- Opening the modal may load subnetwork instance diagrams and missing model versions.
+- Saving writes the full equation array into MongoDB.
+- Deleting writes a filtered equation array into MongoDB.
+- CSV import changes only Redux draft options unless imported variables are used in saved tokens.
+- Solver dispatch may write `src/src/backend/services/solve_request.json` when `SAVE_JSON_FILES=true`; that file is debug output, not source of truth.
 
 ## Error Handling and Edge Cases
 
-- If the modal opens without `diagramId`, hydration initializes empty drafts for a null diagram key.
-- If save is attempted without `diagramId`, the UI shows `Please save the diagram before saving equations.` and does not call the backend.
-- If loading saved equations fails, Redux is hydrated with an empty array and an error alert is shown.
-- If delete fails, the local draft is left intact and the pending delete state is cleared.
-- If `selectedNetwork`, `selectedNode`, `selectedPort`, or `selectedVariable` no longer exists in derived options, the component clears the invalid selection unless self-define mode is active.
-- `handleAddVariable()` returns without changes unless an active equation and all variable path parts are present.
-- CSV import rejects non-`.csv` files, empty files, headers other than exactly `Node`, `Port`, `Variable` after normalization, partial rows, and files with no valid rows.
-- The tokenizer preserves bracket contents, so `t+1` and `t-1` are not split at `+` or `-`.
-- The tokenizer treats `<=` and `>=` as two-character operators.
-- A minus sign is treated as an operator in boundary cases; contributors should test negative values carefully if they add numeric literal support.
-- The delete route does not report a special error when an equation id is absent from the saved array; it saves the unchanged filtered array.
+- Saving without a saved diagram shows `Please save the diagram before saving equations.`
+- Loading failures hydrate an empty equation draft list and show an alert.
+- Deleting failures leave the local draft in place.
+- In structured mode, Add Variable requires network, node, port, and variable.
+- In self-defined mode, Add Variable requires only the variable field. Node and port are optional.
+- If self-defined mode has node/port values but no variable, Add Variable shows an error.
+- Changing Dimension clears `lb` and `ub`; changing Unit converts the current bounds if both units are known.
+- CSV import rejects non-CSV files, empty files, wrong headers, partial rows, and files with no valid rows.
+- The tokenizer preserves bracket contents such as `[t+1]`, so `+` inside brackets is not treated as an operator.
+- Negative numeric literal support is fragile because `-` can be parsed as an operator.
 
 ## Extension Points
 
-- Add a new operator by updating `operatorButtons` in `equation-writing-module.tsx`, `EQUATION_OPERATOR_OPTIONS` in `dataRoutes.ts`, and any solver-side expectations for selected-set equation tokens under `parameters.solve_inputs`.
-- Add a new time-period preset by updating `timePeriodOptions`, the path suffix handling helpers, and manual checks for parsing/persistence.
-- Add a new equation metadata field by updating `EquationDefinition`, `serializeEquationForPersistence(...)`, `normalizePersistedEquations(...)`, `sanitizeEquationDefinitionForStorage(...)`, `normalizeSolveRequestEquations(...)`, and the solver contract.
-- Change variable discovery by editing `buildNodeOptionsFromCanvasNodes(...)`, `getVisiblePortVarsForNode(...)`, and the subnetwork-loading flow together.
-- Persist imported CSV variable choices only if a new diagram field and backend route behavior are added; the current imported list is draft-only.
-- Add automated coverage around tokenization, route sanitization, and solver normalization before changing expression parsing.
+- Add an operator by updating the frontend operator list, backend operator sanitizer, and solver expectations together.
+- Add equation metadata by updating `EquationDefinition`, persistence serialization, backend sanitization, and solver normalization.
+- Change unit behavior by updating frontend `UnitConversion` helpers and backend `normalizeSolveRequestToken(...)` together.
+- Change self-defined variable rules in both `handleConfirmAddVariable()` and solver token normalization.
+- Persist CSV imports only after adding an explicit Mongo field and route support.
+- Add automated coverage around token parsing, unit conversion, and solver normalization before changing expression syntax.
 
 ## Testing and Verification
 
@@ -258,46 +239,39 @@ Working directory:
 HYPRONET-GUI/src/
 ```
 
-Automated checks:
+Useful checks:
 
 ```powershell
-npm.cmd run build
-npm.cmd run test -- --runInBand --coverage=false
+npm.cmd exec tsc -- -p tsconfig.build.json --noEmit
+npm.cmd exec eslint src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx
 ```
 
-There is no equation-writing-specific test file in the current repository. Use the full build and test suite as broad regression checks, and add targeted tests when changing tokenization, persistence sanitization, or solver request normalization.
+Manual verification matrix:
 
-Manual frontend verification matrix:
-
-| Scenario | Action | Expected Result | Regression Risk |
-| --- | --- | --- | --- |
-| Unsaved diagram | Open module, create equation, click Save Equation | Error alert says to save the diagram first. | Prevents writes without a diagram id. |
-| Saved empty diagram | Open module and click `New Equation` | `eq_001` appears and editor controls render. | Draft initialization and active selection. |
-| Canvas variable | Select network, node, port, variable, and `t+1`; click Add Variable | Textarea and terms panel show `Network.Node.Port.Variable[t+1]`. | Node cache and suffix formatting. |
-| Self-defined variable | Enable `User Self Define`, type node/port/variable, select `Self-Define`, click Add Variable | Variable path ends with `[]` and cursor moves inside brackets. | Custom variable entry and cursor behavior. |
-| Text parsing | Type an expression with `<=`, `>=`, `[t+1]`, and `[t-1]` | Terms panel keeps comparison operators and time-period suffixes intact. | Parser compatibility. |
-| CSV import | Import a CSV with `Node,Port,Variable` headers and duplicate rows | Unique imported variables become selectable; invalid files show errors. | Import validation and deduplication. |
-| Save and reload | Save equations, close modal, reload diagram, reopen modal | Saved names, metadata, expression, and tokens rehydrate. | Frontend/backend storage contract. |
-| Delete saved equation | Delete an equation after saving | Backend delete succeeds and local active selection moves to a remaining equation. | Destructive persistence behavior. |
-| Compute handoff | Save an equation, assign it to a set, select that set, and start a computation | Solver request includes the selected set and its normalized equations only in `parameters.solve_inputs`. | Solver payload shape and selection boundary. |
-
-For backend payload confirmation, prefer source-level tests around `dataRoutes.ts` and `solverEngineApiService.ts`. Generated files such as `src/src/backend/services/solve_request.json` may confirm a local run when `SAVE_JSON_FILES=true`, but they should not be committed or treated as the source of truth.
+| Scenario | Expected Result |
+| --- | --- |
+| Create, rename, and save an equation | Mongo `diagram.equations` stores the new wrapped equation. |
+| Add structured variable | Token contains network, node, port, variable, tp, path, bounds, units, and type. |
+| Add self-defined `Var` only | Token is accepted and no Node/Port validation error appears. |
+| Add self-defined Node/Port without Var | Error alert appears and token is not added. |
+| Change Dimension | Unit resets to a compatible unit and `lb`/`ub` become empty. |
+| Change Unit within same Dimension | Existing `lb`/`ub` values convert on screen. |
+| Run computation with non-base unit bounds | `solve_request.json`, when enabled, shows base-unit bounds and base unit. |
+| Delete saved equation | Backend deletes it and active selection moves to a remaining equation or empty state. |
+| Import invalid CSV | User sees an error and no rows are added. |
 
 ## Known Cautions
 
-- Saving equations replaces the entire `diagram.equations` array, so callers must send all equations that should remain.
-- The frontend and backend each maintain tokenizer/operator logic; update both sides together.
-- `parameters.equations` is removed during compute dispatch. Selected-set equations live only under `parameters.solve_inputs`.
-- The module is currently rendered without the header computation disable rule, unlike some other header actions.
-- Imported CSV variable choices are draft-only until they are included in an equation token and saved.
-- Subnetwork variable discovery may create or load subnetwork instances while the modal is open.
-- The solver request builder removes any existing `parameters.equations` and does not recreate it.
-- There is currently no dedicated automated test coverage for the equation-writing UI or equation route sanitizer.
+- Do not treat `src/src/backend/services/solve_request.json` as source code. It is generated only when debugging is enabled.
+- Mongo stores user-selected units for editor clarity; solver payload uses base units for variable bounds.
+- Display names are not unique. Use ids when connecting equations to sets, sets to collections, or rows to SoluAlgoLib.
+- `parameters.solve_inputs` and `parameters.equations` serve different purposes. The former captures selected run inputs; the latter carries normalized saved equations.
+- The Add Variable popover conversion is frontend-only until computation dispatch performs the final base-unit conversion.
 
 ## Related Pages
 
-- `docs/CodeExplanation/header-bar.md`
-- `docs/CodeExplanation/run-config-and-computation-start.md`
-- `docs/CodeExplanation/compute-solver-callback-and-results.md`
-- `docs/CodeExplanation/subnetwork-blueprint-and-instance-flow.md`
-- `docs/CodeExplanation/save-diagram-and-node-cache.md`
+- [Constraint Module Code Explanation](./constraint-module.md)
+- [Solution Algorithm Library Module Code Explanation](./solution-algo-library-module.md)
+- [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md)
+- [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md)
+- [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md)
