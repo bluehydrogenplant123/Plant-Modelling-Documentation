@@ -138,7 +138,8 @@ When matching records are merged, a `source_type: user` record wins scalar confl
 - `process_port_class_material_streams(...)`: imports the current mapping CSV, stores normalized mapping rows, reads each shared Properties database once, merges referenced Fractions databases, and upserts system streams.
 - `process_streams(...)`: invokes the current Port Class material importer and skips stream import when no valid mapping contract is available.
 - `transformStreamToMaterialProperty(...)`: removes Port Class/database/source metadata before building the solver property row.
-- `shouldIncludeMaterialFractionsForPortClass(...)`: omits fraction rows when the active Port Class mapping explicitly has no Fractions database.
+- `translation(...)`: emits a material property row only when the selected stream has at least one usable property value, and emits fractions only when a connected port has both `compname_MF` and `compname_X` templates.
+- `shouldIncludeMaterialFractionsForPortClass(...)`: additionally omits fraction rows when the active Port Class mapping explicitly has no Fractions database.
 
 ## Rendered UI / Interaction Map
 
@@ -210,9 +211,9 @@ State and dependencies:
 ### Selected stream to solver payload
 
 1. Edge selection stores a chosen stream record on the canvas edge.
-2. `translation.ts` resolves the edge's source Port Class and builds stream connectivity.
-3. `transformStreamToMaterialProperty(...)` copies dynamic `properties` while removing editor-only mapping metadata.
-4. Fractions are normalized and included unless the active Port Class mapping explicitly has no Fractions database.
+2. `translation.ts` resolves both connected ports and builds stream connectivity for every supported stream class.
+3. `transformStreamToMaterialProperty(...)` copies dynamic `properties` while removing editor-only mapping metadata; empty/all-invalid property records are not sent to the solver.
+4. Fractions are normalized and included only when they are non-empty, at least one endpoint has both component templates (`compname_MF` and `compname_X`), and the active Port Class mapping does not explicitly disable a Fractions database.
 5. Internal matching `key` fields are removed from final `parameters.material_properties` and `parameters.material_fractions` records.
 
 ## Backend/Data-Flow Contract
