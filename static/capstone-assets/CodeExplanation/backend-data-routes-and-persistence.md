@@ -110,7 +110,7 @@ PostgreSQL also stores computation result metadata for applied TP spec versions.
 
 - Authentication failures are returned before route handlers run: missing token 401, invalid/expired token 401 with a code, missing user 404.
 - Most route validation errors return 400, missing records return 404, ownership failures return 403, duplicate subnetwork names return 409, and uncaught route errors flow to the global app handler as `{ message: "Internal Server Error" }`.
-- CORS accepts requests with no `Origin`, or origins listed in `ALLOWED_ORIGINS`; other origins are rejected before route handling.
+- CORS accepts requests with no `Origin`, or origins listed in `ALLOWED_ORIGINS`. When `NODE_ENV` is explicitly `development` or `test`, loopback origins (`localhost`, `127.0.0.1`, or `[::1]`) on dynamic frontend ports are also accepted; other origins are rejected before route handling.
 - Debug ingest calls to `http://127.0.0.1:7242/ingest/...` are suppressed by a local fetch wrapper unless `DEBUG_INGEST=true`; they are diagnostics, not persistence.
 - Schema upgrade endpoints currently report no pending upgrades and skip bulk upgrades. Import still rejects unknown snapshot versions and calls `migrateToLatest(...)` for known older versions.
 - TP change creation can recover a missing `portVarValue` from an existing manual override or the node model default; if no value can be resolved, creation returns 400.
