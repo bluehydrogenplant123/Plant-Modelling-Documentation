@@ -212,7 +212,8 @@ npm run dev
 
 ## 8. Real Solver Notes
 
-If you are using a real solver instead of the local default solver endpoint, review these values in `src/.env`:
+If you are using a real solver instead of the local default solver endpoint,
+review these values in `src/.env`:
 
 ```env
 BASE_SOLVER_ENGINE_URL=http://127.0.0.1:8000/api
@@ -223,13 +224,15 @@ Rules:
 
 - `BASE_SOLVER_ENGINE_URL` should point to the actual solver API
 - `BASE_EXTERNAL_URL` should point to the public callback base URL of the HyProNet backend
-- if you expose the backend through VS Code port forwarding, the relevant backend port is `3000`
-- write the public `3000` URL into `BASE_EXTERNAL_URL`
+- the backend can be exposed directly with Microsoft Dev Tunnels CLI; VS Code is not required
+- host the actual backend `PORT` (default `3000`) with `devtunnel host -p 3000 --allow-anonymous`
+- write the temporary public tunnel URL into `BASE_EXTERNAL_URL`
 - do not append `/compute/callback/`; the backend appends that automatically
 
-For the step-by-step VS Code **Ports** workflow, including how to add port `3000`, set visibility, and copy the forwarded URL, see:
+For the complete installation, temporary-tunnel security boundary, route checks,
+compute acceptance chain, and failure classification, see:
 
-- [HYPRONET_INSTALLATION_GUIDE - Example Procedure](./HYPRONET_INSTALLATION_GUIDE.md#example-procedure)
+- [Real Solver Quickstart](./REAL_SERVER_QUICKSTART.md)
 
 Example:
 
@@ -242,4 +245,5 @@ For more detail, see [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE
 
 ## 9. Related Pages
 
+- [REAL_SERVER_QUICKSTART](./REAL_SERVER_QUICKSTART.md)
 - [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md)

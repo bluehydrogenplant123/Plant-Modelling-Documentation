@@ -10,6 +10,7 @@ const sidebars: SidebarsConfig = {
       items: [
         {type: 'doc', id: 'capstone/Installation/HYPRONET_INSTALLATION_GUIDE'},
         {type: 'doc', id: 'capstone/Installation/STARTUP_GUIDE'},
+        {type: 'doc', id: 'capstone/Installation/REAL_SERVER_QUICKSTART'},
       ],
     },
     {

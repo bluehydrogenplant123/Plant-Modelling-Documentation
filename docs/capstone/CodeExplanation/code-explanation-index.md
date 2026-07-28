@@ -61,6 +61,7 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 ## Import/Runtime
 
 - [Excel Import Pipeline Code Explanation](./excel-import-pipeline.md): system workbook import, workbook-to-CSV normalization, Prisma database setup, reference-data writes, and import verification boundaries.
+- [Real Solver Quickstart](../Installation/REAL_SERVER_QUICKSTART.md): direct Microsoft Dev Tunnels CLI callback setup, route verification, compute acceptance, and failure classification without VS Code port forwarding.
 - [HyProNet Installation Guide](../Installation/HYPRONET_INSTALLATION_GUIDE.md): current detailed setup, environment, workbook import, and real solver connectivity guide.
 - [HyProNet Streamlined Guide](../Installation/STARTUP_GUIDE.md): concise current startup, shutdown, update, and real solver notes.
 

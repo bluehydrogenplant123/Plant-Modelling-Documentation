@@ -761,7 +761,7 @@ bash run-all.sh jun-16-2026.xlsx
 npm run dev
 ```
 
-## Using a Real Solver Engine with VS Code Port Forwarding
+## Using a Real Solver Engine with Dev Tunnels CLI
 
 When HyProNet talks to a real computation / solver engine, there are **two different URLs** in `src/.env` that matter:
 
@@ -777,7 +777,9 @@ They do different jobs:
 - `BASE_EXTERNAL_URL`
   - the public callback URL that the solver engine uses to send results back to HyProNet
 
-For the VS Code **Ports** workflow shown in the screenshot, the relevant port is **3000**, not `8000`.
+The callback tunnel can be hosted directly with Microsoft Dev Tunnels CLI. VS
+Code is not required. The relevant local port is **3000**, not `8000`, unless
+you deliberately changed the backend `PORT`.
 
 Why:
 
@@ -785,7 +787,20 @@ Why:
 - the callback route is under `/api/external/compute/callback`
 - the solver engine must be able to reach that callback URL from outside the local machine
 
-So if you are using VS Code port forwarding, the port you need to forward and make public is the **backend port `3000`**, and the resulting public URL should be written into `BASE_EXTERNAL_URL`.
+Host the backend port with a temporary anonymous tunnel and write the resulting
+public URL into `BASE_EXTERNAL_URL`:
+
+```powershell
+winget install Microsoft.devtunnel
+devtunnel user login
+devtunnel host -p 3000 --allow-anonymous
+```
+
+The remote solver cannot perform an interactive tunnel login when it posts a
+callback, so anonymous access is required for this temporary test tunnel. This
+also exposes the forwarded backend port publicly. Stop the tunnel with
+`Ctrl+C` as soon as the computation reaches a terminal status, and do not use
+this as a production deployment method.
 
 ### Example Procedure
 
@@ -793,16 +808,16 @@ Assume:
 
 - HyProNet backend is running on port `3000`
 - the real solver engine can already be reached separately
-- you need to expose HyProNet's callback endpoint publicly
+- you need to expose HyProNet's callback endpoint publicly without VS Code
 
-In VS Code:
+In a separate terminal:
 
-1. Open the **Ports** panel.
-2. Add port `3000` if it is not already listed.
-3. Change **Visibility** to **Public**.
-4. Copy the **Forwarded Address**.
+1. Run `devtunnel user show` to confirm the CLI login.
+2. Run `devtunnel host -p 3000 --allow-anonymous`.
+3. Copy the public address printed for port `3000`.
+4. Keep the command running while the computation is active.
 
-If VS Code gives you a forwarded address such as:
+If the CLI gives you a forwarded address such as:
 
 ```text
 https://example-3000.use.devtunnels.ms/
@@ -824,6 +839,17 @@ BASE_EXTERNAL_URL=https://example-3000.use.devtunnels.ms/api/external
 ```
 
 If your forwarded URL already ends with `/api/external`, use it directly and do not append `/api/external` a second time.
+
+Before computing, verify that both routes reach the same backend:
+
+```powershell
+curl.exe http://127.0.0.1:3000/api
+curl.exe https://example-3000.use.devtunnels.ms/api
+```
+
+Both should return `{"message":"API is working"}`. Solver health is a
+separate check and does not prove that a requested executable such as `ipopt`
+or `gurobi` is installed.
 
 ### Where to Change It
 
@@ -848,6 +874,9 @@ If `BASE_EXTERNAL_URL` is wrong, private, or not publicly reachable, computation
 - the GUI opens normally
 - the backend starts correctly
 - the workbook import succeeds
+
+For the complete direct-CLI workflow, acceptance chain, and failure matrix,
+see [Real Solver Quickstart](./REAL_SERVER_QUICKSTART.md).
 
 ## How to Use the Application After Startup
 
@@ -1000,12 +1029,14 @@ Then verify:
 - the solver engine is actually running at `BASE_SOLVER_ENGINE_URL`
 - the backend callback URL in `BASE_EXTERNAL_URL` is reachable from the solver-engine side
 
-If the solver engine is hosted through VS Code port forwarding, also verify:
+If the backend is exposed through Dev Tunnels CLI, also verify:
 
-- port `3000` was forwarded for the HyProNet backend callback
-- the port visibility is set to **Public**
+- `devtunnel host -p 3000 --allow-anonymous` is still running
+- the hosted port matches the backend `PORT`
 - the copied URL was written into `BASE_EXTERNAL_URL`
 - `/api/external` was appended only when needed
+- a solver callback failure such as `No executable found for solver '<name>'`
+  is classified as a remote solver installation problem, not a tunnel problem
 
 ### You want to check the available API routes
 
