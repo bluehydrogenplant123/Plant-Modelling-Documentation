@@ -42,7 +42,7 @@ In this project, Cypress is used because it supports:
 - Fast feedback during development
 - Good support for real user workflows
 
-The Cypress commands used in this project are defined in [src/package.json](https://github.com/bluehydrogenplant123/Plant-Modelling-Documentation/blob/main/src/package.json).
+The Cypress commands used in this project are defined in [src/package.json](../../../src/package.json).
 
 ---
 
@@ -96,7 +96,7 @@ This test opens the app and checks that a visible page element is present.
 
 ## How to run E2E tests
 
-The project provides an E2E script in [src/package.json](https://github.com/bluehydrogenplant123/Plant-Modelling-Documentation/blob/main/src/package.json).
+The project provides an E2E script in [src/package.json](../../../src/package.json).
 
 To run the Cypress suite, use:
 

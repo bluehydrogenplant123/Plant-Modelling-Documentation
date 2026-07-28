@@ -1,0 +1,181 @@
+---
+title: Create a New Node Model
+sidebar_position: 10
+description: Step-by-step guide to defining a new node model — its name, icon, ports and port classes, port locations, variables — and importing it so it appears in the node library on the left of the canvas.
+---
+
+# Create a New Node Model
+
+Use this page when you want to add a brand-new node to HyProNet — for example a new reactor, splitter, or source — so it shows up in the **node library on the left-hand side (LHS) of the canvas** and can be dragged onto a diagram.
+
+## How it works (the big picture)
+
+Node models are **defined in Excel**, then **imported into the database**. After the import, the new node appears in the LHS node library, ready to use.
+
+```
+Excel sheets  ──►  import  ──►  database  ──►  node appears in the LHS node library
+```
+
+A node model is made of four parts:
+
+1. **The model** — name, version, icon, equation settings
+2. **An icon** — the SVG picture shown on the canvas
+3. **Ports** — the connection points, each with a class and a position on the icon
+4. **Variables** — the quantities carried on each port
+
+There are **two ways** to create a node:
+
+- **In the admin config page (GUI)** — interactive and fast, best for a single node. See [Create a node in the admin config page](#create-a-node-in-the-admin-config-page-gui) below.
+- **In Excel, then import** — best for adding many nodes at once, and the source of truth for the whole system. Steps 1–6 below cover this.
+
+:::note
+The Excel file is the **single source of truth** for a full re-import. Nodes you create in the GUI show up immediately, but to make them permanent across a re-import, also add them to the Excel sheets (Steps 1–4).
+:::
+
+---
+
+## Step 1 — Define the model
+
+**Sheet: `Node Model Library`** — add one row per model version.
+
+| Column | What to put | Example |
+|---|---|---|
+| **Domain** | Which domain it belongs to | `Generic`, `Hydrogen Plant` |
+| **Model Name** | Unique short name | `ACC` |
+| **Model Version** | Version label | `BASE` |
+| **Shape** | The icon id (see Step 2) | `42` |
+| **Default** | `Y` if this is the default version | `Y` |
+| **Icon width** / **Icon Height** | Icon size in pixels | `120` / `120` |
+| **P1.EQ** / **P1.Calc** / **P1.CalcPost** | Equation type + calc settings, Phase 1 | `MH0`, … |
+| **P2.EQ** / **P2.Calc** / **P2.CalcPost** | Same, Phase 2 | … |
+| Author / Comment / Version Date | Optional metadata | |
+
+:::tip
+**Model Name** is the key that ties every other sheet together. Spell it exactly the same everywhere (`Node Model Library`, `Node Ports Model Library`, `Node Variables`).
+:::
+
+---
+
+## Step 2 — Add the icon
+
+**File: `excel-sheets/icons.csv`** — this holds the SVG images.
+
+| Column | Meaning |
+|---|---|
+| **Shape** | A number id (e.g. `1`, `2`, … `42`) |
+| **SVG** | The full SVG markup of the icon |
+
+- **Reuse an existing icon:** find its `Shape` number in `icons.csv` and put that number in the **Shape** column of `Node Model Library`.
+- **Add a new icon:** add a new row to `icons.csv` with the next free `Shape` number and your SVG markup, then reference that number.
+
+:::tip
+Keep the SVG's `viewBox` square (the existing icons use `0 0 866 866`) so it scales cleanly. **Icon width / Icon Height** in the model sheet control how large it renders on the canvas.
+:::
+
+---
+
+## Step 3 — Define the ports
+
+**Sheet: `Node Ports Model Library`** — add one row per port.
+
+| Column | What to put | Example |
+|---|---|---|
+| **Domain** | Same domain as the model | `Generic` |
+| **Model Name** | Same model name | `ACC` |
+| **Port Name** | Short port name | `IN`, `OUT`, `INFO` |
+| **Port Class** | Which port class it uses | `MES`, `Q`, `INFO` |
+| **Type** | `IN`, `OUT`, or `INFO` | `IN` |
+| **Port Location** | A **number** — which connection point on the icon this port attaches to | `0`, `1`, `2`, … |
+| **Description** | For `INFO` ports, a JSON list of variable names | `["DESIGN_DUTY","RATE"]` |
+
+### About Port Location
+
+Port Location is the id of a **connection handle** on the icon. Give each port a **different** location number so edges attach at the right spot (for example, inputs on the left, outputs on the right). On the canvas, a connection finds its port by this number.
+
+### About Port Class and Type
+
+- **`IN` / `OUT`** ports must use a **defined Port Class** (like `MES`, `M`, `Q`). That is where the port's variables come from.
+- **`INFO`** ports are not tied to a shared class. Their variables are their own, listed directly (see the `Description` JSON above and Step 4).
+
+---
+
+## Step 4 — Define the variables
+
+**Sheet: `Node Variables`** — add one row per (port, variable).
+
+| Column | What to put | Example |
+|---|---|---|
+| **Model Name** / **Model Version** | Same as above | `ACC` / `BASE` |
+| **Variable Name** | The node-internal name | `ACCUMULATED` |
+| **Port** | Which port it belongs to | `INFO`, `IN`, `OUT` |
+| **Port Var Name** | The system / port-class variable it maps to | `ACCUMULATED`, `MF`, `T0` |
+| **Default Value** | Optional starting value | |
+| **Simulation** / **Optimization** / **ParamUpdt** / **DataRec** | Role in each computation task (`I`, `P`, `F`, `CALC`, …) | `I` |
+
+:::note
+For **IN/OUT** ports, `Port Var Name` should be one of the variables defined on that port's **Port Class**. For **INFO** ports, these are the port's own ad-hoc variables.
+:::
+
+---
+
+## Step 5 — Run the import (the "system update")
+
+Regenerate the database from the updated Excel file:
+
+```bash
+docker compose build python-runner
+docker compose run --rm python-runner /app/run_python_import.sh /app/excel-sheets/<your-file>.xlsx
+```
+
+This reads all the sheets plus `icons.csv` and populates the `Models`, `ModelVersion`, `Ports`, and variable tables. Existing models are updated in place, so re-running the import is safe.
+
+---
+
+## Step 6 — Verify
+
+Open the app. The new node now appears in the **node library menu on the left of the canvas**. Drag it onto a diagram — its icon shows, with the ports at the connection locations you set.
+
+You can also confirm it in the admin config page under **Nodes → Node Model Library**.
+
+---
+
+## Create a node in the admin config page (GUI)
+
+Instead of editing Excel, you can create and manage node models **directly in the admin config page**. This is the quickest way for a single node — no import step needed, and it shows up on the canvas right away.
+
+Open the app → **admin config page** → in the left menu, choose **Nodes → Node Model Library**.
+
+### 1. Create the model
+
+1. Click **+ New Model**.
+2. Enter the **Model name** and **Version name**.
+3. Paste the **Icon** (the SVG markup) and set the **Icon width** and **Icon height**.
+4. Click **Save** — the new model appears in the list on the left.
+
+### 2. Add ports
+
+Select the model, then on its detail page:
+
+1. Click **+ Add Port**.
+2. Enter the **Port name**, choose the **Type** (**Input**, **Output**, or **INFO**), and set the **Port location** (the number of the connection point on the icon — give each port a different one).
+3. **Input / Output** ports: choose a **Port class**. Its variables appear, and you give each one an **internal name**.
+4. **INFO** ports: leave the class empty — you add the variables directly in the next step.
+5. Click **Save**.
+
+### 3. Add variables to an INFO port
+
+For an INFO port, click **+ Add Variable** and fill in:
+
+- **Variable name** (external) and **Internal name**
+- **Variable / Parameter**, **Type**, **Unit**, **Bounds**, **Description**
+
+Click **Save**. Repeat for each variable.
+
+### 4. Edit or delete
+
+- **Edit** (button on the model header) — change the name, icon, or size.
+- **Delete** — remove a single port (the **Delete** on the port), or the whole model (the **Delete** on the header).
+
+:::tip
+For an **Input/Output** port to work, its **Port class** must already be defined (see the Port Class Variables page). For a brand-new port class, define it first, then come back and add the port.
+:::
