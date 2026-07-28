@@ -220,6 +220,20 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/CodeExplanation/test'},
       ],
     },
+    {
+      type: 'category',
+      label: 'Testing',
+      link: {type: 'generated-index', title: 'Testing'},
+      collapsible: true,
+      collapsed: false,
+      items: [
+        {type: 'doc', id: 'capstone/testing/introduction/introduction'},
+        {type: 'doc', id: 'capstone/testing/unit testing/unit-testing'},
+        {type: 'doc', id: 'capstone/testing/integration testing/integration-testing'},
+        {type: 'doc', id: 'capstone/testing/e2e testing/e2e'},
+        {type: 'doc', id: 'capstone/testing/pipeline-github-actions/pipeline'},
+      ],
+    },
   ],
 };
 
