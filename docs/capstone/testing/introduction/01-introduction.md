@@ -75,9 +75,9 @@ The workflow executes:
 
 The corresponding documentation for these topics is available here:
 
-- [Unit testing guide](../unit testing/02-unit-testing.md)
-- [Integration testing guide](../integration testing/03-integration-testing)
-- [E2E testing guide](../e2e testing/e2e.md)
+- [Unit testing guide](../unit%20testing/02-unit-testing.md)
+- [Integration testing guide](../integration%20testing/03-integration-testing)
+- [E2E testing guide](../e2e%20testing/e2e.md)
 - [CI pipeline guide](../pipeline-github-actions/pipeline.md)
 
 ---

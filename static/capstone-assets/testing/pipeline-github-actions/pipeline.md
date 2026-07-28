@@ -4,7 +4,7 @@
 
 This project includes a GitHub Actions workflow that runs automatically for pull requests. Its purpose is to validate the application before changes are merged.
 
-The workflow is defined in [.github/workflows/ci.yml](../../../.github/workflows/ci.yml).
+The workflow is defined in [.github/workflows/ci.yml](/.github/workflows/ci.yml).
 
 It runs three main test stages:
 
@@ -92,7 +92,7 @@ This stage ensures the application works for real user journeys.
 
 ## Test commands used by the workflow
 
-The workflow uses the project scripts defined in [src/package.json](../../../src/package.json):
+The workflow uses the project scripts defined in [src/package.json](/src/package.json):
 
 - Unit tests: npm test
 - Integration tests: npm run test:integration

@@ -45,7 +45,7 @@ In this project, Jest is used because it supports:
 - Coverage reporting
 - Mocking capabilities for isolated tests
 
-The current Jest configuration is defined in [src/jest.config.js](../../../src/jest.config.js), and the test scripts are available in [src/package.json](../../../src/package.json).
+The current Jest configuration is defined in [src/jest.config.js](/src/jest.config.js), and the test scripts are available in [src/package.json](/src/package.json).
 
 ---
 
@@ -130,7 +130,7 @@ cd src
 npm test
 ```
 
-This runs the main Jest test command defined in [src/package.json](../../../src/package.json).
+This runs the main Jest test command defined in [src/package.json](/src/package.json).
 
 Other useful commands include:
 
