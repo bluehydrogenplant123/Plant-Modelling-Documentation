@@ -59,7 +59,7 @@ Integration testing is especially helpful for:
 - Request validation and response formatting
 - Frontend-to-backend communication
 
-The project already includes an integration test script in [src/package.json](/src/package.json), which is configured to run tests under the integration test path.
+The project already includes an integration test script in [src/package.json](https://github.com/bluehydrogenplant123/Plant-Modelling-Documentation/blob/main/src/package.json), which is configured to run tests under the integration test path.
 
 ---
 
@@ -108,7 +108,7 @@ cd src
 npm run test:integration
 ```
 
-This uses the script defined in [src/package.json](/src/package.json).
+This uses the script defined in [src/package.json](https://github.com/bluehydrogenplant123/Plant-Modelling-Documentation/blob/main/src/package.json).
 
 To run all tests, including integration tests, use:
 
