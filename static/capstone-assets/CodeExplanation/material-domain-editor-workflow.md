@@ -52,24 +52,24 @@ It does not own node Palette filtering, node Port Class definitions, saved-edge 
 
 ## Inputs and Outputs
 
-| Input | Source | Used For |
-| --- | --- | --- |
-| `domainId` | canvas route/domain selection | Calls `GET /api/data/domain/:domainId` and identifies the current domain. |
-| `DomainStreamsMapping` rows | PostgreSQL legacy runtime mapping | Supplies compatible flat stream rows when normalized material mappings are missing or incomplete. |
-| `PortClassDatabaseMapping` rows | PostgreSQL normalized mapping | Selects domain/Generic Port Classes and their Properties/Fractions databases. |
-| `Streams` rows | PostgreSQL reference catalog | Supplies material identity, JSON Properties/Fractions, Port Class metadata, database names, and `source_type`. |
-| User workbook | **Import Streams** file input | Adds or supplements user material rows for the current Domain/Generic mapping. |
-| `readOnly` | `App.tsx` computation guard | Disables Delete/Import behavior and table interaction. |
-| `detailView` | Material Editor local state | Selects `properties` or `stream_fractions` for columns and detail panels. |
+| Input                           | Source                            | Used For                                                                                                       |
+| ------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `domainId`                      | canvas route/domain selection     | Calls `GET /api/data/domain/:domainId` and identifies the current domain.                                      |
+| `DomainStreamsMapping` rows     | PostgreSQL legacy runtime mapping | Supplies compatible flat stream rows when normalized material mappings are missing or incomplete.              |
+| `PortClassDatabaseMapping` rows | PostgreSQL normalized mapping     | Selects domain/Generic Port Classes and their Properties/Fractions databases.                                  |
+| `Streams` rows                  | PostgreSQL reference catalog      | Supplies material identity, JSON Properties/Fractions, Port Class metadata, database names, and `source_type`. |
+| User workbook                   | **Import Streams** file input     | Adds or supplements user material rows for the current Domain/Generic mapping.                                 |
+| `readOnly`                      | `App.tsx` computation guard       | Disables Delete/Import behavior and table interaction.                                                         |
+| `detailView`                    | Material Editor local state       | Selects `properties` or `stream_fractions` for columns and detail panels.                                      |
 
-| Output | Destination | Notes |
-| --- | --- | --- |
-| `streams` | API response and Redux `domain.data.streams` | Flat compatibility list used by existing stream selectors and consumers. |
-| `materialGroups` | API response and Redux `domain.data.materialGroups` | Grouped view with mapping identity, scoped keys, Generic flag, and streams. |
-| Imported user streams | Redux domain state | `source_type: user`; merge precedence lets user values supplement or override matching system values. |
-| Diagram `snapshotData` | MongoDB diagram save payload | Save captures current `domainData`, including material state used by the diagram. |
-| Export workbook | browser download | Contains `Properties` and `Fractions` sheets named `<domain>_materials_<timestamp>.xlsx`. |
-| `material_properties` / `material_fractions` | solver request `parameters` | Contains sanitized material values for streams selected on edges, not editor mapping metadata. |
+| Output                                       | Destination                                         | Notes                                                                                                 |
+| -------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `streams`                                    | API response and Redux `domain.data.streams`        | Flat compatibility list used by existing stream selectors and consumers.                              |
+| `materialGroups`                             | API response and Redux `domain.data.materialGroups` | Grouped view with mapping identity, scoped keys, Generic flag, and streams.                           |
+| Imported user streams                        | Redux domain state                                  | `source_type: user`; merge precedence lets user values supplement or override matching system values. |
+| Diagram `snapshotData`                       | MongoDB diagram save payload                        | Save captures current `domainData`, including material state used by the diagram.                     |
+| Export workbook                              | browser download                                    | Contains `Properties` and `Fractions` sheets named `<domain>_materials_<timestamp>.xlsx`.             |
+| `material_properties` / `material_fractions` | solver request `parameters`                         | Contains sanitized material values for streams selected on edges, not editor mapping metadata.        |
 
 ## Core State and Data Structures
 
@@ -101,11 +101,11 @@ A group contains mapping identity plus the streams visible under that tab:
 
 Backend, Redux, and workbook utilities use the same general identity order:
 
-1. Port Class plus `stream_database_id` when a database ID exists.
+1. Intersecting Port Class tokens plus `stream_database_id` when a database ID exists. This lets an imported raw class such as `MES` resolve into an existing combined group such as `CM / M / ME / MES / MS`.
 2. Otherwise Port Class plus `content` and `instance`.
 3. Internal record ID is a final fallback in backend/runtime collections.
 
-When matching records are merged, a `source_type: user` record wins scalar conflicts. Properties and Fractions are merged by key so incoming user values can supplement existing system JSON instead of replacing the entire object.
+When matching records are merged, a `source_type: user` record wins scalar conflicts while the existing internal record ID is preserved. Properties and Fractions are merged by key so incoming user values can supplement existing system JSON instead of replacing the entire object.
 
 ## Main Functions and Components
 
@@ -122,10 +122,10 @@ When matching records are merged, a `source_type: user` record wins scalar confl
 
 ### Workbook and Redux
 
-- `parsePortClassDatabaseMappingsWorkbook(...)`: accepts mapping-sheet aliases, filters mappings to the current domain plus Generic, reads referenced database sheets, and falls back to a two-sheet import when no mapping sheet exists.
+- `parsePortClassDatabaseMappingsWorkbook(...)`: accepts mapping-sheet aliases, filters mappings to the current domain plus Generic, reads referenced database sheets, and supports explicit strict grouping validation for Material Editor imports. A two-sheet workbook without a mapping sheet is accepted by the editor only when each Properties row declares a Port Class.
 - `buildMaterialStreamsFromWorkbookRows(...)`: builds dynamic `properties` JSON and filters explicit Domain rows to the active domain or Generic.
 - `mergeStreamFractionRows(...)`: attaches Fractions to rows by `stream_database_id`, then Content/Instance fallback.
-- `updateOrAddStream(...)`: updates the flat Redux list and matching `materialGroups`, applying user-over-system merge precedence.
+- `updateOrAddStream(...)`: resolves raw imported Port Class tokens against existing combined `materialGroups`, updates the flat Redux list and canonical group, preserves the existing record ID, and applies user-over-system merge precedence.
 - `clearStreams()`: clears both `streams` and `materialGroups` in Redux domain state.
 
 ### Backend and System Import
@@ -143,29 +143,30 @@ When matching records are merged, a `source_type: user` record wins scalar confl
 
 ## Rendered UI / Interaction Map
 
-| UI State or Action | Source State or Props | Expected Result | Verification |
-| --- | --- | --- | --- |
-| Base-period **User Tables** | `mode="base"` | Dropdown includes enabled/guarded **Material Properties**. | Open a base-period canvas and inspect the dropdown. |
-| Multi-TP **User Tables** | `mode="mtp"` | **Material Properties** is always disabled. | Open the Multi-TP secondary row. |
-| Editor opens | `domain.data`, `isOpen` | Header shows Domain and active Class; Generic badge appears for Generic mappings. | Open Material Properties for a domain with Generic data. |
-| Multiple groups | `materialGroups` with more than one non-empty group | Tabs show group labels and stream counts; Generic sorts first. | Load a mapping workbook with Generic plus domain groups. |
-| One non-empty group | derived `streamGroups.length === 1` | No tab strip; the single group becomes active. | Load a single-group material set. |
-| Switch Detail View | `detailView` local state | Dynamic table columns and **View (N)** counts switch between Properties and Stream Fractions. | Toggle the selector and inspect one row. |
-| Open detail panel | `selectedDetail` local state | Side panel shows scoped non-empty key/value rows for one stream. | Click an enabled **View (N)** button. |
-| Import workbook | `readOnly === false` | Mapping rows for the current domain/Generic merge into Redux and a row-count alert appears. | Import a focused fixture workbook. |
-| Read-only editor | `readOnly === true` | Delete and Import are disabled; direct table interaction is suppressed. Export remains available. | Toggle the computation guard while the editor is open. |
-| Delete All Streams | current React Flow edges and Redux streams | All current edges are deleted and the material lists are cleared. | Use a disposable diagram and check both canvas and editor. |
+| UI State or Action            | Source State or Props                               | Expected Result                                                                                                               | Verification                                                                                            |
+| ----------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Base-period **User Tables**   | `mode="base"`                                       | Dropdown includes enabled/guarded **Material Properties**.                                                                    | Open a base-period canvas and inspect the dropdown.                                                     |
+| Multi-TP **User Tables**      | `mode="mtp"`                                        | **Material Properties** is always disabled.                                                                                   | Open the Multi-TP secondary row.                                                                        |
+| Editor opens                  | `domain.data`, `isOpen`                             | Header shows Domain and active Class; Generic badge appears for Generic mappings.                                             | Open Material Properties for a domain with Generic data.                                                |
+| Multiple groups               | `materialGroups` with more than one non-empty group | Tabs show group labels and stream counts; Generic sorts first.                                                                | Load a mapping workbook with Generic plus domain groups.                                                |
+| One non-empty group           | derived `streamGroups.length === 1`                 | No tab strip; the single group becomes active.                                                                                | Load a single-group material set.                                                                       |
+| Switch Detail View            | `detailView` local state                            | Dynamic table columns and **View (N)** counts switch between Properties and Stream Fractions.                                 | Toggle the selector and inspect one row.                                                                |
+| Open detail panel             | `selectedDetail` local state                        | Side panel shows scoped non-empty key/value rows for one stream.                                                              | Click an enabled **View (N)** button.                                                                   |
+| Import mapped workbook        | `readOnly === false`                                | Mapping rows for the current domain/Generic merge into the existing combined Port Class groups and a row-count alert appears. | Import a focused fixture workbook and confirm that no raw duplicate group appears.                      |
+| Import metadata-free workbook | No mapping sheet and no row-level Port Class        | Import stops before Redux mutation and reports how to add grouping metadata.                                                  | Import a two-sheet fixture without Port Class metadata and confirm that no **Materials** group appears. |
+| Read-only editor              | `readOnly === true`                                 | Delete and Import are disabled; direct table interaction is suppressed. Export remains available.                             | Toggle the computation guard while the editor is open.                                                  |
+| Delete All Streams            | current React Flow edges and Redux streams          | All current edges are deleted and the material lists are cleared.                                                             | Use a disposable diagram and check both canvas and editor.                                              |
 
 ## Component Contract
 
 `MaterialEditorProps`:
 
-| Prop | Type | Contract |
-| --- | --- | --- |
-| `isOpen` | `boolean` | Returns `null` when false; renders the portal when true. |
-| `onClose` | `() => void` | Closes the overlay without changing material state. |
-| `container` | `HTMLElement` optional | Portal target; defaults to `document.body`. |
-| `readOnly` | `boolean` optional | Defaults to false and controls destructive/import interactions. |
+| Prop        | Type                   | Contract                                                        |
+| ----------- | ---------------------- | --------------------------------------------------------------- |
+| `isOpen`    | `boolean`              | Returns `null` when false; renders the portal when true.        |
+| `onClose`   | `() => void`           | Closes the overlay without changing material state.             |
+| `container` | `HTMLElement` optional | Portal target; defaults to `document.body`.                     |
+| `readOnly`  | `boolean` optional     | Defaults to false and controls destructive/import interactions. |
 
 State and dependencies:
 
@@ -298,15 +299,15 @@ git diff --check -- docs/CodeExplanation/material-domain-editor-workflow.md
 
 ### Frontend Manual Verification Matrix
 
-| Scenario | Action | Expected Visual Result | Expected State or API Effect | Regression Risk |
-| --- | --- | --- | --- | --- |
-| Generic plus domain groups | Open Material Properties for a mapped domain. | Generic is first; domain-specific classes follow; counts and database names match. | One domain API request returns flat and grouped data. | High: wrong grouping mixes incompatible material rows. |
-| Properties scope | Choose a shared-database group and select Properties. | Only keys belonging to the active Properties database appear. | No write; derived columns use `property_keys`. | High: cross-database keys can mislead users and solver selection. |
-| Fractions scope | Select Stream Fractions for a class with/without a Fractions database. | Mapped fraction columns appear; a no-fractions group shows zero fraction columns. | No write; derived columns use `fraction_keys`. | High: composition can leak into an incompatible Port Class. |
-| User override | Import a workbook row matching a system material. | One merged row remains; user values appear and Source is user. | Redux merges scalar and JSON values using user precedence. | High: duplicate or reversed precedence changes model inputs. |
-| Legacy user workbook | Import a two-sheet workbook with no mapping sheet. | Rows load in the compatible fallback group. | First sheet becomes Properties; optional second becomes Fractions. | Medium: older user files must remain usable. |
-| Read-only guard | Open or keep the editor open while the material rule is read-only. | Delete/Import are disabled; Export is available. | No destructive/import mutation is allowed. | High: computation-time edits can desynchronize state. |
-| Clear all | Use a disposable diagram and click Delete All Streams. | Material rows disappear and every canvas edge is removed. | React Flow edges and Redux material state clear. | High: this action is intentionally destructive. |
+| Scenario                   | Action                                                                 | Expected Visual Result                                                             | Expected State or API Effect                                       | Regression Risk                                                   |
+| -------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Generic plus domain groups | Open Material Properties for a mapped domain.                          | Generic is first; domain-specific classes follow; counts and database names match. | One domain API request returns flat and grouped data.              | High: wrong grouping mixes incompatible material rows.            |
+| Properties scope           | Choose a shared-database group and select Properties.                  | Only keys belonging to the active Properties database appear.                      | No write; derived columns use `property_keys`.                     | High: cross-database keys can mislead users and solver selection. |
+| Fractions scope            | Select Stream Fractions for a class with/without a Fractions database. | Mapped fraction columns appear; a no-fractions group shows zero fraction columns.  | No write; derived columns use `fraction_keys`.                     | High: composition can leak into an incompatible Port Class.       |
+| User override              | Import a workbook row matching a system material.                      | One merged row remains; user values appear and Source is user.                     | Redux merges scalar and JSON values using user precedence.         | High: duplicate or reversed precedence changes model inputs.      |
+| Legacy user workbook       | Import a two-sheet workbook with no mapping sheet.                     | Rows load in the compatible fallback group.                                        | First sheet becomes Properties; optional second becomes Fractions. | Medium: older user files must remain usable.                      |
+| Read-only guard            | Open or keep the editor open while the material rule is read-only.     | Delete/Import are disabled; Export is available.                                   | No destructive/import mutation is allowed.                         | High: computation-time edits can desynchronize state.             |
+| Clear all                  | Use a disposable diagram and click Delete All Streams.                 | Material rows disappear and every canvas edge is removed.                          | React Flow edges and Redux material state clear.                   | High: this action is intentionally destructive.                   |
 
 ## Known Cautions
 
