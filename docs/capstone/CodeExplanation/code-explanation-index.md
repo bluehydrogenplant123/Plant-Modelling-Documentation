@@ -30,7 +30,8 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 ## Frontend/Core UI
 
 - [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md): dashboard create/load/delete flows, canvas shell routing, React Flow setup, sidebar drag-and-drop, display filtering, and high-level edit guards.
-- [Header Bar Code Explanation](./header-bar.md): top-level canvas navigation, secondary controls, save metadata, display filtering, run configuration entry points, and computation-aware UI guards.
+- [Header Bar Code Explanation](./header-bar.md): top-level canvas navigation, secondary controls, Optimization/DataRec setup orchestration, shared-editor signals, save metadata, display filtering, run configuration entry points, and computation-aware UI guards.
+- [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md): active Calc Type dropdowns, selection versus editing boundaries, Header-owned run state, authoritative backend resolution, queued snapshots, and `parameters.solve_inputs`.
 - [Material Domain Editor Workflow Code Explanation](./material-domain-editor-workflow.md): User Tables entry, Domain + Port Class grouping, Generic/common materials, Properties/Fractions views, workbook import, API grouping, and solver sanitization boundaries.
 - [Shape Node and Ports Code Explanation](./shape-node-and-ports.md): shape-node rendering, port resolution, rotation behavior, modal handoff, Redux updates, node cache updates, and save-flow integration.
 - [Custom Edge and Stream Selection Code Explanation](./custom-edge-and-stream-selection.md): orthogonal stream edge rendering, stream-property selection, validation, connected-node hydration, and edge-level interaction contracts.
@@ -47,7 +48,8 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 ## TP/Economic/Run
 
 - [Time Period and Economic Flow Code Explanation](./time-period-and-economic-flow.md): base TP, global TP, Sliding Horizon UI and persistence, TP specs, economic panels, cost data ownership, and solver payload handoff.
-- [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md): run-configuration fields, solver and algorithm ownership, MTP-only Sliding Horizon request handling, backend start behavior, and solver request boundaries.
+- [TP Spec Version Management Code Explanation](./tp-spec-version-management.md): version identity, Base/MTP and calculation-type isolation, sparse MongoDB persistence, frontend operations, API contracts, active-version compute binding, callback scoping, and result traceability.
+- [Run Config and Computation Start Code Explanation](./run-config-and-computation-start.md): solver configuration, SoluAlgoLib ownership, Optimization/DataRec selections, MTP-only Sliding Horizon handling, backend start behavior, and solver request boundaries.
 
 ## Backend/Data
 
@@ -55,7 +57,7 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 ## Compute/Translation
 
-- [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md): compute task creation, Bull queue dispatch, solver request construction, external callback handling, reverse translation, and result persistence.
+- [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md): selected-input snapshotting, compute task creation, Bull queue dispatch, solver request construction, external callback handling, reverse translation, and result persistence.
 - [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md): solver-facing parameter construction, `parameters.tps_specs`, `parameters.costs`, stream/material data, reverse translation, and computed TP updates.
 
 ## Import/Runtime

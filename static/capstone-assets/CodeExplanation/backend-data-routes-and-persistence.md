@@ -24,6 +24,8 @@ All routes listed here use `authenticateToken`. The middleware accepts `Authoriz
 - `src/src/backend/prisma/postgres/schema.prisma`: PostgreSQL reference/catalog models.
 - `src/src/backend/utils/canvasModelVersionUtils.ts`: model-version lookup and canvas attach/detach helpers.
 - `src/src/backend/utils/schemaMigrations.ts`: current schema version, version checks, and snapshot/canvas migration hooks.
+- `src/src/backend/utils/tpSpecVersionUtils.ts`: TP Spec scope/calculation-type normalization, logical naming, lazy V1 creation, legacy adoption, and active/selected context lookup.
+- `src/src/backend/utils/tpChangeReadUtils.ts`: version-compatible TP-change identity and newest-row deduplication for node-modal reads.
 
 ## Endpoint Map
 
@@ -57,11 +59,11 @@ All paths below include the `/api/data` prefix.
 | TP node versions | `GET /tpnodevers` | Reads rows by required `diagramId` and optional `nodeId`; empty result returns 404. | Reads Mongo `TpNodeVers`. |
 | TP node versions | `PUT /tpnodevers` | Updates one row by row id passed as `timePeriodId`. | Reads/writes Mongo `TpNodeVers`. |
 | TP node versions | `DELETE /tpnodevers` | Deletes rows by `timePeriodIds`, which are row Mongo ids. | Deletes Mongo `TpNodeVers`. |
-| TP changes | `POST /tpchanges` | Upserts a manual port override; resolves `BASE_TP` or TP ranges, falls back to existing override or node model default if creating without `portVarValue`, then mirrors wrapper overrides when possible. | Reads/writes Mongo `TpChanges`, reads Mongo `TpNodeVers` and `Node`, and may write mirrored `TpChanges`. |
-| TP changes | `PUT /tpchanges` | Updates manual overrides matching diagram/node/time/port, preferring exact `portLocation` then `null`, and mirrors wrapper overrides when possible. | Reads/writes Mongo `TpChanges`. |
+| TP changes | `POST /tpchanges` | Upserts a manual port override; in MTP mode resolves the active version from `calcType`, stamps version ids, resolves `BASE_TP` or TP ranges, and mirrors wrapper overrides when possible. | Reads/writes Mongo `TpChanges`, reads Mongo `TpNodeVers` and `Node`, and may write mirrored `TpChanges`. |
+| TP changes | `PUT /tpchanges` | Updates a manual override in the active MTP version context, preferring exact `portLocation` then `null`, and mirrors wrapper overrides when possible. | Reads/writes Mongo `TpChanges`. |
 | TP changes | `DELETE /tpchanges` | Deletes matching overrides after resolving canonical time-period context, and mirrors wrapper delete when possible. | Deletes Mongo `TpChanges`; may read Mongo `TpNodeVers`. |
-| TP changes | `GET /tpchanges` | Reads and dedupes overrides by required `diagramId` plus optional `nodeId`, `timePeriodId`, and `portLocation`; empty result returns 404. | Reads Mongo `TpChanges`. |
-| TP changes | `GET /tpchanges/all` | Reads and dedupes all overrides for a required diagram/node pair. | Reads Mongo `TpChanges`. |
+| TP changes | `GET /tpchanges` | Reads the active MTP version plus compatible legacy rows by required `diagramId` and optional `nodeId`, `timePeriodId`, `portLocation`, and `calcType`; newest duplicates win and an empty result returns 404. | Reads Mongo `TpChanges`; may lazily create/adopt TP Spec V1 metadata. |
+| TP changes | `GET /tpchanges/all` | Reads and dedupes active-version and compatible legacy overrides for a required diagram/node pair and optional `calcType`. | Reads Mongo `TpChanges`; may lazily create/adopt TP Spec V1 metadata. |
 | TP spec versions | `GET /diagrams/:diagramId/tp-spec-versions` | Lists TP spec versions for the resolved scope and requested calculation type, creating V1 when missing. | Reads/writes Mongo `TpSpecVersionSet` and `TpSpecVersionTable`; may stamp legacy `TpChanges`. |
 | TP spec versions | `POST /diagrams/:diagramId/tp-spec-versions` | Creates a new version for the current scope and calculation type only, copying sparse changes from the selected source version. | Writes Mongo `TpSpecVersionSet`, `TpSpecVersionTable`, `TpSpecBaseChange`, or version-scoped `TpChanges`. |
 | TP spec versions | `PATCH /tp-spec-versions/:versionSetId` | Renames a version display name. | Updates Mongo `TpSpecVersionSet`. |
@@ -77,6 +79,8 @@ All paths below include the `/api/data` prefix.
 | Subnetwork blueprints | `GET /subnetworks/:id` | Reads one authorized blueprint, normalizes legacy `portsMapping`, and adds schema metadata. | Reads/writes Mongo `SubnetworkBlueprint`; reads Mongo `Diagram`. |
 | Subnetwork blueprints | `PUT /subnetworks/:id` | Updates one authorized blueprint and keeps the referenced diagram marked as `type: 1`. | Reads/writes Mongo `SubnetworkBlueprint` and `Diagram`. |
 | Subnetwork blueprints | `DELETE /subnetworks/:id` | Deletes a blueprint and resets its blueprint diagram from `type: 1` to `type: 0` if still applicable. | Deletes Mongo `SubnetworkBlueprint`; updates Mongo `Diagram`. |
+
+For the version entities, row materialization rules, copy/apply/delete semantics, active Base overlay, legacy adoption, and compute/callback boundary, see [TP Spec Version Management](./tp-spec-version-management.md).
 
 ## Data Ownership and DB Boundary
 
@@ -115,6 +119,8 @@ PostgreSQL also stores computation result metadata for applied TP spec versions.
 - Schema upgrade endpoints currently report no pending upgrades and skip bulk upgrades. Import still rejects unknown snapshot versions and calls `migrateToLatest(...)` for known older versions.
 - TP change creation can recover a missing `portVarValue` from an existing manual override or the node model default; if no value can be resolved, creation returns 400.
 - TP spec version reads create V1 defaults automatically. V1 cannot be deleted. Saving a non-active version persists sparse changes but does not change the active network state until the version is applied.
+- Creating a new Base version copies sparse Base patches. Creating a new MTP version copies manual rows only; computed rows are deliberately excluded.
+- A TP Spec table save compares submitted rows with an unmodified materialized baseline. Matching rows remove existing sparse overrides instead of storing redundant copies.
 - Subnetwork blueprint reads normalize legacy `portsMapping` and write the normalized JSON back when migration is detected.
 
 ## Known Cautions
@@ -126,12 +132,22 @@ PostgreSQL also stores computation result metadata for applied TP spec versions.
 - Save endpoints are performance-sensitive. `nodeCacheDiffs`/`nodeCacheFull`, `ensureNodeCacheCoverage`, and selective node upserts are used to avoid rewriting every node model version on every save.
 - TP spec versions are scoped by both TP mode and calculation type. A query or update that omits `calcType` can accidentally read or mutate the wrong version family.
 - Base TP spec version data and Multi-TP spec version data use different sparse stores. Do not move Base TP patches into `TpChanges`, and do not store Multi-TP version rows in `TpSpecBaseChange`.
+- `GET /diagrams/:diagramId/tp-spec-versions` and active-context helpers can create V1, claim legacy rows, and remove stale legacy tables; their names may look read-oriented, but their compatibility behavior can write data.
+- `/tp-specs/bulk-update` directly mutates node model versions and is not the version-aware grid save endpoint. New TP Spec version work should use `/tp-spec-tables/:versionTableId/changes`.
 - Do not document behavior from `src/src/backend/services/solve_request.json`; it is a generated runtime artifact and is outside this persistence API source of truth.
 
 ## Testing and Verification
 
-For documentation-only edits to this page, run from `C:\Users\19612\Desktop\Project\HYPRONET-GUI`:
+For documentation-only edits, run from the repository root:
 
-```powershell
-git diff --check -- docs/CodeExplanation/backend-data-routes-and-persistence.md
+```bash
+git diff --check -- docs/CodeExplanation/backend-data-routes-and-persistence.md docs/CodeExplanation/tp-spec-version-management.md
 ```
+
+There are no focused route tests for the TP Spec version endpoints. Version-route changes need integration coverage or the manual matrix in [TP Spec Version Management](./tp-spec-version-management.md#testing-and-verification).
+
+## Related Pages
+
+- [TP Spec Version Management](./tp-spec-version-management.md)
+- [Time Period and Economic Flow](./time-period-and-economic-flow.md)
+- [Compute, Solver Callback, and Results](./compute-solver-callback-and-results.md)

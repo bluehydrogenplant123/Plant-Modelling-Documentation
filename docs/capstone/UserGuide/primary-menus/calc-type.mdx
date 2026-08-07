@@ -15,11 +15,11 @@ Click a button name to open the detailed page for that calculation type.
 | Button | What It Is For |
 | --- | --- |
 | **[Simulation](./calc-type/simulation)** | Use simulation mode. |
-| **[Optimization](./calc-type/optimization)** | Use optimization mode. |
-| **[DataRec](./calc-type/data-rec)** | Use data reconciliation mode. |
+| **[Optimization](./calc-type/optimization)** | Select Objective Function / Constraint Sets and open Optimization specifications. |
+| **[DataRec](./calc-type/data-rec)** | Select Instrument Sets, Plant Measurements, and Objective Function Sets for data reconciliation. |
 | **[ParamUpdt](./calc-type/param-updt)** | Use parameter update mode. |
 
-Clicking the selected type opens **TP Specs**. Clicking a different type opens **Switch Calc Type** first, then changes the mode after confirmation.
+Clicking a different type opens **Switch Calc Type** first, then changes the mode and opens **TP Specs** after confirmation. When Simulation or ParamUpdt is already active, clicking its button opens **TP Specs** directly. When Optimization or DataRec is active, its button becomes a dropdown; use **Specification set** inside that dropdown to open **TP Specs**.
 
 Calc Type buttons can be disabled while computation-related read-only rules are active.
 

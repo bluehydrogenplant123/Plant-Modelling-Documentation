@@ -24,6 +24,8 @@ When **DataRec** is selected, its secondary button becomes a dropdown with four 
 
 If another calculation type is selected, clicking **DataRec** first opens **Switch Calc Type**.
 
+Saving records in the Instrument Mapping, Measurements, `+Constr`, or TP Specs editors makes those records available for reuse. It does not select them for a run. Use **Apply** in each DataRec selector to commit the next-run choices; **Cancel** leaves the previous choices unchanged.
+
 ## Basic Steps
 
 1. Open **Calc Type**.
@@ -31,15 +33,17 @@ If another calculation type is selected, clicking **DataRec** first opens **Swit
 3. If **Switch Calc Type** appears, click **Confirm** to switch to **DataRec**.
 4. Open **Define Instruments**, choose an Instrument Set, and click **Apply**.
 5. Open **Plant Measurements**, select the measurements to use, and click **Apply**.
-6. Select any required Objective Function and Specification Sets from the remaining dropdown items.
+6. Open **Objective function**, apply any required Objective Function Sets, then use **Specification set** to review or edit TP Specs.
 
 ## Result
 
-The network uses **DataRec** as its calculation mode, and the saved **TP Specs** rows are ready for data reconciliation workflows.
+The network uses **DataRec** as its calculation mode. The active Instrument Set, selected Plant Measurements, and selected Objective Function Sets control the next DataRec run. Changing the Instrument Set clears the measurement selection, and these run choices reset when the canvas Header is remounted or another network is opened.
 
 ## Related Pages
 
 - [Calc Type Menu overview](../calc-type)
 - [Simulation](./simulation)
 - [ParamUpdt](./param-updt)
+- [Plant Measurements](../analysis/plant-measurements)
+- [Constr](../model/constr)
 - [Run button](../run)

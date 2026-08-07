@@ -1,14 +1,14 @@
 ---
 sidebar_position: 13
 title: Run Config and Computation Start
-description: Explains how run configuration and MTP sliding-horizon data are collected, validated, and handed to compute start and the solver request.
+description: Explains how solver configuration, SoluAlgoLib, Optimization/DataRec selections, and MTP sliding-horizon data are collected, validated, and handed to compute start and the solver request.
 ---
 
 # Run Config and Computation Start Code Explanation
 
 ## Overview
 
-Run config and computation start are adjacent but separate flows. The current backend reads run configuration definitions from the PostgreSQL `RunConfigs` table, groups them as `runConfigs`, and returns them with domain data. The frontend lets users select solver and algorithm groups from that object, then sends the chosen names, task metadata, and mode-specific options to `/api/compute/start`.
+Run config and computation start are adjacent but separate flows. The current backend reads solver configuration definitions from the PostgreSQL `RunConfigs` table, groups them as `runConfigs`, and returns them with domain data. The frontend chooses a solver from that object, uses the diagram-specific SoluAlgoLib as the active algorithm, and sends task metadata plus mode-specific options to `/api/compute/start`.
 
 Sliding Horizon is one of those mode-specific values. It is collected in Global TP, persisted with the canvas, and sent as `parameters.global_params.slidingHorizon` only for MTP runs. It is deliberately not part of solver `configuration`.
 
@@ -23,26 +23,34 @@ Current behavior was checked in these source files:
 - `src/src/frontend/src/components/header-bar/run-buttons/universal-runconfig-panel.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/global-tp-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/computation-button.tsx`
+- `src/src/frontend/src/components/header-bar/header-buttons/optimization-setup-menu.tsx`
+- `src/src/frontend/src/components/header-bar/header-buttons/datarec-setup-menu.tsx`
+- `src/src/frontend/src/components/header-bar/header-buttons/solution-algo-library-module.tsx`
 - `src/src/frontend/src/components/header-bar/utils/save-util.tsx`
 - `src/src/frontend/src/features/canvas/canvasSlice.ts`
 - `src/src/frontend/src/App.tsx`
 - `src/src/backend/routes/computeRoutes.ts`
 - `src/src/backend/services/computationTaskService.ts`
+- `src/src/backend/services/solveInputTranslationService.ts`
 - `src/src/backend/services/solverEngineApiService.ts`
 - `src/src/backend/workers/computationDispatchWorker.ts`
 - `src/src/backend/utils/economicCosts.ts`
+- `src/src/backend/utils/tpSpecVersionUtils.ts`
 - `src/src/backend/utils/translation.ts`
 - `src/tests/backend/utils/economicCosts.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
+- `src/tests/backend/services/solveInputTranslationService.test.ts`
+- `src/tests/backend/services/solverEngineApiService.test.ts`
 
-For TP and Economic field ownership, see `time-period-and-economic-flow.md`.
+For TP and Economic field ownership, see [Time Period and Economic Flow](./time-period-and-economic-flow.md). For active-version selection and metadata, see [TP Spec Version Management](./tp-spec-version-management.md).
 
 ## Purpose
 
 Run config and computation start are separate responsibilities:
 
-- Set Run edits stored solver and algorithm configuration attributes.
-- Run selects the solver, algorithm, run name, and maximum computation time for a new task.
+- Set Run opens stored solver configuration attributes, SoluAlgoLib, and Optimization mode options.
+- Run selects the solver, fixed SoluAlgoLib algorithm, run name, and maximum computation time for a new task.
+- Active Optimization/DataRec dropdowns own the next-run set, instrument, and measurement selections; Run reduces those selections to ids.
 - Global TP owns the editable Sliding Horizon value; Run only reads that value and conditionally adds it to an MTP start request.
 - The backend compute start route rebuilds solver parameters from the current diagram state and queues the computation task.
 
@@ -52,33 +60,39 @@ Run config does not own TP ranges, durations, Sliding Horizon, economic entities
 
 | Field | Owner | Stored in | Used by compute start |
 | --- | --- | --- | --- |
-| `runConfigs` | Backend domain data route. | PostgreSQL `RunConfigs`, then Redux domain data. | Solver and algorithm names are selected from these keys. |
+| `runConfigs` | Backend domain data route. | PostgreSQL `RunConfigs`, then Redux domain data. | Solver names are selected from keys that do not match `/algorithm/i`. |
 | Solver config attributes | `RunConfigModal` and `UniversalRunConfigPanel`. | Currently loaded from `RunConfigs`; frontend save attempts `/api/data/run-configs/import`, but the backend route is missing. | `ComputationTaskService.translateComputationConfig` uses the selected solver name. |
-| Algorithm config attributes | `RunConfigModal` and `UniversalRunConfigPanel`. | Currently loaded from `RunConfigs`; frontend save attempts `/api/data/run-configs/import`, but the backend route is missing. | `ComputationTaskService.translateComputationConfig` uses the selected algorithm name. |
+| `solution_algo_library` | `SolutionAlgoLibraryModule`. | MongoDB `diagram.solualgolib`. | `buildSolveRequest(...)` normalizes saved rows into solver configuration. |
+| `optimizationOptions` | Header Optimization setup plus **Set Run > Optimization Options**. | Header runtime state, then internal queued-task snapshot. | Selects deterministic/DRO mode and saved Objective Function / Constraint Sets. |
+| `dataRecOptions` | Header DataRec setup. | Header/Redux runtime state, then internal queued-task snapshot. | Selects one Instrument Set, Plant Measurements, and Objective Function Sets. |
 | `runName` | `ComputationButton`. | Computation task row. | Required in `/api/compute/start`. |
 | `maxComputationTime` | `ComputationButton` UI, then backend route validation. | Computation configuration. | Passed to `translateComputationConfig`. |
 | `slidingHorizon` | `GlobalTpButton`, then Redux canvas state. | `canvas.slidingHorizon`, default `1`. | For MTP only, sent and generated as `parameters.global_params.slidingHorizon`. Never added to `configuration`. |
+| Active TP Spec context | TP Specs Apply action and backend version metadata. | MongoDB version set/table plus sparse Base or MTP changes. | Selects the changes used by translation and adds version identity to `global_params.task_config`. |
 | `parameters.costs` | `computeRoutes.ts` and `translation.ts`. | `diagram.parameters.costs` after start. | Generated from `duration`, `durationUnit`, `tpNodeVers`, `costEntities`, and `costMappings`. |
 
 ## Data Flow
 
 1. The domain data route reads PostgreSQL `RunConfigs` through `buildRunConfigs()` and returns the grouped `runConfigs` object with the rest of the domain payload.
-2. The frontend stores `runConfigs` in Redux domain state and `HeaderBar` splits keys into solver and algorithm groups with `/algorithm/i`.
-3. `Set Run` opens `RunConfigModal` for the selected group. Editable saves currently attempt `/api/data/run-configs/import`; because the backend route is not present, treat that call as frontend intent that still needs backend implementation.
-4. `Run` opens `ComputationButton`, which chooses one solver key and one algorithm key from the same `runConfigs` object.
-5. The frontend posts `/api/compute/start` with `runName`, `solverName`, `algorithmName`, `maxComputationTime`, and `diagramId`. MTP requests additionally contain `parameters.global_params.slidingHorizon`; Base TP requests omit it.
-6. The backend start route resolves TP mode, validates and normalizes Sliding Horizon for MTP, and rebuilds the rest of the diagram parameters.
-7. The route attaches the normalized horizon as a sibling of `global_params.task_config`, saves the generated parameters, and uses `ComputationTaskService.translateComputationConfig(...)` to build the separate solver configuration.
-8. A waiting computation task is created and queued. The dispatch worker passes the saved diagram parameters to `buildSolveRequest(...)`, which preserves `global_params.slidingHorizon` in the solver request.
+2. The frontend stores `runConfigs` in Redux domain state and filters non-algorithm keys into the Solver menu.
+3. `Set Run` opens `RunConfigModal` for a selected solver. Editable saves currently attempt `/api/data/run-configs/import`; because the backend route is not present, treat that call as frontend intent that still needs backend implementation.
+4. Set Run's Algorithm menu opens `SolutionAlgoLibraryModule`, and active Optimization additionally exposes deterministic/DRO options.
+5. Active Optimization/DataRec dropdowns collect next-run selections independently of their shared editors.
+6. `Run` opens `ComputationButton`, which chooses one solver and uses `SoluAlgoLib` as the algorithm.
+7. The frontend posts `/api/compute/start` with task fields plus the active type's identifier-only `optimizationOptions` or `dataRecOptions`. MTP requests additionally contain `parameters.global_params.slidingHorizon`; Base TP requests omit it.
+8. The backend resolves selected ids into an authoritative queued snapshot, resolves TP mode, validates and normalizes Sliding Horizon for MTP, and rebuilds the rest of the diagram parameters.
+9. The route attaches the normalized horizon as a sibling of `global_params.task_config`, saves the generated parameters, and uses `ComputationTaskService.translateComputationConfig(...)` to build the separate solver configuration.
+10. A waiting computation task is created and queued. The dispatch worker passes task selection, saved diagram parameters, equations, collections, and SoluAlgoLib rows to `buildSolveRequest(...)`.
 
 ## Header Handoff
 
-`HeaderBar` reads `state.domain.data.runConfigs || {}` and exposes two user-facing sections:
+`HeaderBar` reads `state.domain.data.runConfigs || {}` and exposes these connected surfaces:
 
-- `Set Run` for editing config attributes.
+- `Calc Type` for Optimization/DataRec next-run selection.
+- `Set Run` for solver attributes, SoluAlgoLib, and Optimization mode.
 - `Run` through `ComputationButton` for starting a computation.
 
-In `Set Run`, keys that do not match `/algorithm/i` are shown under the Solver dropdown. Keys that match `/algorithm/i` are shown under the Algorithm dropdown. Selecting either key opens `RunConfigModal` with the selected config group.
+In `Set Run`, keys that do not match `/algorithm/i` are shown under the Solver dropdown. The Algorithm dropdown no longer lists generic run-config keys; its active entry is `SoluAlgoLib`, which opens the diagram-specific solution algorithm library.
 
 The same computing-disable rule is passed as `readOnly` to `RunConfigModal`. In read-only mode, the modal renders the config values but does not expose save/cancel actions.
 
@@ -96,7 +110,7 @@ The same computing-disable rule is passed as `readOnly` to `RunConfigModal`. In 
 }
 ```
 
-It determines whether the selected group is a solver or algorithm group by checking `/algorithm/i`. The modal then passes the selected group's `attributes` to `UniversalRunConfigPanel`.
+The current Header path opens this modal for solver groups. The modal still derives `exportType` with `/algorithm/i` for compatibility, then passes the selected group's `attributes` to `UniversalRunConfigPanel`.
 
 `UniversalRunConfigPanel` renders attributes as:
 
@@ -136,9 +150,9 @@ If a matching backend route is added and returns success, the frontend dispatche
 `ComputationButton` reads the same `runConfigs` object. When configs load, it defaults:
 
 - `selectedSolver` to the first key that does not match `/algorithm/i`.
-- `selectedAlgorithm` to the first key that matches `/algorithm/i`.
+- `selectedAlgorithm` to the fixed compatibility name `SoluAlgoLib`.
 
-The computation modal lets the user choose run name, maximum computation time, solver, and algorithm. It can also open read-only `RunConfigModal` views for the selected solver or algorithm.
+The computation modal lets the user choose run name, maximum computation time, solver, fixed SoluAlgoLib algorithm, and log level. It can also open a read-only `RunConfigModal` view for the selected solver.
 
 Before posting a start request, the frontend guards against:
 
@@ -157,11 +171,38 @@ The common Base TP start body is:
 {
   "runName": "Run 1",
   "solverName": "Selected Solver",
-  "algorithmName": "Selected Algorithm",
+  "algorithmName": "SoluAlgoLib",
+  "logLevel": "development",
   "maxComputationTime": 50,
   "diagramId": "..."
 }
 ```
+
+When Optimization is active, the request also contains selected set ids and mode:
+
+```json
+{
+  "optimizationOptions": {
+    "mode": "deterministic",
+    "objectiveFunctionSetIds": ["objective-set-1"],
+    "additionalConstraintSetIds": ["constraint-set-1"]
+  }
+}
+```
+
+When DataRec is active, the request instead contains selected Instrument Set, measurement, and Objective Function Set ids:
+
+```json
+{
+  "dataRecOptions": {
+    "instrumentSetId": "64b000000000000000000003",
+    "measurementIds": ["64b000000000000000000005"],
+    "objectiveFunctionSetIds": ["objective-set-1"]
+  }
+}
+```
+
+The full editor objects do not cross the trust boundary. See [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md) for authoritative resolution and solver shapes.
 
 When `state.canvas.tpMode === "MTP"`, `ComputationButton` adds the normalized Redux value without changing the existing request fields:
 
@@ -169,7 +210,8 @@ When `state.canvas.tpMode === "MTP"`, `ComputationButton` adds the normalized Re
 {
   "runName": "Run 1",
   "solverName": "Selected Solver",
-  "algorithmName": "Selected Algorithm",
+  "algorithmName": "SoluAlgoLib",
+  "logLevel": "development",
   "maxComputationTime": 50,
   "diagramId": "...",
   "parameters": {
@@ -205,17 +247,18 @@ After validation, the route:
 5. Checks for missing model versions.
 6. Checks duplicate stream instances.
 7. Reads calculation type from `diagram.parameters.global_params.task_config.task_type`, falling back to `Simulation`.
-8. Loads network `tpNodeVers` rows and persisted TP changes.
-9. Resolves Base versus MTP mode and resolves the MTP Sliding Horizon value.
-10. Merges request-body TP changes over persisted TP changes when supplied.
-11. Builds `costsPayload`.
-12. Calls `translation(...)`.
-13. Attaches active TP-spec metadata and the mode-specific Sliding Horizon field.
-14. Writes the returned parameters back to the diagram.
-15. Builds the computation configuration from the selected solver and algorithm.
-16. Creates a waiting computation task.
+8. Resolves the active type's `optimizationOptions` or `dataRecOptions` against saved sets, Instrument Sets, mappings, and measurements.
+9. Loads network `tpNodeVers` rows and persisted TP changes.
+10. Resolves Base versus MTP mode and resolves the MTP Sliding Horizon value.
+11. Merges request-body TP changes over persisted TP changes when supplied.
+12. Builds `costsPayload`.
+13. Calls `translation(...)`.
+14. Attaches active TP Spec metadata and the mode-specific Sliding Horizon field. Version selection is isolated by diagram, TP scope, and calculation type.
+15. Writes the returned parameters back to the diagram.
+16. Builds the computation configuration from the selected solver and SoluAlgoLib indicator, then attaches the internal selected-input snapshot.
+17. Creates a waiting computation task.
 
-The compute route does not read solver parameters from the run config modal state directly. It receives the selected solver and algorithm names and delegates configuration construction to `ComputationTaskService.translateComputationConfig`. Sliding Horizon follows the separate `parameters` path and is not passed into that service.
+The compute route does not read solver parameters from the run config modal state directly. It receives the selected solver and algorithm names and delegates the configuration shell to `ComputationTaskService.translateComputationConfig`. Sliding Horizon follows the separate base `parameters` path. Optimization/DataRec selections follow a third path: an internal `configuration.selected_inputs` snapshot that `buildSolveRequest(...)` later moves to `parameters.solve_inputs`.
 
 ## Sliding Horizon Handoff
 
@@ -334,13 +377,15 @@ This means `diagram.parameters` after a run start is generated state. Do not use
 
 Relevant backend tests are present at:
 
+- `src/tests/backend/services/solveInputTranslationService.test.ts`
+- `src/tests/backend/services/solverEngineApiService.test.ts`
 - `src/tests/backend/utils/economicCosts.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
 
 Focused backend validation commands, run from `src/`:
 
 ```bash
-npx jest tests/backend/utils/economicCosts.test.ts tests/backend/utils/translationCosts.test.ts --runInBand --coverage=false
+npx jest tests/backend/services/solveInputTranslationService.test.ts tests/backend/services/solverEngineApiService.test.ts tests/backend/utils/economicCosts.test.ts tests/backend/utils/translationCosts.test.ts --runInBand --coverage=false
 npm run build
 ```
 
@@ -364,17 +409,28 @@ There is no dedicated automated Sliding Horizon request test in the current repo
 | MTP with request field omitted | Older/manual client sends no horizon field. | Uses persisted current value, saved canvas value, legacy value, or default `1` in that order. | Older clients must remain runnable. |
 | MTP with invalid explicit value | Contains a non-finite value or value below `1`. | Returns HTTP `400`; no task is queued. | Invalid request must not silently overwrite saved state. |
 | Base TP after an earlier MTP run | Omits the field. | Removes current and legacy solver-facing horizon fields. | Stale MTP horizon must not reach the Base TP solver request. |
-| Existing Run options | Includes Optimization or DataRec options as before. | Existing parameter translation and configuration remain unchanged. | Adding the horizon branch must not drop sibling request fields. |
+| Optimization run | Includes `optimizationOptions` id arrays and mode. | Queued snapshot becomes Optimization `parameters.solve_inputs`. | Sliding Horizon or run-config changes must not drop selected sets. |
+| DataRec run | Includes `dataRecOptions` ids. | Queued snapshot expands authoritative mappings and selected measurements. | Sliding Horizon or run-config changes must not drop DataRec selections. |
 
 ## Known Cautions
 
-- Solver and algorithm grouping depends on the config key name matching `/algorithm/i`.
+- Solver grouping depends on config key names not matching `/algorithm/i`; the active algorithm path is now the separate diagram-specific SoluAlgoLib module.
 - `UniversalRunConfigPanel` converts numeric-looking strings on save, but deeper semantic validation belongs to the missing run config import/backend path.
 - The current frontend attempts `POST /api/data/run-configs/import`; the current backend does not define that route and only reads `RunConfigs` into domain data.
 - `parameters.costs` is produced at compute start from persisted diagram fields. It should not be treated as a manual editing surface.
 - `canvas.slidingHorizon` is the editable saved value; `parameters.global_params.slidingHorizon` is generated for MTP solver transport.
 - Do not add Sliding Horizon to `ComputationConfiguration` or `translateComputationConfig(...)`; that would change the established separation between `configuration` and `parameters`.
+- `configuration.selected_inputs` is an intentional internal snapshot for selected set membership and expanded DataRec values. `buildSolveRequest(...)` removes it from configuration and emits `parameters.solve_inputs`; full equation definitions are still reloaded from the diagram at dispatch.
+- Optimization/DataRec dropdown **Apply** updates runtime selection only. Saving an editor record and selecting it for a run are separate actions.
 - Base TP intentionally omits the frontend request field and removes any stale generated value on the backend.
 - The current numeric normalizers truncate positive fractions. Strict-integer behavior requires a coordinated frontend and backend change.
 - No solver iteration logic is implemented by this feature.
+- Saving an inactive TP Spec version does not affect compute start. Only the active version for the resolved scope and calculation type is selected.
 - `src/src/backend/services/solve_request.json` is not the current source of truth for this flow.
+
+## Related Pages
+
+- [Time Period and Economic Flow](./time-period-and-economic-flow.md)
+- [TP Spec Version Management](./tp-spec-version-management.md)
+- [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md)
+- [Compute, Solver Callback, and Results](./compute-solver-callback-and-results.md)

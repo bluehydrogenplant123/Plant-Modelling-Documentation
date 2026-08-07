@@ -19,6 +19,8 @@ Use **Specs** when you need to review, version, apply, or edit base specificatio
 
 The **Specs** button opens the shared TP Specs panel in Base TP mode. It loads diagram node data and lets you edit specification rows for the base time period.
 
+Only eligible model variables are shown. A row must have an effective specification of `F`, `V`, `P`, `I`, or `CALC` for the selected calculation type. For a subnetwork instance, the panel hides internal ports that are not exposed through the wrapper mapping.
+
 <figure style={{ maxWidth: '980px', margin: '1.5rem auto' }}>
   <img
     src={tpSpecsDialog}
@@ -39,6 +41,10 @@ The **Specs** button opens the shared TP Specs panel in Base TP mode. It loads d
 5. Click **Save** to persist changes to the selected version.
 6. Click **Apply** when you want that version to become the version used by the network and the next solve request.
 
+The version shown in the dropdown is the **selected** version. The item marked `(active)` is the **active** version. Selecting a version is safe for review and editing; it does not apply that version.
+
+In the **Simulation** tab, the **Spec** cell is read-only. Value, bounds, and supported unit fields remain editable when the panel is not read-only. Other calculation-type tabs allow editing the supported Spec values.
+
 ## Version Management
 
 Base TP specs are versioned separately for each calculation type. Creating **V2** under **Simulation** creates only the Simulation version table; it does not create V2 for Optimization, DataRec, or ParamUpdt.
@@ -54,19 +60,63 @@ Default Base TP tables use these names:
 
 Version behavior:
 
-- **V1 Default** is created automatically and cannot be deleted.
-- **New** copies the currently selected version for the current calculation type.
+- **V1 Default** is created automatically when the version family is first loaded and cannot be deleted.
+- **New** creates the next available version number and copies the currently selected version for the current calculation type. The new version starts inactive.
 - **Rename** changes the display name shown in the version menu.
 - **Delete** removes the selected non-default version. If the deleted version was active, the panel falls back to V1 for that calculation type.
 - **Save** stores edits in the selected version. If that version is not active, the network is not updated until **Apply** is clicked.
 - **Apply** makes the selected version active for the current calculation type, refreshes the panel, and updates the values used by the network.
 
+The version code, display name, and logical table name serve different purposes:
+
+| Identity | Example | Behavior |
+| --- | --- | --- |
+| Version code | `V2` | Stable generated code for that version number. |
+| Display name | `High Feed Case` | User-editable label in the dropdown. |
+| Logical table | `TPSPECV2` | Internal readable identity for Base Simulation V2. Renaming does not change it. |
+
+Versions store only values that differ from the model baseline. New copies the selected version's saved differences, while unchanged cells continue to inherit current node model defaults. A version is therefore a sparse overlay, not a frozen copy of every displayed row.
+
+## Save Versus Apply
+
+Use **Save** while preparing or comparing a version. Use **Apply** only when it should affect the active network.
+
+| Current state | Save result | Apply result |
+| --- | --- | --- |
+| Selected version is active | Saves changes and refreshes active Base values. | Disabled because the version is already active. |
+| Selected version is inactive | Saves changes only inside that version. | Activates it for Base TP and the current calculation type. |
+| Active non-default version is deleted | Removes that version and its saved changes. | V1 becomes active automatically. |
+
+During an active computation, Specs can become read-only. In that state, review and refresh remain available, but grid edits and version mutations are disabled.
+
 ## Result
 
-Base specification changes are saved for the current diagram and version. The active Base TP spec version is included in the solve request metadata as `tp_spec_scope`, `tp_spec_version`, and `active_tp_spec_table`.
+Base specification changes are saved for the current diagram and version. The active Base TP version is overlaid when Base-mode node data is loaded and is selected again when computation starts.
+
+The solve task configuration records:
+
+- `tp_spec_scope`
+- `tp_spec_version`
+- `tp_spec_version_name`
+- `active_tp_spec_table`
+- `active_tp_spec_version_set_id`
+- `active_tp_spec_version_table_id`
+
+Computation result rows also retain calculation type, scope, version code, and logical table so a stored run can be traced to the version that produced it.
+
+## Troubleshooting
+
+| Message or symptom | Meaning | What to do |
+| --- | --- | --- |
+| `Save the diagram first to load TP Specs.` | Versions require a persisted diagram id. | Save the diagram, then reopen Specs. |
+| `No TP spec rows found for this diagram.` | No node variable is eligible for the selected calculation type. | Check node model definitions and the selected calculation type. |
+| Saved values do not affect the network | The edited version is not active. | Select it and click **Apply**. |
+| A version is missing after switching tabs | Version lists are isolated by calculation type. | Return to the calculation type where it was created. |
+| MTP versions are missing here | Base and MTP version families are separate. | Open **Multi-TP -> TP Specs** for MTP versions. |
 
 ## Related Pages
 
 - [Model Menu overview](../model)
 - [Base TP](./base-tp)
 - [Calc Type Menu](../calc-type)
+- [TP Spec Version Management Code Explanation](../../../CodeExplanation/tp-spec-version-management.md)

@@ -204,6 +204,7 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/CodeExplanation/header-bar'},
         {type: 'doc', id: 'capstone/CodeExplanation/time-period-and-economic-flow'},
         {type: 'doc', id: 'capstone/CodeExplanation/run-config-and-computation-start'},
+        {type: 'doc', id: 'capstone/CodeExplanation/tp-spec-version-management'},
         {type: 'doc', id: 'capstone/CodeExplanation/equation-writing-module'},
         {type: 'doc', id: 'capstone/CodeExplanation/solve-request-selected-inputs'},
         {type: 'doc', id: 'capstone/CodeExplanation/constraint-module'},

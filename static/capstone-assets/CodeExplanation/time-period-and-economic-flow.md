@@ -1,16 +1,18 @@
 ---
 sidebar_position: 12
 title: Time Period and Economic Flow
-description: Explains how base time period, multi-time-period ranges, sliding horizon, economic costs, and compute-start parameters are edited and persisted.
+description: Explains how base time period, multi-time-period ranges, sliding horizon, TP Spec versions, economic costs, and compute-start parameters are edited and persisted.
 ---
 
 # Time Period and Economic Flow Code Explanation
 
 ## Overview
 
-The TP and Economic flow owns diagram-level duration, Multi-TP ranges, the MTP sliding-horizon value, node model-version ranges, cost entities, and cost mappings. User edits are saved to diagram fields or TP rows first; compute start later converts those persisted fields into solver-facing parameters.
+The TP and Economic flow owns diagram-level duration, Multi-TP ranges, the MTP sliding-horizon value, TP Spec version selection, node model-version ranges, cost entities, and cost mappings. User edits are saved to diagram fields or TP rows first; compute start later converts those persisted fields into solver-facing parameters.
 
 The important boundary is that `canvas.slidingHorizon` is the editable persistence source for Sliding Horizon, while `parameters.global_params.slidingHorizon` is the MTP solver-facing value generated at compute start. Similarly, `parameters.costs` is generated runtime state rather than the editing source of truth for Base TP, Global TP, Base Economic, or Multi-TP Economic behavior.
+
+This page keeps the cross-feature view. For version identity, sparse storage, endpoint contracts, Base overlays, MTP compatibility, and callback/result behavior, use [TP Spec Version Management](./tp-spec-version-management.md) as the detailed maintenance reference.
 
 ## Source Files
 
@@ -21,6 +23,10 @@ Current behavior was checked in these source files:
 - `src/src/frontend/src/components/header-bar/header-buttons/global-tp-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/computation-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/tp-specs-button.tsx`
+- `src/src/frontend/src/components/modal/tabs/info-tab.tsx`
+- `src/src/frontend/src/components/modal/tabs/node-vars-tab.tsx`
+- `src/src/frontend/src/components/modal/tabs/specs-tab.tsx`
+- `src/src/frontend/src/components/modal/useNodeDataPrefetch.ts`
 - `src/src/frontend/src/components/header-bar/header-buttons/cost-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/cost-button-utils.ts`
 - `src/src/frontend/src/components/header-bar/index.tsx`
@@ -37,7 +43,9 @@ Current behavior was checked in these source files:
 - `src/src/backend/utils/storeComputationResultUtils.ts`
 - `src/src/backend/prisma/mongodb/schema.prisma`
 - `src/src/backend/prisma/postgres/schema.prisma`
+- `src/src/backend/prisma/postgres/migrations/20260630000100_add_tp_spec_version_to_computation_results/migration.sql`
 - `src/tests/backend/utils/economicCosts.test.ts`
+- `src/tests/backend/utils/storeComputationResultUtils.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
 
 Legacy docs were used only as historical density references:
@@ -49,10 +57,11 @@ Legacy docs were used only as historical density references:
 
 ## Purpose
 
-The TP and Economic flow owns three related data surfaces:
+The TP and Economic flow owns four related data surfaces:
 
 - Time structure and duration, stored on the diagram for the base period and on `tpNodeVers` rows for multi-time-period ranges.
 - The MTP sliding-horizon size, edited in Global TP, stored with the canvas, and copied into solver-facing global parameters only for MTP computations.
+- TP Spec versions, stored as version metadata plus sparse Base or MTP changes and bound to computation by the active version.
 - Economic cost definitions and mappings, stored on the diagram and converted into solver-facing `parameters.costs` only when computation starts.
 
 The UI does not edit solver-facing `parameters` directly. The backend start route rebuilds `parameters.costs` from the current diagram, TP rows, and economic rows, and separately attaches the normalized Sliding Horizon value after translation.
@@ -249,6 +258,8 @@ The button renders only after verification state allows it. The header keeps the
 
 Each scope is also separated by calculation type. Simulation, Optimization, DataRec, and ParamUpdt each have their own version list and active version. Creating `V2` while the Simulation tab is selected creates only the Simulation version table; it does not create matching V2 tables for the other calculation types.
 
+The complete code-level explanation is in [TP Spec Version Management](./tp-spec-version-management.md). The summary below defines the boundaries that matter when changing adjacent TP or Economic code.
+
 Default Base TP logical table names are:
 
 | Calculation type | Table name |
@@ -278,7 +289,10 @@ TpSpecVersionSet {
   code,
   displayName,
   isDefault,
-  isActive
+  isActive,
+  sourceVersionSetId,
+  createdAt,
+  updatedAt
 }
 
 TpSpecVersionTable {
@@ -286,14 +300,18 @@ TpSpecVersionTable {
   versionSetId,
   scope,
   calcType,
-  logicalName
+  logicalName,
+  createdAt,
+  updatedAt
 }
 ```
 
 Large TP spec tables are not duplicated in full. The backend stores only sparse user changes:
 
-- Base TP changes are stored in `TpSpecBaseChange` with a JSON patch for value/spec/bounds/unit fields.
+- Base TP changes are stored in `TpSpecBaseChange` with a JSON patch for value, spec, bounds, unit, and type fields.
 - Multi-TP changes are stored in `TpChanges` with `tpSpecVersionSetId`, `tpSpecVersionTableId`, `calcType`, and `changeSource`.
+
+The table shown in the UI is materialized on demand. Base starts from node model-version defaults and overlays the selected Base patch set. MTP expands those defaults across `TpNodeVers` ranges and overlays the selected table's `TpChanges`. Creating a version copies sparse manual changes, not a frozen full-table snapshot; computed MTP rows are not copied.
 
 The frontend uses these version endpoints:
 
@@ -309,9 +327,14 @@ PUT /api/data/tp-spec-tables/:versionTableId/changes
 
 `Save` and `Apply` are intentionally different:
 
+- Selecting a version changes which table is displayed and edited; it does not change the network's active version.
 - `Save` persists edits to the selected version table. Saving a non-active version does not change the network.
 - `Apply` marks the selected version active for the current scope and calculation type, refreshes the TP Specs panel, and updates the values used by the network and the next solve request.
 - `V1 Default` is created automatically and cannot be deleted. If an active non-default version is deleted, that scope and calculation type fall back to V1.
+
+In Base mode, ordinary node reads overlay the active Base patch set for the diagram's persisted calculation type. The UI Apply path also performs a calculation-type-only diagram update and refreshes frontend node cache. The backend Apply endpoint itself only toggles version metadata, so non-UI API clients must preserve the calculation-type handoff explicitly.
+
+For MTP, node-modal `/tpchanges` reads and writes are scoped to the active version context. The Info, Node Vars, Specs, and prefetch paths pass `calcType` so one calculation-type tab does not read another tab's changes. Legacy unversioned MTP rows remain readable and are adopted by default-version compatibility logic.
 
 At compute start, `computeRoutes.ts` resolves the active TP spec context with `getActiveTpSpecContext(...)`, overlays the active sparse changes, and attaches version metadata to `parameters.global_params.task_config`:
 
@@ -326,7 +349,7 @@ At compute start, `computeRoutes.ts` resolves the active TP spec context with `g
 }
 ```
 
-Callback result storage copies this metadata into PostgreSQL `ComputationResults` columns `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table` so run results can be traced back to the version used for the solve.
+Callback result storage copies this metadata into PostgreSQL `ComputationResults` columns `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table` so stored rows can be traced back to the version used for the solve. These columns provide a backend traceability contract; a result UI must opt in before users can filter or display every field.
 
 ## Economic Panels
 
@@ -423,19 +446,20 @@ const costsPayload = {
 - `mappings` drop `scope`, `fromTp`, and `toTp`; the solver receives network/node/port/var/entity only.
 - `duration` is emitted as an array with `From TP`, `To TP`, `Duration`, and `DurationUnit`.
 
-The same compute-start pass writes TP spec version metadata into `parameters.global_params.task_config`. For MTP, `slidingHorizon` is a sibling of `task_config` under `parameters.global_params`; it is not nested inside `task_config`. The solver request therefore identifies the calculation type, applied TP spec table, and MTP horizon size. The callback storage path persists TP-spec metadata with computation results for later run-history filtering and display.
+The same compute-start pass writes TP spec version metadata into `parameters.global_params.task_config`. For MTP, `slidingHorizon` is a sibling of `task_config` under `parameters.global_params`; it is not nested inside `task_config`. The solver request therefore identifies the calculation type, applied TP spec table, and MTP horizon size. The callback storage path persists TP-spec metadata with computation results for traceability and possible result filtering.
 
 ## Testing
 
 Relevant backend tests are present at:
 
 - `src/tests/backend/utils/economicCosts.test.ts`
+- `src/tests/backend/utils/storeComputationResultUtils.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
 
 Focused backend validation commands, run from `src/`:
 
 ```bash
-npx jest tests/backend/utils/economicCosts.test.ts tests/backend/utils/translationCosts.test.ts --runInBand --coverage=false
+npx jest tests/backend/utils/economicCosts.test.ts tests/backend/utils/translationCosts.test.ts tests/backend/utils/storeComputationResultUtils.test.ts --runInBand --coverage=false
 npm run build
 ```
 
@@ -456,6 +480,8 @@ There is no dedicated automated Sliding Horizon test in the current repository. 
 | Base TP run | Start computation with `tpMode === "BASE"`. | Saved canvas may still retain the editable value. | Start request omits the field; backend removes it from generated solver parameters. |
 | MTP run | Start computation with `tpMode === "MTP"`. | Existing Run behavior is unchanged. | Request and final solver payload contain `parameters.global_params.slidingHorizon`. |
 
+There are also no focused automated tests for TP Spec version utilities, version/table routes, or frontend version actions. At minimum, manually verify scope isolation, calculation-type isolation, inactive Save, Apply, active-version deletion fallback, MTP copy excluding computed rows, and solve/result metadata. The detailed matrix is in [TP Spec Version Management](./tp-spec-version-management.md#testing-and-verification).
+
 ## Known Cautions
 
 - Do not use generated runtime artifacts as the source of truth for TP or cost behavior.
@@ -470,3 +496,12 @@ There is no dedicated automated Sliding Horizon test in the current repository. 
 - Legacy unscoped `1-1` cost rows are base rows for compatibility. New Multi-TP rows should use explicit `scope: "mtp"`.
 - Do not treat a saved TP spec version as applied unless `isActive` is true for that exact scope and calculation type.
 - Saving a non-active TP spec version is allowed, but it must not update node cache, active `tp_changes`, or solve request metadata until the user clicks `Apply`.
+- TP Spec versions are sparse overlays, not immutable table snapshots. Unchanged cells continue to inherit node model-version defaults.
+- Keep TP Spec actions read-only during computation. Callback persistence resolves the active context when results are handled.
+
+## Related Pages
+
+- [TP Spec Version Management](./tp-spec-version-management.md)
+- [Run Config and Computation Start](./run-config-and-computation-start.md)
+- [Backend Data Routes and Persistence](./backend-data-routes-and-persistence.md)
+- [Compute, Solver Callback, and Results](./compute-solver-callback-and-results.md)

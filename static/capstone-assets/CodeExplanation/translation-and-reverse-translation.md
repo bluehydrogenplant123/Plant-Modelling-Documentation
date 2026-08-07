@@ -6,7 +6,7 @@ description: Explains how HyProNet builds solver-facing parameters and maps solv
 
 ## Overview
 
-Translation converts the current diagram, domain snapshot, stream data, time-period rows, TP overrides, and Economic cost data into the solver-facing `parameters` object. Reverse translation consumes callback `results.tps_specs` and pushes machine-generated values back into `parameters.tps_specs`, node model versions, and computed TP changes.
+Translation converts the current diagram, domain snapshot, stream data, time-period rows, active-version TP overrides, and Economic cost data into the solver-facing `parameters` object. Reverse translation consumes callback `results.tps_specs` and pushes machine-generated values back into `parameters.tps_specs`, node model versions, and computed TP changes.
 
 The solver request wrapper is built later by `solverEngineApiService.ts`; this page explains the `parameters` payload and the result-to-state mapping.
 
@@ -17,6 +17,7 @@ The solver request wrapper is built later by `solverEngineApiService.ts`; this p
 - `src/src/backend/services/computationTaskHandler.ts`: calls reverse translation, merges subnetwork/wrapper updates, persists computed TP changes, and updates diagrams and nodes.
 - `src/src/backend/utils/storeComputationResultUtils.ts`: stores callback machine-generated values in PostgreSQL result rows after reverse translation.
 - `src/src/backend/routes/computeRoutes.ts`: gathers diagram, node, TP, stream, subnetwork, and cost inputs before calling `translation(...)`.
+- `src/src/backend/utils/tpSpecVersionUtils.ts`: resolves the active TP Spec context used to select translation inputs; translation itself does not choose a version.
 - `src/src/backend/utils/interfaces.ts`: declares the `tps_spec`, `stream_connect`, material, and global parameter interfaces.
 - `src/tests/backend/utils/translation.test.ts`: verifies the general translation output format.
 - `src/tests/backend/utils/translationCosts.test.ts`: verifies solver-facing Economic cost payloads.
@@ -40,7 +41,7 @@ The solver request wrapper is built later by `solverEngineApiService.ts`; this p
 | `nodeCacheData` | MongoDB `node` records plus expanded subnetwork nodes | Supplies persisted `modelVersion`, Mongo document ids, and diagram ids. |
 | `subnetworkPortMap` | `buildSubnetworkPortMap(...)` | Resolves wrapper-node edge handles to internal nodes and ports. |
 | `tpNodeVers` | MongoDB `tpNodeVers` | Builds TP ranges and model-version ranges. |
-| `tpChanges` | MongoDB `tpChanges` merged with optional request TP changes | Supplies explicit non-computed human overrides. |
+| `tpChanges` | Active MTP table rows or Base patches converted by `computeRoutes.ts`, merged with optional request TP changes | Supplies explicit human overrides. Version selection happens before `translation(...)`. |
 | `costsPayload` | Diagram Economic fields and TP durations | Builds optional `parameters.costs`. |
 | `outputJson` | Solver callback `results` | Reverse-translated into updated parameters, canvas data, and computed TP changes. |
 
@@ -177,16 +178,18 @@ Material property lookup is case-insensitive and can fall back to zero-suffixed 
 
 ## Data Flow
 
-1. `computeRoutes.ts` loads diagram, snapshot, node rows, TP rows, TP changes, cost data, and subnetwork information.
-2. `expandSubnetworkInstances(...)` adds instance diagram nodes to the canvas and node cache.
-3. `buildSubnetworkPortMap(...)` resolves wrapper external port locations to internal nodes and ports.
-4. `translation(...)` initializes `global_params`, computes `ntp`, and prepares maps for models, ports, and solver node names.
-5. It skips subnetwork instance wrapper nodes while still allowing their used edge ports to resolve to internal nodes.
-6. It creates solver `models` and `nodes`, including TP model-version ranges.
-7. It converts edges to `stream_connectivity`, `material_properties`, and `material_fractions`.
-8. It reconstructs each node state from a clean model definition, connected-stream hydration, persisted explicit human overrides, and current request overrides.
-9. It emits `parameters.tps_specs`.
-10. It appends sanitized `parameters.costs` when a `costsPayload` is present.
+1. `computeRoutes.ts` loads diagram, snapshot, node rows, TP rows, cost data, and subnetwork information, then resolves active TP Spec contexts for the run scope and calculation type.
+2. It selects active-table MTP changes or converts active Base patches into translation overrides, retaining unversioned MTP compatibility rows where required.
+3. `expandSubnetworkInstances(...)` adds instance diagram nodes to the canvas and node cache.
+4. `buildSubnetworkPortMap(...)` resolves wrapper external port locations to internal nodes and ports.
+5. `translation(...)` initializes `global_params`, computes `ntp`, and prepares maps for models, ports, and solver node names.
+6. It skips subnetwork instance wrapper nodes while still allowing their used edge ports to resolve to internal nodes.
+7. It creates solver `models` and `nodes`, including TP model-version ranges.
+8. It converts edges to `stream_connectivity`, `material_properties`, and `material_fractions`.
+9. It reconstructs each node state from a clean model definition, connected-stream hydration, persisted explicit human overrides, and current request overrides.
+10. It emits `parameters.tps_specs`.
+11. It appends sanitized `parameters.costs` when a `costsPayload` is present.
+12. After translation, `computeRoutes.ts` attaches the active TP Spec version metadata to `global_params.task_config`.
 
 ## Reverse Translation Contract
 
@@ -244,6 +247,7 @@ If an output variable has no matching input `parameters.tps_specs` row, the fall
 - It writes computed MongoDB `tpChanges` with `isComputed: true`.
 - It updates existing computed TP changes before creating missing ones.
 - It never overwrites manual user TP changes with computed results.
+- When active-context resolution succeeds, it tags computed rows with version set/table ids, calculation type, and `changeSource: "COMPUTED"`.
 - It applies wrapper and subnetwork propagation before final diagram and node writes.
 - It writes node `modelVersion` updates and diagram `canvas` / `parameters` updates with bounded concurrency.
 - It calls `storeComputationResults(...)` to upsert PostgreSQL result rows.
@@ -288,8 +292,9 @@ Manual payload inspection:
 1. Run compute from the UI.
 2. Inspect `diagram.parameters` or, only when `SAVE_JSON_FILES === 'true'`, read `src/src/backend/services/solve_request.json`.
 3. Confirm `parameters.tps_specs` contains the expected TP ranges, bounds, specs, and human-input flags.
-4. Confirm `parameters.costs.entities`, `parameters.costs.mappings`, and `parameters.costs.duration` exist when Economic data is present.
-5. After callback success, confirm base TP values changed on node model versions and non-base values became computed TP changes.
+4. Confirm `parameters.global_params.task_config` contains the expected active TP Spec scope, code, display name, logical table, and ids.
+5. Confirm `parameters.costs.entities`, `parameters.costs.mappings`, and `parameters.costs.duration` exist when Economic data is present.
+6. After callback success, confirm base TP values changed on node model versions and non-base values became version-scoped computed TP changes.
 
 ## Known Cautions
 
@@ -301,5 +306,6 @@ Manual payload inspection:
 ## Related Pages
 
 - `docs/CodeExplanation/compute-solver-callback-and-results.md`
+- `docs/CodeExplanation/tp-spec-version-management.md`
 - `docs/CodeExplanation/save-diagram-and-node-cache.md`
 - `docs/CodeExplanation/subnetwork-blueprint-and-instance-flow.md`
