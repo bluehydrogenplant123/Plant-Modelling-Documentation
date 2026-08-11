@@ -20,7 +20,7 @@ Raunak Pandey sent the exact regression workbook to Muyao in Teams on
 - Port classes: `MES 119`, `Q 1`, and `ELF 1`
 
 The unchanged workbook is now the browser regression fixture at
-[`src/cypress/fixtures/material_editor_test.xlsx`](../../src/cypress/fixtures/material_editor_test.xlsx).
+[`src/cypress/fixtures/material_editor_test.xlsx`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/cypress/fixtures/material_editor_test.xlsx).
 It replaces the stale fixture that lacked the row-level `Domain` and `Port
 Class` metadata required by the production importer.
 
@@ -62,18 +62,18 @@ contains the exact before/after browser result.
 
 | Concern                                              | Code                                                                                                       |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Workbook entry point and strict metadata validation  | [`parsePortClassDatabaseMappingsWorkbook()`](../../src/src/frontend/src/utils/streamWorkbookUtils.ts#L593) |
-| Read each resolved Properties sheet once             | [`propertySources`](../../src/src/frontend/src/utils/streamWorkbookUtils.ts#L650)                          |
-| Assign shared-sheet rows to canonical material roles | [`propertySources.forEach()`](../../src/src/frontend/src/utils/streamWorkbookUtils.ts#L688)                |
-| Stable stream identity matching                      | [`materialStreamsMatch()`](../../src/src/frontend/src/features/domain/domainSlice.ts#L69)                  |
-| Merge user rows into Redux groups                    | [`updateOrAddStream`](../../src/src/frontend/src/features/domain/domainSlice.ts#L230)                      |
-| Material Editor import and actionable errors         | [`handleImportStreams()`](../../src/src/frontend/src/components/material-editor/index.tsx#L494)            |
-| Exact Raunak browser fixture                         | [`material_editor_test.xlsx`](../../src/cypress/fixtures/material_editor_test.xlsx)                        |
-| Browser import, grouping, edge, and save regression  | [`canvas.cy.ts`](../../src/cypress/e2e/canvas/canvas.cy.ts#L50)                                            |
-| Metadata-free rejection regression                   | [`streamWorkbookUtils.test.ts`](../../src/tests/frontend/streamWorkbookUtils.test.ts#L96)                  |
-| Shared Hydrogen database `1 / 1 / 6` regression      | [`streamWorkbookUtils.test.ts`](../../src/tests/frontend/streamWorkbookUtils.test.ts#L221)                 |
-| Random imported ID merge regression                  | [`domainSlice.test.ts`](../../src/tests/frontend/domainSlice.test.ts#L21)                                  |
-| New row joins an existing combined group             | [`domainSlice.test.ts`](../../src/tests/frontend/domainSlice.test.ts#L91)                                  |
+| Workbook entry point and strict metadata validation  | [`parsePortClassDatabaseMappingsWorkbook()`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/src/frontend/src/utils/streamWorkbookUtils.ts#L593) |
+| Read each resolved Properties sheet once             | [`propertySources`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/src/frontend/src/utils/streamWorkbookUtils.ts#L650) |
+| Assign shared-sheet rows to canonical material roles | [`propertySources.forEach()`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/src/frontend/src/utils/streamWorkbookUtils.ts#L688) |
+| Stable stream identity matching                      | [`materialStreamsMatch()`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/src/frontend/src/features/domain/domainSlice.ts#L69) |
+| Merge user rows into Redux groups                    | [`updateOrAddStream`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/src/frontend/src/features/domain/domainSlice.ts#L230) |
+| Material Editor import and actionable errors         | [`handleImportStreams()`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/src/frontend/src/components/material-editor/index.tsx#L494) |
+| Exact Raunak browser fixture                         | [`material_editor_test.xlsx`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/cypress/fixtures/material_editor_test.xlsx) |
+| Browser import, grouping, edge, and save regression  | [`canvas.cy.ts`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/cypress/e2e/canvas/canvas.cy.ts#L50) |
+| Metadata-free rejection regression                   | [`streamWorkbookUtils.test.ts`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/tests/frontend/streamWorkbookUtils.test.ts#L96) |
+| Shared Hydrogen database `1 / 1 / 6` regression      | [`streamWorkbookUtils.test.ts`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/tests/frontend/streamWorkbookUtils.test.ts#L221) |
+| Random imported ID merge regression                  | [`domainSlice.test.ts`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/tests/frontend/domainSlice.test.ts#L21) |
+| New row joins an existing combined group             | [`domainSlice.test.ts`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/5f8ecef3856ce18b73dc9f465dbc65f442c139aa/src/tests/frontend/domainSlice.test.ts#L91) |
 
 ## Verified result
 
