@@ -261,7 +261,8 @@ MongoDB persistence happens in `handleComputationSuccess(...)`, not in `storeCom
 - `/start` rejects missing required fields and `maxComputationTime` below the configured minimum.
 - `/start` and upload finalize reject stale or wrong-type selected equation sets, invalid DRO radius, cross-user/cross-diagram Instrument Sets, missing selected measurements, measurements with validation errors, invalid plant values, and broken measurement-to-mapping joins.
 - DataRec measurement ids cannot be supplied without an Instrument Set id.
-- `/start` rejects diagrams with missing persisted node model versions, duplicate stream instances after subnetwork expansion, or missing domain model definitions.
+- `/start` rejects diagrams with missing persisted node model versions, missing or duplicate stream connection names after subnetwork expansion, or missing domain model definitions. Reusing the same Excel/material instance is allowed when the non-empty connection names differ.
+- Upload finalize expands subnetworks in the reassembled uploaded canvas for validation and applies the same missing/duplicate-name guard before task creation.
 - `/start` and upload finalize reject users who already have a processing task.
 - Upload finalize deletes the in-memory upload session after parse errors, authorization errors, missing diagrams, duplicate processing tasks, and successful queueing.
 - The worker marks the task `failed` if solver dispatch throws after a task id is available locally.

@@ -158,7 +158,7 @@ Before posting a start request, the frontend guards against:
 
 - Unsaved diagrams.
 - Incomplete stream edges.
-- Duplicate stream-instance edges.
+- Missing or duplicate stream connection names; repeated Excel/material instances are allowed when non-empty names differ.
 - Blank run name.
 - Duplicate run name.
 - Missing selected solver.
@@ -245,7 +245,7 @@ After validation, the route:
 3. Loads node documents and cache data.
 4. Expands subnetwork nodes into the assembled canvas.
 5. Checks for missing model versions.
-6. Checks duplicate stream instances.
+6. Checks for missing or duplicate stream connection names after subnetwork expansion.
 7. Reads calculation type from `diagram.parameters.global_params.task_config.task_type`, falling back to `Simulation`.
 8. Resolves the active type's `optimizationOptions` or `dataRecOptions` against saved sets, Instrument Sets, mappings, and measurements.
 9. Loads network `tpNodeVers` rows and persisted TP changes.

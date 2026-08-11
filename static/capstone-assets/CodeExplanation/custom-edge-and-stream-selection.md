@@ -19,7 +19,7 @@ Current behavior is implemented in `src/src/frontend/src/components/custom-edge/
 - `src/src/frontend/src/components/custom-edge/orthogonal-routing.ts`: orthogonal route candidate generation, scoring, simplification, and grid snapping.
 - `src/src/frontend/src/components/custom-edge/utils.ts`: helper that removes stream-generated component variables from a model version for one port.
 - `src/src/frontend/src/components/custom-edge/custom-edge.css`: selector, static label, and waypoint handle styling.
-- `src/src/frontend/src/utils/streamValidation.ts`: complete/incomplete stream predicates, power-stream styling predicate, and duplicate instance detection helper.
+- `src/src/frontend/src/utils/streamValidation.ts`: complete/incomplete stream predicates, power-stream styling predicate, connection-name resolution, and duplicate-name detection.
 - `src/src/frontend/src/utils/modelVersionUtils.ts`: stream property sanitization, stream-to-port-var matching, component variable generation, and stream hydration guards.
 - `src/src/frontend/src/utils/connection-utils.ts`: finds a local edge connected to a selected node/port.
 - `src/src/frontend/src/features/node/nodeCacheService.ts`: loads and updates cached connected-node model versions.
@@ -74,7 +74,7 @@ The component is responsible for keeping edge data, connected node cache entries
 - `clearNodeData()`: removes generated component vars from each connected endpoint at the edge handles.
 - `updateName(name)`: updates the current stream name nested under `edge.data.stream`.
 - `updateWaypoints(nextWaypoints)`: simplifies and stores orthogonal waypoints in edge data.
-- `EdgeLabelSelector(...)`: renders stream selection controls and validates duplicate names/instances.
+- `EdgeLabelSelector(...)`: renders stream selection controls, permits instance reuse, and validates unique connection names.
 - `isStreamSelectionComplete(stream)`: used for edge coloring, selector warnings, and save validation.
 - `updateModelVersionWithDomainStream(...)`: generates component variables and fills only stream-owned non-human, non-required values.
 
@@ -121,17 +121,16 @@ The selector emits:
 - `onLabelChange(undefined)` when Content changes, clearing stream selection.
 - `onLabelChange(updatedStream)` when Instance or Stream Database Name changes.
 - `updateName(newName)` while editing the stream name.
-- `clearNodeData()` when the parent Content selection changes.
-- `updateNodeData(updatedStream)` in several selection/name flows.
+- `updateNodeData(updatedStream)` when initializing a missing legacy name or committing a valid edited name.
 
-Current caution: selecting an instance or database id can call `updateNodeData` both through `onLabelChange` and directly from `EdgeLabelSelector`. The hydration path must stay idempotent.
+Current caution: selecting an instance or database id hydrates through `onLabelChange`. Do not add a second selector-side `updateNodeData` call because that would repeat node-cache reconciliation and cleanup work.
 
 ## Data Flow
 
 ### Stream selection to edge data and node cache
 
 1. The user selects a Content, Instance, or Stream Database Name in `EdgeLabelSelector`.
-2. `EdgeLabelSelector` validates duplicate stream instances against other custom edges.
+2. `EdgeLabelSelector` preserves or generates a unique connection name. The same Excel/material instance may be selected on multiple edges.
 3. The selector creates `updatedStream` and calls `onLabelChange(updatedStream)`.
 4. `CustomEdge.setLabel` sanitizes stream properties, calls `clearNodeData`, and writes `data.stream`, `label`, handles, and completion flags into the current edge.
 5. `markConnectedNodesDirty` ensures source and target model versions are loaded and synchronized into node cache.
@@ -156,7 +155,7 @@ Current caution: selecting an instance or database id can call `updateNodeData` 
 1. Save builds a lightweight canvas that includes edge stream data.
 2. Save gathers node cache data, merges compatible `canvas.nodeParameters`, and sends `nodeCacheDiffs` and `nodeCacheFull` in the diagram payload.
 3. Save persists dirty node model versions through `nodeCache.saveAllNodeChanges`.
-4. Compute later loads the saved diagram, expands subnetwork data, attaches saved model versions, validates duplicate stream instances, loads `tpChanges`, and calls `translation(...)`.
+4. Compute later loads the saved diagram, expands subnetwork data, attaches saved model versions, validates duplicate connection names, loads `tpChanges`, and calls `translation(...)`.
 5. The final solver request is built from saved canvas edges, persisted node model versions, domain snapshot data, and TP overrides. `solve_request.json` is a runtime artifact and should not be used as authoring source.
 
 ## Side Effects
@@ -177,7 +176,7 @@ Current caution: selecting an instance or database id can call `updateNodeData` 
 - If component templates `compname_MF` and `compname_X` are missing for the connected port, `updateModelVersionWithDomainStream` warns and returns the original model version.
 - Required or human-input port variables are not populated from stream properties.
 - Non-human, non-computed port variables may be cleared when a previously stored value no longer has a matching stream property.
-- Duplicate stream instances are blocked in the selector UI and also checked by backend compute after subnetwork expansion.
+- Reusing a stream instance is allowed. Connection names must be non-empty and unique after trimming and case-folding; the selector UI and backend compute both enforce that contract.
 
 ## Port Mapping Cautions
 
@@ -211,7 +210,9 @@ Manual UI verification matrix:
 | Normal complete stream | Connect two normal node ports, select Content and Instance, enter a unique name, then deselect. | Edge is black with static label. | Edge data has `stream`, `label`, handles; connected node cache and `canvas.nodeParameters` contain stream-derived updates. | Stream selection does not hydrate endpoints. |
 | Stream Database Name path | Select a Stream Database Name without using Content/Instance. | Completion warning disappears and edge becomes complete. | `isStreamSelectionComplete` accepts `stream_database_id`; save can proceed. | Database-name-only streams falsely blocked. |
 | Incomplete stream | Connect ports and leave stream selection blank, then save. | Edge becomes red, first incomplete selector opens, alert explains incomplete stream selection. | Save aborts before `/api/data/diagrams` or node save calls. | Invalid stream edge persists. |
-| Duplicate instance | Give two edges the same stream instance. | Selector shows duplicate instance error. | Backend compute also checks duplicate stream instances after expansion. | Duplicate stream instances reach solver translation. |
+| Reused instance | Give two edges the same stream instance and keep distinct connection names. | Both selections remain valid. | Solver connectivity uses the two connection names while both records retain the same material instance. | Reuse is incorrectly rejected or solver names collapse to the instance. |
+| Duplicate connection name | Give two edges the same connection name, even with different instances. | Both edges are highlighted and compute is blocked. | Backend compute also checks duplicate names after expansion. | Duplicate solver connection identifiers. |
+| Missing connection name | Clear a connection name or load a legacy edge with a blank name. | The selector reports the blank name and compute highlights the edge. | Backend compute returns the affected edge ids and does not queue the run. | Translation silently falls back to an instance or legacy label. |
 | Rotated normal nodes | Rotate source/target nodes and inspect edge endpoints. | Orthogonal path starts and ends at rotated handle positions. | Edge data remains on same handle ids. | Edge starts at old unrotated side. |
 | Subnetwork wrapper port | Select a stream on an edge connected to a wrapper exposed port, then save. | Wrapper edge behaves like a complete custom edge. | Edge stream data saves in parent canvas; node cache merge preserves exposed-port propagation unless explicit human override exists. | Wrapper values overwritten by automatic merge. |
 | Internal mapped port | Enter subnetwork instance with parent-connected stream and open node variables. | Edge may not exist locally, but modal stream display can still use parent proxy stream data. | Verify modal prefetch path rather than `CustomEdge` only. | Internal mapped variables appear disconnected. |
