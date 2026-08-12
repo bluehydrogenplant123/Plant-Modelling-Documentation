@@ -71,7 +71,8 @@ buildSolveRequest(
   diagram.equations,
   diagram.collections,
   diagram.solualgolib,
-  unitConversions
+  unitConversions,
+  computationTask.runName
 )
 ```
 
@@ -83,7 +84,7 @@ The returned object sent to the solver has this high-level shape:
   configuration: {
     max_computation_time: number | null,
     solver: object | null,
-    algorithm: "SoluAlgoLib" | null,
+    algorithm: string,
     solution_algo_library: object[]
   },
   parameters: {
@@ -113,6 +114,10 @@ The returned object sent to the solver has this high-level shape:
   }
 }
 ```
+
+`configuration.algorithm` is the concrete saved algorithm name selected for the run. `SoluAlgoLib` is a legacy library sentinel, not the outbound concrete selection; dispatch fails safely when zero or multiple saved algorithm groups make that sentinel ambiguous. Only the selected algorithm's phase rows are sent in `configuration.solution_algo_library`.
+
+Each `parameters.material_properties` row is flat at the calc boundary: `domain`, `rigmod_id`, `stream_content`, `instance`, canonical numeric properties, and any domain-specific numeric properties share one object level. The serializer must not wrap those values in a nested `properties` object.
 
 Important exact fields:
 

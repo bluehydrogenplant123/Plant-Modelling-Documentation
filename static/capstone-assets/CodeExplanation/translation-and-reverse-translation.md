@@ -171,8 +171,22 @@ Durations default to `1`, are rounded to six decimal places, and accept only `mi
 `material_properties` comes from edge stream properties. Runtime stream properties are sanitized, then formatted with normalized numeric fields:
 
 ```ts
-T0, P0, Cp, H0, MF0, Rho
+{
+  domain: string,
+  rigmod_id: string | null,
+  stream_content: string | null,
+  instance: string | null,
+  T0: number | null,
+  P0: number | null,
+  Cp: number | null,
+  H0: number | null,
+  MF0: number | null,
+  Rho: number | null,
+  [dynamicProperty: string]: string | number | null
+}
 ```
+
+These solver rows are flat: property values are siblings of the identity fields, not nested under a `properties` key. Dynamic domain fields such as gasoline properties are retained at that same row level after finite-number coercion.
 
 Material property lookup is case-insensitive and can fall back to zero-suffixed keys for names that do not already end in a digit. `material_fractions` filters spreadsheet artifact keys such as `Unnamed`, stream database metadata, and instruction/header text before sending fractions to the solver.
 
