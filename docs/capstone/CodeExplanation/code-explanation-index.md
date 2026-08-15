@@ -54,11 +54,14 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 ## Backend/Data
 
 - [Backend Data Routes and Persistence Code Explanation](./backend-data-routes-and-persistence.md): Express data API wiring, authentication, MongoDB and PostgreSQL boundaries, persistence helpers, and route-level fallback behavior.
+- [System and User Table Reference](./system-and-user-table-reference.md): complete PostgreSQL system-table and MongoDB user-collection inventory, representative structures, purposes, and ownership rules.
+- [Unit Conversion and Administration](./unit-conversion-and-administration.md): conversion formula, base-unit model, administration API, workbook path, and current offset-unit limitation.
 
 ## Compute/Translation
 
 - [Compute, Solver Callback, and Results Code Explanation](./compute-solver-callback-and-results.md): selected-input snapshotting, compute task creation, Bull queue dispatch, solver request construction, external callback handling, reverse translation, and result persistence.
 - [Translation and Reverse Translation Code Explanation](./translation-and-reverse-translation.md): solver-facing parameter construction, `parameters.tps_specs`, `parameters.costs`, stream/material data, reverse translation, and computed TP updates.
+- [Calculation Server Payload Reference](./calculation-server-payload-reference.md): canonical final `/solve/` request shape, every assembled extension field, ownership, and normalization rules.
 
 ## Import/Runtime
 
