@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="920" viewBox="0 0 1280 920" role="img" aria-labelledby="title desc">
+  <title id="title">Empty Economic Sheets: Before vs After</title>
+  <desc id="desc">Comparison of the former hard failure and the corrected warning-and-continue behavior for header-only Prices and Demand_Supply sheets.</desc>
+  <defs>
+    <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#b85450" />
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#82b366" />
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666666" />
+    </marker>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .title { font-size: 24px; font-weight: 700; fill: #1f2937; }
+      .subtitle { font-size: 14px; fill: #4b5563; }
+      .lane-title { font-size: 18px; font-weight: 700; }
+      .node-title { font-size: 14px; font-weight: 700; }
+      .node-copy { font-size: 13px; }
+      .legend { font-size: 12px; fill: #374151; }
+      .edge-red { stroke: #b85450; stroke-width: 2.5; fill: none; marker-end: url(#arrow-red); }
+      .edge-green { stroke: #82b366; stroke-width: 2.5; fill: none; marker-end: url(#arrow-green); }
+      .edge-skip { stroke: #666666; stroke-width: 2.5; stroke-dasharray: 7 5; fill: none; marker-end: url(#arrow-gray); }
+    </style>
+  </defs>
+  <rect width="1280" height="920" fill="#ffffff" />
+  <text x="640" y="43" text-anchor="middle" class="title">Empty Economic Sheets: Before vs After</text>
+  <text x="640" y="76" text-anchor="middle" class="subtitle">Header-only Prices and Demand_Supply should not block material stream import</text>
+
+  <rect x="40" y="110" width="580" height="680" rx="14" fill="#fffafa" stroke="#b85450" stroke-width="2" />
+  <path d="M54 110 H606 A14 14 0 0 1 620 124 V164 H40 V124 A14 14 0 0 1 54 110 Z" fill="#f8cecc" stroke="#b85450" stroke-width="2" />
+  <text x="330" y="144" text-anchor="middle" class="lane-title" fill="#7f1d1d">BEFORE - hard blocker</text>
+
+  <rect x="660" y="110" width="580" height="680" rx="14" fill="#f7fff7" stroke="#82b366" stroke-width="2" />
+  <path d="M674 110 H1226 A14 14 0 0 1 1240 124 V164 H660 V124 A14 14 0 0 1 674 110 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2" />
+  <text x="950" y="144" text-anchor="middle" class="lane-title" fill="#215c2c">AFTER - warning and continue</text>
+
+  <path class="edge-red" d="M330 254 V286" />
+  <path class="edge-red" d="M330 358 V390" />
+  <path class="edge-red" d="M330 462 V494" />
+  <path class="edge-red" d="M330 566 V598" />
+  <path class="edge-skip" d="M330 670 V702" />
+  <path class="edge-green" d="M950 254 V286" />
+  <path class="edge-green" d="M950 358 V390" />
+  <path class="edge-green" d="M950 462 V494" />
+  <path class="edge-green" d="M950 566 V598" />
+  <path class="edge-green" d="M950 670 V702" />
+
+  <polygon points="140,190 560,190 520,254 100,254" fill="#ffe6cc" stroke="#d79b00" stroke-width="2" />
+  <text x="330" y="215" text-anchor="middle" class="node-title" fill="#7c4a03">Header-only economic sheets</text>
+  <text x="330" y="237" text-anchor="middle" class="node-copy" fill="#7c4a03">Prices + Demand_Supply; 0 data rows</text>
+  <rect x="120" y="294" width="420" height="64" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2" />
+  <text x="330" y="319" text-anchor="middle" class="node-title" fill="#1f4e79">Mapped economic CSVs</text>
+  <text x="330" y="341" text-anchor="middle" class="node-copy" fill="#1f4e79">complete headers; 0 rows</text>
+  <rect x="120" y="398" width="420" height="64" rx="10" fill="#f8cecc" stroke="#b85450" stroke-width="2" />
+  <text x="330" y="423" text-anchor="middle" class="node-title" fill="#7f1d1d">ValueError: no data rows</text>
+  <text x="330" y="445" text-anchor="middle" class="node-copy" fill="#7f1d1d">empty economic input treated as invalid</text>
+  <rect x="120" y="502" width="420" height="64" fill="#f8cecc" stroke="#b85450" stroke-width="2" />
+  <text x="330" y="527" text-anchor="middle" class="node-title" fill="#7f1d1d">process_costs aborts</text>
+  <text x="330" y="549" text-anchor="middle" class="node-copy" fill="#7f1d1d">main import exits before later phases</text>
+  <rect x="120" y="606" width="420" height="64" fill="#f5f5f5" stroke="#666666" stroke-width="2" stroke-dasharray="7 5" />
+  <text x="330" y="631" text-anchor="middle" class="node-title" fill="#4b5563">process_streams skipped</text>
+  <text x="330" y="653" text-anchor="middle" class="node-copy" fill="#4b5563">material catalog is not imported</text>
+  <rect x="120" y="710" width="420" height="64" rx="10" fill="#f5f5f5" stroke="#666666" stroke-width="2" stroke-dasharray="7 5" />
+  <text x="330" y="735" text-anchor="middle" class="node-title" fill="#4b5563">Stream selector empty</text>
+  <text x="330" y="757" text-anchor="middle" class="node-copy" fill="#4b5563">no Stream DB option can be chosen</text>
+
+  <polygon points="760,190 1180,190 1140,254 720,254" fill="#ffe6cc" stroke="#d79b00" stroke-width="2" />
+  <text x="950" y="215" text-anchor="middle" class="node-title" fill="#7c4a03">Header-only economic sheets</text>
+  <text x="950" y="237" text-anchor="middle" class="node-copy" fill="#7c4a03">Prices + Demand_Supply; mapping preserved</text>
+  <rect x="740" y="294" width="420" height="64" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2" />
+  <text x="950" y="319" text-anchor="middle" class="node-title" fill="#1f4e79">Normalize split sources</text>
+  <text x="950" y="341" text-anchor="middle" class="node-copy" fill="#1f4e79">valid empty DataFrame</text>
+  <rect x="740" y="398" width="420" height="64" rx="10" fill="#fff2cc" stroke="#d6b656" stroke-width="2" />
+  <text x="950" y="423" text-anchor="middle" class="node-title" fill="#6b5200">WARNING only</text>
+  <text x="950" y="445" text-anchor="middle" class="node-copy" fill="#6b5200">preserve existing CostEntitiesConfig rows</text>
+  <rect x="740" y="502" width="420" height="64" fill="#d5e8d4" stroke="#82b366" stroke-width="2" />
+  <text x="950" y="527" text-anchor="middle" class="node-title" fill="#215c2c">process_streams continues</text>
+  <text x="950" y="549" text-anchor="middle" class="node-copy" fill="#215c2c">later material phase still executes</text>
+  <path d="M740 614 C740 603 834 598 950 598 C1066 598 1160 603 1160 614 V662 C1160 673 1066 678 950 678 C834 678 740 673 740 662 Z" fill="#d5e8d4" stroke="#82b366" stroke-width="2" />
+  <path d="M740 614 C740 625 834 630 950 630 C1066 630 1160 625 1160 614" fill="none" stroke="#82b366" stroke-width="2" />
+  <text x="950" y="643" text-anchor="middle" class="node-title" fill="#215c2c">Imported material catalog</text>
+  <text x="950" y="665" text-anchor="middle" class="node-copy" fill="#215c2c">Streams = 41; DomainMappings = 43</text>
+  <rect x="740" y="710" width="420" height="64" rx="10" fill="#d5e8d4" stroke="#82b366" stroke-width="2" />
+  <text x="950" y="735" text-anchor="middle" class="node-title" fill="#215c2c">Stream selector available</text>
+  <text x="950" y="757" text-anchor="middle" class="node-copy" fill="#215c2c">NG can be selected</text>
+
+  <rect x="40" y="820" width="1200" height="80" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" />
+  <text x="56" y="844" class="legend" font-weight="700">Legend</text>
+  <rect x="60" y="862" width="26" height="18" rx="4" fill="#f8cecc" stroke="#b85450" />
+  <text x="94" y="876" class="legend">Hard stop</text>
+  <rect x="350" y="862" width="26" height="18" rx="4" fill="#fff2cc" stroke="#d6b656" />
+  <text x="384" y="876" class="legend">Warning / preserve</text>
+  <rect x="650" y="862" width="26" height="18" rx="4" fill="#d5e8d4" stroke="#82b366" />
+  <text x="684" y="876" class="legend">Continued / verified</text>
+  <rect x="950" y="862" width="26" height="18" rx="4" fill="#f5f5f5" stroke="#666666" stroke-dasharray="5 3" />
+  <text x="984" y="876" class="legend">Skipped / unavailable</text>
+</svg>
