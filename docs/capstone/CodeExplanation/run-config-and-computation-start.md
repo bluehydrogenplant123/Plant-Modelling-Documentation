@@ -63,7 +63,7 @@ Run config does not own TP ranges, durations, Sliding Horizon, economic entities
 | `runConfigs` | Backend domain data route. | PostgreSQL `RunConfigs`, then Redux domain data. | Solver names are selected from keys that do not match `/algorithm/i`. |
 | Solver config attributes | `RunConfigModal` and `UniversalRunConfigPanel`. | Currently loaded from `RunConfigs`; frontend save attempts `/api/data/run-configs/import`, but the backend route is missing. | `ComputationTaskService.translateComputationConfig` uses the selected solver name. |
 | `solution_algo_library` | `SolutionAlgoLibraryModule`. | MongoDB `diagram.solualgolib`. | `buildSolveRequest(...)` normalizes saved rows into solver configuration. |
-| `optimizationOptions` | Header Optimization setup plus **Set Run > Optimization Options**. | Header runtime state, then internal queued-task snapshot. | Selects deterministic/DRO mode and saved Objective Function / Constraint Sets. |
+| `optimizationOptions` | Header **Calc Type > Optimization** dropdown. | Header runtime state, then internal queued-task snapshot. | Selects deterministic/DRO mode, Wasserstein radius/norm, and saved Objective Function / Constraint Sets. |
 | `dataRecOptions` | Header DataRec setup. | Header/Redux runtime state, then internal queued-task snapshot. | Selects one Instrument Set, Plant Measurements, and Objective Function Sets. |
 | `runName` | `ComputationButton`. | Computation task row. | Required in `/api/compute/start`. |
 | `maxComputationTime` | `ComputationButton` UI, then backend route validation. | Computation configuration. | Passed to `translateComputationConfig`. |
@@ -75,9 +75,9 @@ Run config does not own TP ranges, durations, Sliding Horizon, economic entities
 
 1. The domain data route reads PostgreSQL `RunConfigs` through `buildRunConfigs()` and returns the grouped `runConfigs` object with the rest of the domain payload.
 2. The frontend stores `runConfigs` in Redux domain state and filters non-algorithm keys into the Solver menu.
-3. `Set Run` opens `RunConfigModal` for a selected solver. Editable saves currently attempt `/api/data/run-configs/import`; because the backend route is not present, treat that call as frontend intent that still needs backend implementation.
-4. Set Run's Algorithm menu opens `SolutionAlgoLibraryModule`, and active Optimization additionally exposes deterministic/DRO options.
-5. Active Optimization/DataRec dropdowns collect next-run selections independently of their shared editors.
+3. Every Calc Type split dropdown exposes the same Solver, Algorithm, and Specification set entries; Solver opens `RunConfigModal` and Algorithm opens `SolutionAlgoLibraryModule`.
+4. The Optimization dropdown additionally exposes deterministic/DRO options.
+5. Optimization/DataRec dropdowns collect next-run selections independently of their shared editors.
 6. `Run` opens `ComputationButton`, which chooses one solver and uses `SoluAlgoLib` as the algorithm.
 7. The frontend posts `/api/compute/start` with task fields plus the active type's identifier-only `optimizationOptions` or `dataRecOptions`. MTP requests additionally contain `parameters.global_params.slidingHorizon`; Base TP requests omit it.
 8. The backend resolves selected ids into an authoritative queued snapshot, resolves TP mode, validates and normalizes Sliding Horizon for MTP, and rebuilds the rest of the diagram parameters.

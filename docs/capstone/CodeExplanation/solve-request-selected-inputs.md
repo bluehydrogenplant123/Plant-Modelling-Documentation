@@ -96,11 +96,12 @@ Plant Measurements cannot be selected until an Instrument Set is active. Measure
 
 ### Optimization mode
 
-When Optimization is active, **Set Run > Optimization Options** controls a separate part of `OptimizationOptions`:
+The **Optimization > Optimization Options** dropdown entry controls a separate part of `OptimizationOptions`:
 
 - `deterministic` stores no Wasserstein radius.
-- `dro` requires a finite `wassersteinRadius` greater than or equal to zero.
-- Closing or cancelling restores the last committed mode and radius input.
+- `dro` requires a finite `wassersteinRadius` greater than or equal to zero and a `wassersteinNorm` of `L1`, `L2`, or `L∞`.
+- The DRO defaults are radius `1.0` and norm `L1`.
+- Closing or cancelling restores the last committed mode, radius, and norm.
 - Saving a mode change preserves the currently selected Objective Function and Constraint sets.
 
 ## Frontend State and Component Contracts
@@ -149,6 +150,7 @@ Optimization request fields:
   "optimizationOptions": {
     "mode": "dro",
     "wassersteinRadius": 0.25,
+    "wassersteinNorm": "L2",
     "objectiveFunctionSetIds": ["objective-set-1"],
     "additionalConstraintSetIds": ["constraint-set-1"]
   }
@@ -238,6 +240,7 @@ Optimization selection example:
       "optimization": {
         "mode": "deterministic",
         "wasserstein_radius": null,
+        "wasserstein_norm": null,
         "objective_functions": [
           {
             "set_id": "objective-set-1",
