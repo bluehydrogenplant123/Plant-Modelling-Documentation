@@ -15,6 +15,9 @@ The workflow crosses the stable7 header, Material Editor, Redux domain state, th
 - `src/src/frontend/src/components/header-bar/header-buttons/user-tables-menu.tsx`: renders **User Tables** and opens **Material Properties** in base-period mode.
 - `src/src/frontend/src/components/header-bar/header-buttons/user-tables-menu-options.ts`: defines menu labels, order, base-period guards, and the Multi-TP material restriction.
 - `src/src/frontend/src/components/material-editor/index.tsx`: renders the overlay, group tabs, detail views, import/export controls, clearing behavior, and the AgGrid table.
+- `src/src/frontend/src/services/componentMappingService.ts`: loads one validated Component Mapping snapshot for each import attempt.
+- `src/src/frontend/src/services/componentMappedMaterialImport.ts`: holds the atomic load, parse, canonicalize, then commit orchestration used by Material Editor.
+- `src/src/shared/componentMapping.ts`: canonicalizes user fraction keys before Canvas state and rejects ambiguous mappings or target collisions.
 - `src/src/frontend/src/utils/streamWorkbookUtils.ts`: parses mapping-based and legacy two-sheet workbooks, normalizes Domain names, groups streams, and merges duplicate user material rows.
 - `src/src/frontend/src/features/domain/domainSlice.ts`: owns hydrated `DomainData`, merges imported user streams, updates `materialGroups`, and clears stream state.
 - `src/src/frontend/src/models/domain.ts`: defines the frontend `Stream`, `MaterialGroup`, and `DomainData` contracts.
@@ -116,13 +119,14 @@ When matching records are merged, a `source_type: user` record wins scalar confl
 - `MaterialEditor`: selects Redux domain data, derives group tabs and scoped keys, renders the table/detail panel, and owns import/export/clear handlers.
 - `buildMaterialDetailKeyScopes(...)`: learns which dynamic keys belong to each database token, including shared property-database rows.
 - `getScopedRecordEntries(...)`: limits displayed detail values to the active group's database scope.
-- `handleImportStreams(...)`: reads the workbook with SheetJS, parses current-domain material rows, dispatches `updateOrAddStream(...)`, and reports the row count.
+- `handleImportStreams(...)`: fetches one validated Component Mapping snapshot, reads the workbook with SheetJS, and parses current-domain material rows. A metadata-free legacy workbook opens the blocking current-domain class selector; only explicit confirmation retries with that context. Canonicalization then completes before the sole `updateOrAddStream(...)` commit boundary.
 - `handleExportStreams()`: writes `Properties` and `Fractions` sheets for all current streams.
 - `handleClearStreams()`: deletes all current React Flow edges, clears the edge state, and dispatches `clearStreams()`.
 
 ### Workbook and Redux
 
-- `parsePortClassDatabaseMappingsWorkbook(...)`: accepts mapping-sheet aliases, filters mappings to the current domain plus Generic, reads referenced database sheets, and supports explicit strict grouping validation for Material Editor imports. A two-sheet workbook without a mapping sheet is accepted by the editor only when each Properties row declares a Port Class.
+- `parsePortClassDatabaseMappingsWorkbook(...)`: accepts mapping-sheet aliases, filters mappings to the current domain plus Generic, reads referenced database sheets, and supports explicit strict grouping validation for Material Editor imports. A two-sheet workbook without a mapping sheet is accepted only when rows declare Port Class metadata or the caller supplies an explicitly confirmed class whose domain matches the current domain.
+- `buildCurrentDomainLegacyPortClassChoices(...)`: excludes Generic and other-domain classes from the legacy selector; filenames, stream names, and component headers are never classification inputs.
 - `buildMaterialStreamsFromWorkbookRows(...)`: builds dynamic `properties` JSON and filters explicit Domain rows to the active domain or Generic.
 - `mergeStreamFractionRows(...)`: attaches Fractions to rows by `stream_database_id`, then Content/Instance fallback.
 - `updateOrAddStream(...)`: resolves raw imported Port Class tokens against existing combined `materialGroups`, updates the flat Redux list and canonical group, preserves the existing record ID, and applies user-over-system merge precedence.
@@ -143,19 +147,19 @@ When matching records are merged, a `source_type: user` record wins scalar confl
 
 ## Rendered UI / Interaction Map
 
-| UI State or Action            | Source State or Props                               | Expected Result                                                                                                               | Verification                                                                                            |
-| ----------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Base-period **User Tables**   | `mode="base"`                                       | Dropdown includes enabled/guarded **Material Properties**.                                                                    | Open a base-period canvas and inspect the dropdown.                                                     |
-| Multi-TP **User Tables**      | `mode="mtp"`                                        | **Material Properties** is always disabled.                                                                                   | Open the Multi-TP secondary row.                                                                        |
-| Editor opens                  | `domain.data`, `isOpen`                             | Header shows Domain and active Class; Generic badge appears for Generic mappings.                                             | Open Material Properties for a domain with Generic data.                                                |
-| Multiple groups               | `materialGroups` with more than one non-empty group | Tabs show group labels and stream counts; Generic sorts first.                                                                | Load a mapping workbook with Generic plus domain groups.                                                |
-| One non-empty group           | derived `streamGroups.length === 1`                 | No tab strip; the single group becomes active.                                                                                | Load a single-group material set.                                                                       |
-| Switch Detail View            | `detailView` local state                            | Dynamic table columns and **View (N)** counts switch between Properties and Stream Fractions.                                 | Toggle the selector and inspect one row.                                                                |
-| Open detail panel             | `selectedDetail` local state                        | Side panel shows scoped non-empty key/value rows for one stream.                                                              | Click an enabled **View (N)** button.                                                                   |
-| Import mapped workbook        | `readOnly === false`                                | Mapping rows for the current domain/Generic merge into the existing combined Port Class groups and a row-count alert appears. | Import a focused fixture workbook and confirm that no raw duplicate group appears.                      |
-| Import metadata-free workbook | No mapping sheet and no row-level Port Class        | Import stops before Redux mutation and reports how to add grouping metadata.                                                  | Import a two-sheet fixture without Port Class metadata and confirm that no **Materials** group appears. |
-| Read-only editor              | `readOnly === true`                                 | Delete and Import are disabled; direct table interaction is suppressed. Export remains available.                             | Toggle the computation guard while the editor is open.                                                  |
-| Delete All Streams            | current React Flow edges and Redux streams          | All current edges are deleted and the material lists are cleared.                                                             | Use a disposable diagram and check both canvas and editor.                                              |
+| UI State or Action            | Source State or Props                               | Expected Result                                                                                                                                         | Verification                                                                                                                                      |
+| ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base-period **User Tables**   | `mode="base"`                                       | Dropdown includes enabled/guarded **Material Properties**.                                                                                              | Open a base-period canvas and inspect the dropdown.                                                                                               |
+| Multi-TP **User Tables**      | `mode="mtp"`                                        | **Material Properties** is always disabled.                                                                                                             | Open the Multi-TP secondary row.                                                                                                                  |
+| Editor opens                  | `domain.data`, `isOpen`                             | Header shows Domain and active Class; Generic badge appears for Generic mappings.                                                                       | Open Material Properties for a domain with Generic data.                                                                                          |
+| Multiple groups               | `materialGroups` with more than one non-empty group | Tabs show group labels and stream counts; Generic sorts first.                                                                                          | Load a mapping workbook with Generic plus domain groups.                                                                                          |
+| One non-empty group           | derived `streamGroups.length === 1`                 | No tab strip; the single group becomes active.                                                                                                          | Load a single-group material set.                                                                                                                 |
+| Switch Detail View            | `detailView` local state                            | Dynamic table columns and **View (N)** counts switch between Properties and Stream Fractions.                                                           | Toggle the selector and inspect one row.                                                                                                          |
+| Open detail panel             | `selectedDetail` local state                        | Side panel shows scoped non-empty key/value rows for one stream.                                                                                        | Click an enabled **View (N)** button.                                                                                                             |
+| Import mapped workbook        | `readOnly === false`                                | Mapping rows for the current domain/Generic merge into the existing combined Port Class groups and a row-count alert appears.                           | Import a focused fixture workbook and confirm that no raw duplicate group appears.                                                                |
+| Import metadata-free workbook | No mapping sheet and no row-level Port Class        | Import stops before Redux mutation and opens the blocking current-domain class selector. Confirm retries with explicit context; Cancel commits nothing. | Import the sanitized two-sheet fixture, cancel once, then explicitly confirm an allowed class and verify no inferred **Materials** group appears. |
+| Read-only editor              | `readOnly === true`                                 | Delete and Import are disabled; direct table interaction is suppressed. Export remains available.                                                       | Toggle the computation guard while the editor is open.                                                                                            |
+| Delete All Streams            | current React Flow edges and Redux streams          | All current edges are deleted and the material lists are cleared.                                                                                       | Use a disposable diagram and check both canvas and editor.                                                                                        |
 
 ## Component Contract
 
@@ -193,12 +197,15 @@ State and dependencies:
 ### User workbook import and save
 
 1. The user selects **Import Streams** and chooses an `.xlsx` or `.xls` file.
-2. `parsePortClassDatabaseMappingsWorkbook(...)` looks for a mapping-sheet alias.
-3. With a mapping sheet, it keeps mappings for the current domain plus Generic and reads the referenced Properties/Fractions sheets.
-4. Without a mapping sheet, it treats the first sheet as Properties and the optional second sheet as Fractions.
-5. Parsed rows receive `source_type: user` and are deduplicated by material identity.
-6. `updateOrAddStream(...)` merges each row into flat streams and the matching group; user scalar/JSON values take precedence over matching system data.
-7. A later diagram Save includes current `domainData` as `snapshotData`.
+2. `importComponentMappedMaterialWorkbook(...)` fetches and validates one complete Component Mapping snapshot. If it is unavailable or invalid, import stops before Canvas state changes.
+3. `parsePortClassDatabaseMappingsWorkbook(...)` looks for a mapping-sheet alias.
+4. With a mapping sheet, it keeps mappings for the current domain plus Generic and reads the referenced Properties/Fractions sheets.
+5. Without a mapping sheet, it treats the first sheet as Properties and the optional second sheet as Fractions. If rows have no Port Class, parsing raises `LegacyMaterialPortClassRequiredError` before any state mutation.
+6. Material Editor opens a blocking selector with concrete current-domain classes. The visible class may be preselected, but Cancel does nothing and Confirm is mandatory. Confirmation starts a new import attempt with the selected context.
+7. Parsed rows receive `source_type: user` and are deduplicated by material identity.
+8. `canonicalizeMaterialStreams(...)` maps known User Names to System Names, preserves unknown and zero values, and rejects a batch when two source keys collapse to one target.
+9. Only after the complete batch passes, the orchestration commit callback runs and `updateOrAddStream(...)` merges each row into flat streams and the matching group; user scalar/JSON values take precedence over matching system data.
+10. A later diagram Save includes canonical current `domainData` as `snapshotData`; full export/import and duplicate preserve that snapshot.
 
 ### System workbook to PostgreSQL
 
@@ -233,6 +240,7 @@ The Material Editor import is a frontend state operation. It does not write the 
 
 - Opening a domain calls `GET /api/data/domain/:domainId` through the Redux thunk.
 - Import reads a local workbook and mutates Redux domain state; it does not upload the workbook.
+- Component Mapping is fetched once per import attempt. The initial metadata-free attempt and an explicitly confirmed retry are separate attempts. API unavailability, invalid/cross-domain class context, Cancel, an invalid snapshot, or a target collision aborts before Redux or edge mutation.
 - Save can persist the resulting domain material state inside diagram `snapshotData`.
 - Export initiates a browser download and does not change Redux or backend data.
 - Delete All Streams deletes every current React Flow edge and clears Redux `streams`/`materialGroups`.
@@ -241,7 +249,7 @@ The Material Editor import is a frontend state operation. It does not write the 
 
 ## Error Handling and Edge Cases
 
-- A missing mapping sheet in a user workbook activates the compatible first-sheet/second-sheet fallback.
+- A missing mapping sheet in a user workbook activates the compatible first-sheet/second-sheet fallback. Strict Material Editor import requires row metadata or explicit current-domain selector confirmation.
 - A missing first worksheet returns no imported rows.
 - Mapping rows are filtered to the current domain, normalized Petroleum Refinery spelling, and Generic mappings.
 - Missing referenced Properties sheets produce no user rows for that mapping; an optional missing Fractions sheet leaves the material without imported fractions.
@@ -319,6 +327,7 @@ git diff --check -- docs/CodeExplanation/material-domain-editor-workflow.md
 - Diagram snapshots can retain imported material state. Check both current PostgreSQL catalog data and saved `snapshotData` when diagnosing stale rows.
 - Generic data is intentionally merged into selected domains. Do not remove it as an apparent duplicate without checking mapping identity and `is_generic`.
 - Generated migration logs, CSV output, runtime JSON, and solver request artifacts are verification aids only and must not be edited or committed as source documentation.
+- The maintained runtime workbook at this review point is `src/excel-sheets/Aug-16-2026.xlsx`. Component Mapping does not modify it. The mapping editor remains global rather than Domain/Port Class filtered; the separate legacy import-context selector adds no mapping-table schema fields.
 
 ## Related Pages
 

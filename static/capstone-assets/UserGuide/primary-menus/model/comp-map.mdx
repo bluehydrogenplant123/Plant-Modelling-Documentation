@@ -1,0 +1,67 @@
+---
+title: COMP. Map
+sidebar_position: 12
+description: Maintain user-to-system component names used by Material Editor imports.
+---
+
+# COMP. Map
+
+Use **COMP. Map** to translate component headers in a user material workbook to the canonical names used by the canvas and solver.
+
+## Where To Find It
+
+1. Open an editable canvas.
+2. Select the **Model** primary menu.
+3. Click **COMP. Map**.
+
+## Fields
+
+| Field           | Meaning                                      | Example          |
+| --------------- | -------------------------------------------- | ---------------- |
+| **Component**   | Human-readable component description.        | `Methane`        |
+| **System Name** | Canonical component key expected downstream. | `CH4`            |
+| **User Name**   | Header used in the user's workbook.          | `client_methane` |
+
+Matching is case-insensitive. With the example above, both `client_methane` and `CLIENT_METHANE` import as `CH4`. A workbook key that is already `CH4` stays `CH4`; an unknown key stays unchanged.
+
+Examples in this page are illustrative only. The application does not create them as default rows or read them from the maintained runtime workbook; each organization owns the mappings it enters.
+
+Stable 7 also installs three explicitly supplied reference rows:
+
+| Component | System Name | User Name  |
+| --------- | ----------- | ---------- |
+| `CH3`     | `CH3`       | `METHY-01` |
+| `CH4O`    | `CH4O`      | `METHY-02` |
+| `H2SO4`   | `H2SO4`     | `SULFU-01` |
+
+These are the only mappings created by this feature. They are not inferred from filenames or chemistry labels.
+
+## Add Or Edit A Mapping
+
+1. Click **+ New Mapping**, or click **Edit** on an existing row.
+2. Complete all three fields.
+3. Click **Add Mapping** or **Save Changes**.
+
+Duplicate aliases and mappings that make a name resolve ambiguously are rejected. Deleting a row affects future imports; it does not rewrite an already saved diagram.
+
+## Import Behavior
+
+When **Material Properties -> Import Streams** reads a workbook, the canvas loads one complete mapping snapshot and validates it before changing any edge or Redux state. If the mapping API is unavailable, the snapshot is invalid, or two workbook headers collapse to the same System Name, the whole import stops and the existing canvas remains unchanged.
+
+If a legacy two-sheet workbook has no **Port Classes Database Mapping** sheet and no row-level **Port Class**, a blocking **Select Material Class** dialog opens. It lists only concrete classes owned by the current domain:
+
+1. Review the workbook name and selected class.
+2. Choose a class if none is selected.
+3. Click **Confirm Class and Import** to retry with that explicit context, or **Cancel Import** to leave the canvas unchanged.
+
+The visible Material Editor class may be preselected, but it is never silently accepted. The app does not infer a class from the filename, stream names, or component headers. If the current domain has no valid class, import remains blocked.
+
+Fraction values and their basis are not converted by this feature. Only the component key is canonicalized. A zero-valued alias is still renamed and retained under its System Name.
+
+The table is intentionally the existing three free-text columns. It is not filtered by Domain or Port Class, and **System Name** is not a search/dropdown selector in this scope. The legacy import dialog selects parser context; it does not add Domain or Port Class fields to Component Mapping. Add only mappings whose canonical names are already accepted by the maintained runtime catalog; the application does not invent additional chemistry rules.
+
+## Related Pages
+
+- [Model Menu overview](../model)
+- [Component Mapping Import Boundary](../../../CodeExplanation/component-mapping-import-boundary)
+- [Material Domain Editor Workflow](../../../CodeExplanation/material-domain-editor-workflow)

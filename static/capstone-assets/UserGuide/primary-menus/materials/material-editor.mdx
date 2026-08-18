@@ -54,7 +54,7 @@ The current mapping-aware workbook flow uses a sheet named **Port Classes Databa
 
 Imported rows use `source_type: user`. A raw Port Class such as `MES` is resolved into the existing combined tab that contains that token, such as `CM / M / ME / MES / MS`. Matching system and user rows merge by Port Class plus `stream_database_id`; if no database ID is available, the fallback identity uses Port Class, Content, and Instance. User values override or supplement matching system Properties/Fractions without creating a duplicate raw-class tab.
 
-If no mapping sheet exists, each Properties row must include a **Port Class** column. The first worksheet is treated as Properties and the optional second worksheet as Fractions. A metadata-free workbook is rejected with an actionable message because the editor cannot safely decide whether a row belongs in an electric, heat, or material group. It does not silently create a catch-all **Materials** tab.
+If no mapping sheet exists, the first worksheet is treated as Properties and the optional second worksheet as Fractions. Rows with an explicit **Port Class** continue directly. If Port Class metadata is missing, a blocking **Select Material Class** dialog lists only concrete classes owned by the current domain. The visible active class may be preselected, but you must click **Confirm Class and Import**; **Cancel Import** commits nothing. Filename, stream names, and component headers are never used to guess a class, and the editor does not silently create a catch-all **Materials** tab.
 
 This validation runs in the browser before Redux state is changed. Restarting or clearing Docker does not change the result.
 
