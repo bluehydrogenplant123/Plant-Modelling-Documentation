@@ -15,7 +15,7 @@ Use **Import** when you need to import diagram data from a JSON file.
 
 ## What It Opens
 
-The button opens the operating system file picker. It accepts `.json` files and imports the selected diagram data.
+The button opens the operating system file picker. It accepts `.json` files and imports the selected diagram data. Current Full Data snapshots preserve the exact root `metadata.isVerified` value contained in the file.
 
 ## Basic Steps
 
@@ -26,7 +26,9 @@ The button opens the operating system file picker. It accepts `.json` files and 
 
 ## Result
 
-The selected diagram data is imported into the application.
+The selected diagram data is imported into the application. A preserved verified snapshot appears as verified; a snapshot exported with **Export as Unverified** appears as unverified and editable.
+
+For current Full Data files, import creates the diagram once with that status. It does not send a second verification request. The Model-menu and Dashboard import controls share this behavior. Legacy-format files continue to use the compatibility import path.
 
 ## Related Pages
 

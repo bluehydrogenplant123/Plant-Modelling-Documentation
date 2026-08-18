@@ -1,0 +1,65 @@
+<mxfile host="app.diagrams.net" modified="2026-08-14T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="verification-lifecycle" name="Verification lifecycle">
+    <mxGraphModel dx="1400" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Diagram Verification Lifecycle" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#17324D;" vertex="1" parent="1">
+          <mxGeometry x="60" y="30" width="620" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" value="Root diagram UI&#xa;Verified ↔ Unverified switch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#2F6DA5;fontColor=#17324D;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="120" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="Desired-state API&#xa;PATCH /verification&#xa;{ isVerified: Boolean }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E9F7EF;strokeColor=#2E8B57;fontColor=#17324D;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="115" width="250" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="guard" value="Owner check first&#xa;Idempotent comparison" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF5DB;strokeColor=#C58A16;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="700" y="120" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="db" value="MongoDB Diagram&#xa;isVerified is canonical" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#F3EAF8;strokeColor=#7A4EAB;fontColor=#17324D;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="110" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="redux" value="Canonical response&#xa;Redux updates only on success" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F7FA;strokeColor=#5C738A;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="120" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="exportUi" value="Header or Dashboard&#xa;Full Data export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#2F6DA5;fontColor=#17324D;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="360" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="helper" value="Shared transfer helper&#xa;preserve | unverified" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E9F7EF;strokeColor=#2E8B57;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="370" y="360" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="snapshot" value="Build snapshot copy&#xa;Override root metadata only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF5DB;strokeColor=#C58A16;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="700" y="360" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="download" value="Downloaded JSON&#xa;Source and nested records unchanged" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#F2F7FA;strokeColor=#5C738A;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="350" width="240" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="importUi" value="Header or Dashboard&#xa;Current-format import" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#2F6DA5;fontColor=#17324D;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="600" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="importPost" value="One shared POST /import&#xa;No follow-up /verify" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E9F7EF;strokeColor=#2E8B57;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="370" y="600" width="250" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="created" value="Created root diagram&#xa;Exact metadata.isVerified" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#F3EAF8;strokeColor=#7A4EAB;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="700" y="590" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="group" value="Dashboard grouping&#xa;Verified or Unverified" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F7FA;strokeColor=#5C738A;fontColor=#17324D;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="600" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Scope boundary: normal root verification only. Existing guards, Multi-TP behavior, and nested instance semantics are preserved." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2F2;strokeColor=#B85450;fontColor=#6B2525;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="350" width="220" height="340" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2F6DA5;strokeWidth=2;" edge="1" parent="1" source="ui" target="api"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2E8B57;strokeWidth=2;" edge="1" parent="1" source="api" target="guard"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#C58A16;strokeWidth=2;" edge="1" parent="1" source="guard" target="db"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" value="saved state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#7A4EAB;strokeWidth=2;" edge="1" parent="1" source="db" target="redux"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2F6DA5;strokeWidth=2;" edge="1" parent="1" source="exportUi" target="helper"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2E8B57;strokeWidth=2;" edge="1" parent="1" source="helper" target="snapshot"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#C58A16;strokeWidth=2;" edge="1" parent="1" source="snapshot" target="download"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2F6DA5;strokeWidth=2;" edge="1" parent="1" source="importUi" target="importPost"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#2E8B57;strokeWidth=2;" edge="1" parent="1" source="importPost" target="created"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#7A4EAB;strokeWidth=2;" edge="1" parent="1" source="created" target="group"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -19,14 +19,21 @@ Use **Export** when you need to download diagram data from the current network.
 
 The **Export Data** dialog lets you choose **Full Data**, **Solver Data**, or **Algorithm Data**. For **Full Data**, you can enter an **Export File Name**. The app adds `.json` automatically when needed.
 
-<figure style={{ maxWidth: '560px', margin: '1.5rem auto' }}>
+When the source root diagram is verified, Full Data also offers two verification choices:
+
+- **Preserve verified status** keeps the root status in the downloaded snapshot.
+- **Export as Unverified** writes `isVerified: false` only in the downloaded root metadata, so an imported copy is editable.
+
+An unverified source has no extra choice because both results would be unverified. Solver Data and Algorithm Data are unchanged.
+
+<figure style={{ maxWidth: '500px', margin: '1.5rem auto' }}>
   <img
     src={exportDataDialog}
-    alt="Export Data dialog with export type options, file name field, and Export button"
+    alt="Full Data export dialog with Preserve verified status and Export as Unverified choices"
     style={{ width: '100%', height: 'auto', borderRadius: '6px' }}
   />
   <figcaption style={{ fontSize: '0.9rem', color: 'var(--ifm-color-emphasis-700)', textAlign: 'center', marginTop: '0.5rem' }}>
-    Choose the export data type, enter a file name when needed, then click <strong>Export</strong>.
+    A verified root can be downloaded with its status preserved or as an editable unverified copy.
   </figcaption>
 </figure>
 
@@ -35,12 +42,15 @@ The **Export Data** dialog lets you choose **Full Data**, **Solver Data**, or **
 1. Open **Export**.
 2. Choose the export mode.
 3. Enter an export file name if you selected **Full Data**.
-4. Click **Export**.
-5. Click **Cancel** if you do not want to export.
+4. For a verified source, choose whether to preserve the status or export an unverified copy.
+5. Click **Export**.
+6. Click **Cancel** if you do not want to export.
 
 ## Result
 
-The selected export data is downloaded from the current diagram.
+The selected export data is downloaded from the current diagram. Export never changes the source diagram in the database, and the unverified option does not rewrite nested subnetwork instance records.
+
+The Dashboard Full Data export uses the same rule: for a verified source, confirm an editable unverified copy or cancel that confirmation to preserve the verified status.
 
 ## Related Pages
 

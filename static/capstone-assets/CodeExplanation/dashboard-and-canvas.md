@@ -23,7 +23,8 @@ This page covers the current frontend shell flow only. Backend CRUD route behavi
 - `src/src/frontend/src/features/domain/domainSlice.ts`: domain-data loading, stream sanitization, and domain snapshot state used by the sidebar and run configuration UI.
 - `src/src/frontend/src/features/saved/savedSlice.ts`: saved/unsaved status, active save flag, last save timestamp, and save duration state shown in the header.
 - `src/src/frontend/src/store.ts`: Redux store wiring and middleware that marks most state-changing actions as unsaved.
-- `src/src/frontend/src/utils/exportDownload.ts`: export filename normalization and browser download helper used by the dashboard.
+- `src/src/frontend/src/utils/exportDownload.ts`: export filename normalization and browser download primitive.
+- `src/src/frontend/src/utils/diagramTransfer.ts`: shared Full Data export and current-format import contract used by Dashboard and Header.
 - `src/src/frontend/src/utils/displayNodeFilter.ts`: canvas node display filter labels and subnetwork-wrapper detection used by `App.tsx` and the header Display button.
 
 ## Purpose and Responsibility
@@ -78,8 +79,8 @@ The Dashboard owns the first-step UI for choosing a diagram name, domain, calcul
 - `handleLoadDiagram(diagramId)`: clears stale canvas state, fetches the diagram once, initializes node names, current diagram ID, diagram type, and parent connections, then navigates to `/diagram/${diagramId}`.
 - `handleDeleteDiagram(diagramId)`: fetches the diagram to remove node names from dashboard cleanup state, deletes the backend diagram, refreshes the list, and shows an alert.
 - `handleDeleteSubnetwork(blueprintId)`: deletes the subnetwork blueprint, refreshes blueprint data, shows a blueprint success alert, and then calls `handleDeleteDiagram` for the associated `blueprintDiagramId`.
-- `handleExportDiagram(diagramId, diagramName)`: prompts for an export name, calls `/api/data/diagrams/:id/export`, normalizes the final filename, and downloads the snapshot JSON.
-- `handleImportDiagram(file)`: parses a selected JSON file, posts current snapshot formats to `/api/data/diagrams/import`, falls back to the legacy `/api/data/diagrams` path, optionally verifies legacy imports, refreshes the list, and clears the hidden file input.
+- `handleExportDiagram(diagramId, diagramName, sourceIsVerified)`: prompts for an export name, lets a verified source export as an editable unverified copy or preserve its status, then delegates the request and download to `diagramTransfer.ts`.
+- `handleImportDiagram(file)`: parses a selected JSON file, posts a current snapshot exactly once through `diagramTransfer.ts`, falls back to the legacy `/api/data/diagrams` path, optionally verifies only legacy imports, refreshes the list, and clears the hidden file input.
 - `ReactFlowWrapper`: owns route cleanup, domain load, existing diagram load, computation polling, loading-state rendering, and the outer `ReactFlowProvider`.
 - `ReactFlowCanvas`: owns React Flow event handlers, header/sidebar panels, material editor modal, save confirm modal, display filtering, autosave threshold tracking, custom delete-key handling, and canvas edit guards.
 - `Sidebar`: reads `state.domain.data.models` and renders draggable `SidebarItem` entries.
@@ -95,8 +96,8 @@ The Dashboard owns the first-step UI for choosing a diagram name, domain, calcul
 | Click Create Diagram with valid fields | Dashboard local state and Redux dispatches | Old canvas state is cleared, domain data fetch starts, name/description/calc type are stored, `verified` becomes `false`, and route changes to `/canvas/<domainId>`. | Create a network and confirm the canvas route opens. |
 | Click Create Diagram with missing fields | Required inputs and submit guard | Browser required-field validation may block submit; if the handler runs without required state, an error alert is dispatched. | Try submitting with a missing domain or calculation type. |
 | Click Load on an existing diagram | `diagrams` list item ID | Dashboard clears stale state, fetches the diagram, seeds node names/type/parent connections, and navigates to `/diagram/<diagramId>`. | Click Load and watch route plus loaded canvas state. |
-| Export a diagram | `handleExportDiagram` prompt and export endpoint | A browser prompt asks for the base filename; Cancel stops export. Confirm downloads a normalized `.json` snapshot. | Click Export, test both Cancel and confirmed names with spaces. |
-| Import a current snapshot | Hidden file input, JSON `version` of `1.0.0` or `6.0.0`, `metadata` | Posts `{ snapshot }` to `/api/data/diagrams/import`, shows success, may mention migration, refreshes diagram list, and updates local `calcType` if metadata provides one. | Import a known current-format export and check alert/list refresh. |
+| Export a diagram | `handleExportDiagram` prompts and shared export helper | A browser prompt asks for the base filename. A verified source also asks whether to export an editable unverified copy; the other choice preserves status. Confirm downloads a normalized `.json` snapshot without mutating the source. | Export verified and unverified rows, then reload the source and inspect both files. |
+| Import a current snapshot | Hidden file input, supported JSON `version`, `metadata` | Sends one `{ snapshot }` POST, shows success, may mention migration, refreshes the diagram list, and groups the created diagram by the imported status. | Import preserved and forced-unverified exports; verify one POST and the expected list. |
 | Import a legacy snapshot | JSON without current snapshot metadata | Builds a legacy diagram payload, appends a random suffix for duplicate names, posts to `/api/data/diagrams`, optionally calls verify, and refreshes the list. | Import a legacy JSON with and without duplicate name. |
 | Delete a diagram | Diagram list action | Fetches node metadata, removes node names from cleanup state, deletes the backend diagram, refreshes the list, and shows an info alert. | Delete a test diagram and confirm it disappears after refresh. |
 | Delete a subnetwork blueprint | Blueprint list action | Deletes blueprint, refreshes blueprints, shows blueprint success alert, then deletes the associated diagram through `handleDeleteDiagram`. | Delete a disposable blueprint and confirm both list changes. |
@@ -207,10 +208,10 @@ Hook and cleanup contracts:
 ## Side Effects
 
 - Dashboard reads `/api/data/domains`, `/api/data/diagrams`, and `/api/data/subnetworks` on mount.
-- Dashboard creates imports through `/api/data/diagrams/import` for current snapshot payloads and `/api/data/diagrams` for legacy payloads.
-- Dashboard may call `PATCH /api/data/diagrams/:id/verify` for verified legacy imports.
+- Dashboard creates imports through one `/api/data/diagrams/import` POST for current snapshot payloads and `/api/data/diagrams` for legacy payloads.
+- Dashboard may call the compatible `PATCH /api/data/diagrams/:id/verify` wrapper only for verified legacy imports; current-format imports never re-PATCH verification.
 - Dashboard deletes diagrams through `DELETE /api/data/diagrams/:id` and deletes blueprints through `DELETE /api/data/subnetworks/:id`.
-- Dashboard exports through `GET /api/data/diagrams/:id/export` and triggers a browser download.
+- Dashboard exports through `GET /api/data/diagrams/:id/export?verification=preserve|unverified` and triggers a browser download through the shared helper.
 - Dashboard writes temporary form data to `localStorage`.
 - `App.tsx` reads `localStorage` keys `temp_diagram_<domainId>` and `diagram_save_meta_<diagramId>`.
 - `App.tsx` calls `/api/data/diagrams/:diagramId` for existing diagram load and `/api/compute/details/:diagramId` for computation status polling.
@@ -225,7 +226,7 @@ Hook and cleanup contracts:
 - Import with no selected file shows `No file selected for import.`.
 - Import parse, schema, or API failures show `Failed to import diagram. Check console for details.` and clear the hidden file input.
 - Legacy import duplicate names receive a random six-character suffix.
-- Legacy verify treats `400` responses containing `already verified` as success; `401` and `403` become a warning about permission.
+- Legacy verified imports use the compatible desired-true wrapper; a failed compatibility call warns that the diagram imported but verification failed.
 - Export prompt cancel exits before calling the backend.
 - Existing diagram load errors in Dashboard show `Failed to load diagram.`; existing diagram load errors in `App.tsx` are logged and clear the loading flag.
 - Domain load failure in `domainSlice` leads `ReactFlowWrapper` to render `Error loading domain data`.
@@ -274,7 +275,7 @@ git diff --check -- docs/CodeExplanation/dashboard-and-canvas.md
 | New canvas creation | Dashboard with at least one domain | Enter unique name, select domain and calc type, enter description, click Create Diagram | Canvas route opens with header and palette | Redux name/description/calc type update; `fetchDomainData` runs; route is `/canvas/<domainId>` | High: wrong state causes later save to use stale metadata. |
 | Duplicate name guard | Dashboard has an existing diagram name | Enter the exact same name and blur | Input clears and invalid feedback appears | No navigation; `nameError` is set | Medium: duplicate diagrams confuse import/export lists. |
 | Existing diagram load | Dashboard has a saved diagram | Click Load | Loading message then diagram canvas appears | Dashboard and `App.tsx` both fetch diagram; Redux current ID/type/names/parent connections update | High: stale state can leak between diagrams. |
-| Import current snapshot | Valid export JSON with version `1.0.0` or `6.0.0` | Click Import Diagram and select file | Success alert; list refreshes | `POST /api/data/diagrams/import`; optional local calc type update | High: import format drift can break recovery workflows. |
+| Import current snapshot | Valid supported Full Data export JSON | Click Import Diagram and select file | Success alert; list refreshes into the status stored in root metadata | One `POST /api/data/diagrams/import`; no follow-up `/verify` | High: import format or verification drift can break recovery workflows. |
 | Export cancel | Any listed diagram | Click Export and cancel prompt | No download | No export API call should be made | Low: avoids unexpected downloads. |
 | Delete diagram | Disposable diagram | Click Delete | Diagram disappears after refresh; info alert appears | `GET /diagrams/:id`, `DELETE /diagrams/:id`, node names removed from cleanup state | High: wrong delete can remove saved work. |
 | Sidebar drag | New unverified, not computing canvas | Drag a palette item onto canvas | New selected shape appears | Node cache receives modelVersion; canvas marked unsaved; node parameters refreshed | High: node creation is a core authoring path. |

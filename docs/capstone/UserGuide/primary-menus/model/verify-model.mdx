@@ -1,32 +1,39 @@
 ---
-title: Verify Model
+title: Verify or Unverify Model
 sidebar_position: 10
-description: Use the Verify Model secondary button from the Model menu.
+description: Change the verification state of a saved root diagram from the Model menu.
 ---
 
-# Verify Model
+# Verify or Unverify Model
 
-Use **Verify Model** when you need to mark the current diagram as verified before advanced workflows or computation.
+Use this control to move a saved, normal root diagram between **Unverified** and **Verified**. Verification continues to protect workflows that already depend on the verified state; unverifying returns the root diagram to its editable state.
 
 ## Where To Find It
 
 1. Open an existing diagram.
 2. Select the **Model** primary menu.
-3. Click **Verify Model** in the secondary button row.
+3. Read the current state on the switch-like button: **Unverified** or **Verified**. Click it to request the opposite state.
 
 ## What It Does
 
-The button sends a verify request for the current diagram. After verification succeeds, the button label changes to **Verified** and the diagram is treated as verified.
+The button text reports the diagram's current persisted state. Clicking it requests the opposite state:
+
+- **Unverified** means the diagram is editable; clicking requests `isVerified: true`.
+- **Verified** means the diagram is protected by the existing verified-state guards; clicking requests `isVerified: false`.
+
+The switch label, `aria-checked` value, and application state change only after the server returns the canonical saved state. Repeating the same desired state is safe and does not create an error.
 
 ## Basic Steps
 
-1. Confirm the network is ready to verify.
-2. Click **Verify Model**.
-3. Wait for the verification status message.
+1. Confirm that the root diagram is saved and that no existing guard disables the control.
+2. Click the action matching the change you want.
+3. Wait for the success message and the button label to switch.
 
 ## Result
 
-The current diagram is marked as verified. If it is already verified, the UI warns that the diagram is already verified.
+The server stores the selected verification state for the owner diagram. The control is not shown for subnetwork blueprint/instance diagrams. A normal root diagram can still be verified before entering Multi-TP, so the existing verified-then-Multi-TP flow is preserved.
+
+If the request fails, the displayed verification state is not changed. An unexpected change after a failure should be treated as an error and reported with the diagram ID.
 
 ## Related Pages
 

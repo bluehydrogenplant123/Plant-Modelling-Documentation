@@ -57,6 +57,8 @@ Important delegated button components imported by `index.tsx` include:
 - `src/src/frontend/src/components/header-bar/model-buttons/open-network-modal.tsx`
 - `src/src/frontend/src/components/header-bar/model-buttons/import-diagram-modal.tsx`
 - `src/src/frontend/src/components/header-bar/model-buttons/export-diagram-modal.tsx`
+- `src/src/frontend/src/utils/verificationLifecycle.ts`: derives the next desired verification state and validates the canonical API response.
+- `src/src/frontend/src/utils/diagramTransfer.ts`: shared Full Data export and current-format import contract used by Header and Dashboard.
 - `src/src/frontend/src/components/header-bar/run-buttons/run-config-modal.tsx`
 
 ## Purpose and Responsibility
@@ -143,7 +145,7 @@ It does not own the persisted contents of Objective Function Sets, Constraint Se
 | --- | --- | --- | --- |
 | Header initially renders | `activeSection` default `Model` | Top row shows Model, User Tables, Calc Type, Analysis, Set Run, Computation, Run Result, Multi-TP, TP Analysis, System, Display, Help, save/name/back/status controls. Second row shows Model controls. | Open any canvas route and inspect initial header. |
 | Click a section button | `activeSection` | Active button uses `deepblue`; secondary row changes to that section's controls. | Click Calc Type, Analysis, Set Run, Multi-TP, TP Analysis, System, or Help. |
-| Model section active | `activeSection === 'Model'`, disable rules | Shows create/open/save copy/save subnetwork/import subnetwork/verify/base TP/import/export plus `TPSpecsButton`. | Confirm Model secondary row contents. |
+| Model section active | `activeSection === 'Model'`, disable rules | Shows create/open/save copy/save subnetwork/import subnetwork/root Verify-or-Unverify/base TP/import/export plus `TPSpecsButton`. | Confirm Model secondary row contents. |
 | User Tables -> Material Properties | `ruleMaterialEditor`, `setMaterialEditor` | The base-period dropdown opens the parent Material Editor when enabled. | Open User Tables, then Material Properties. |
 | User Tables -> Economic data | `ruleCostButtons` | Cost/Revenue and Supply/Demand entries open delegated Economic panels with the cost guard. | Open each User Tables Economic entry during idle and computation. |
 | Multi-TP section active | `activeSection === 'Multi-TP'`, MTP guards | Shows User Tables, Time Period controls, Global TP, TP Specs, and TP Data. TP Specs opens the shared version-aware panel in MTP scope. | Open Multi-TP, click TP Specs, and confirm the MTP badge. |
