@@ -39,10 +39,31 @@ The **Duplicate Network** dialog asks for a **Network Name**. It checks whether 
 
 ## Result
 
-The current network is duplicated and saved with the new name.
+The current network is duplicated and saved with the new name. The original
+network is not changed. The copy opens as **Unverified** so it can be edited,
+even when the source network was verified.
+
+## Check Base And Multi-TP Behavior
+
+Use this sequence when the copy must continue into Multi-TP work:
+
+1. Record representative Base values on the source network.
+2. Duplicate the network and open the new copy.
+3. Confirm that the copy is **Unverified** and that the recorded Base values
+   are still present.
+4. Verify the copy.
+5. Select **Multi-TP**, open **Global TP**, add the required time periods, and
+   click **Apply to All Nodes**.
+6. Inspect the copied values in the new TP range, save, and reopen the copy.
+7. Confirm that the values remain and that the source network has not changed.
+
+A successful duplicate preserves editable diagram-owned configuration, but it
+does not copy computation tasks, results, or run history. Run a new computation
+for the copy when computation acceptance is required.
 
 ## Related Pages
 
 - [Model Menu overview](../model)
 - [Open](./open)
 - [Export](./export)
+- [Global TP](../multi-tp/global-tp)

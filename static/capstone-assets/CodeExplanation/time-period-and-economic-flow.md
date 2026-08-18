@@ -21,6 +21,7 @@ Current behavior was checked in these source files:
 - `src/src/frontend/src/components/header-bar/header-buttons/base-tp-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/time-period-viewer.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/global-tp-button.tsx`
+- `src/src/frontend/src/utils/componentTemplateGlobalTpUtils.ts`
 - `src/src/frontend/src/components/header-bar/header-buttons/computation-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/tp-specs-button.tsx`
 - `src/src/frontend/src/components/modal/tabs/info-tab.tsx`
@@ -185,7 +186,13 @@ The range validator enforces these rules:
 - Every range must have a positive duration.
 - `durationUnit` must be `minutes`, `hours`, `days`, or `weeks`.
 
-On apply, the component builds add, update, and delete sets for `/api/data/tpnodevers`. Structural changes can clear TP-specific values, computation results, and cache state. When new ranges are added, the component can clone existing base or first-period TP changes into the new ranges.
+On apply, the component builds add, update, and delete sets for `/api/data/tpnodevers`. Structural changes can clear TP-specific values, computation results, and cache state. When a Base diagram is expanded to Multi-TP, eligible human-input values are collected from each node's current Base model version and copied into the new ranges through `/api/data/tpchanges`. When ranges are appended to an existing Multi-TP diagram, the first TP range is the copy source instead. Component-template definitions and generated component rows are excluded from this generic copy path.
+
+Duplicate acceptance uses the same production payload builder after the copy is
+verified. The regression in
+`src/tests/backend/routes/dataRoutes.recursiveSubnetwork.test.ts` proves that
+two copied nodes retain their Base inputs, receive the Global TP payloads, and
+reload the saved MTP values while the source remains unchanged.
 
 Global TP also prepares economic data for the new TP ranges. It calls:
 
