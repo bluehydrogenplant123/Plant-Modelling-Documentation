@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram id="issue-166" name="Before and after">
+    <mxGraphModel dx="1200" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="Issue #166: System workbook economics are excluded before parsing" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="180" y="20" width="840" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Price, demand, supply, templates, and legacy cost sheets cannot gate the non-economic import" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="190" y="65" width="820" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="BEFORE" style="swimlane;startSize=40;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7c4a03;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="520" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="AFTER ISSUE #166" style="swimlane;startSize=40;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1e5b2a;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="640" y="110" width="520" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="&lt;b&gt;System workbook&lt;/b&gt;&lt;br&gt;Price_Demand mapping&lt;br&gt;Prices / Demand_Supply&lt;br&gt;U templates / Entity Specs" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7c4a03;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="40" y="70" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="&lt;b&gt;Resolve mapping&lt;/b&gt;&lt;br&gt;parse and validate every economic sheet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="290" y="70" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="&lt;b&gt;Economic CSVs&lt;/b&gt;&lt;br&gt;Prices.csv&lt;br&gt;Demand_Supply.csv&lt;br&gt;SYS Costs.csv fallback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="290" y="190" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="&lt;b&gt;process_costs(conn)&lt;/b&gt;&lt;br&gt;validate + upsert defaults" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7f1d1d;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="290" y="330" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="&lt;b&gt;Import gate&lt;/b&gt;&lt;br&gt;malformed or empty contract can stop later phases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7f1d1d;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="40" y="330" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="CostEntitiesConfig&lt;br&gt;mutated by workbook" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7f1d1d;fontSize=13;" vertex="1" parent="4">
+          <mxGeometry x="40" y="200" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="&lt;b&gt;System workbook&lt;/b&gt;&lt;br&gt;same economic sheets&lt;br&gt;plus normal catalog sheets" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7c4a03;fontSize=13;spacing=8;" vertex="1" parent="5">
+          <mxGeometry x="40" y="70" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="&lt;b&gt;Sheet-name filter&lt;/b&gt;&lt;br&gt;runs before ExcelFile.parse(...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="5">
+          <mxGeometry x="290" y="70" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="&lt;b&gt;Economic sheets skipped&lt;/b&gt;&lt;br&gt;no parse, validation, or CSV" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1e5b2a;fontSize=13;spacing=8;" vertex="1" parent="5">
+          <mxGeometry x="290" y="180" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="&lt;b&gt;Non-economic sheets&lt;/b&gt;&lt;br&gt;models, ports, variables, streams, algorithms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="5">
+          <mxGeometry x="40" y="190" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="&lt;b&gt;migrate.main()&lt;/b&gt;&lt;br&gt;process_run_configs → algorithms → mappings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="5">
+          <mxGeometry x="40" y="360" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="&lt;b&gt;process_streams runs&lt;/b&gt;&lt;br&gt;streams remain selectable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1e5b2a;fontSize=13;spacing=8;" vertex="1" parent="5">
+          <mxGeometry x="290" y="360" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="CostEntitiesConfig&lt;br&gt;preserved; seed/runtime owned" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=13;" vertex="1" parent="5">
+          <mxGeometry x="290" y="285" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="Verification: parse spy proves ignored sheets are unopened  •  four workbook variants produce identical non-economic CSVs  •  isolated DB sentinel remains unchanged" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#5b3b68;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="140" y="620" width="920" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="parse" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.4;entryX=0;entryY=0.4;" edge="1" parent="4" source="6" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="export" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="4" source="7" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="load" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="4" source="8" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="upsert" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.35;entryX=1;entryY=0.65;" edge="1" parent="4" source="9" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="failure" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#b85450;exitX=0;exitY=0.75;entryX=1;entryY=0.5;" edge="1" parent="4" source="9" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="economic names" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.35;entryX=0;entryY=0.35;" edge="1" parent="5" source="12" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="continue without parse" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#82b366;" edge="1" parent="5" source="13" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="other sheets" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;entryX=0.25;entryY=0;" edge="1" parent="5" source="12" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="CSV" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="5" source="15" target="16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="later phase" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#82b366;" edge="1" parent="5" source="16" target="17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

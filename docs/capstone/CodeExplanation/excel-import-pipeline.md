@@ -19,7 +19,7 @@ The Python importer converts workbook sheets to normalized CSV files, then reads
 - `src/excel-migration/Dockerfile`: builds the Python container image by copying the importer scripts into `/app`.
 - `src/excel-migration/run_python_import.sh`: container-side import script that converts the workbook, redirects `migrate.py` output to a timestamped log, and removes temporary CSV output after success.
 - `src/excel-migration/excel_to_csv.py`: converts workbook sheets into CSV filenames and headers expected by the importer.
-- `src/excel-migration/migration_normalization.py`: shared cleanup helpers for model rows, unit rows, cost rows, and stream property aliases.
+- `src/excel-migration/migration_normalization.py`: shared cleanup helpers for model rows, unit rows, and stream property aliases.
 - `src/excel-migration/migrate.py`: reads `csv_outputs/*.csv` and writes imported reference/configuration data into PostgreSQL.
 - `src/excel-migration/requirements.txt`: Python package versions used by the importer container.
 - `src/src/backend/prisma/postgres/schema.prisma`: PostgreSQL schema that receives imported catalog/configuration rows.
@@ -33,7 +33,7 @@ This pipeline owns initial database preparation and workbook-to-database import 
 - starting the required local database services;
 - applying the current Prisma schemas;
 - converting accepted workbook sheet names and headers into the current CSV contract;
-- importing domain, stream, model, port, variable, unit, run configuration, color, task type, and cost configuration data into PostgreSQL;
+- importing domain, stream, model, port, variable, unit, run configuration, color, and task type data into PostgreSQL;
 - writing importer logs for migration failures.
 
 It does not own frontend startup, user authentication data, saved diagrams, computation queue state, solver execution, or callback result storage. Those areas use MongoDB, Redis, and PostgreSQL at runtime after the imported catalog is available.
@@ -76,29 +76,32 @@ It does not own frontend startup, user authentication data, saved diagrams, comp
 | `Port Classes and Vars` | `SYSPortClassesandVars.csv` |
 | `Run Configs` | `SYS Run Configs.csv` |
 | `Node Ports Model Library` | `SYSNodePortsModelLibrary.csv` |
-| `Entity Specs` | `SYS Costs.csv` |
-| `Prices` | `Prices.csv` |
-| `Demand_Supply` | `Demand_Supply.csv` |
-| `Price_Demand_DB_mapping` | `Price_Demand_DB_mapping.csv` |
+| `Price_Demand_DB_mapping` | Ignored; no CSV output. |
+| `Prices` | Ignored; no CSV output. |
+| `Demand_Supply` | Ignored; no CSV output. |
+| `U_Prices` / `U_Demand_Supply` | Ignored; no CSV output. |
+| `Entity Specs` / `SYS Costs` | Ignored legacy economic input; no CSV output. |
 
 The obsolete `Stream Properties` and `Stream Fractions` aliases are not part of the current importer contract. `migrate.py` imports materials through `Port Classes Database Mapping` and its referenced `#Prop_*` / `#Comp_*` sheets, and no longer reads `SYS Stream Properties.csv` or `SYS Stream Fractions.csv`. `System Variables` remains an active source sheet and is exported as `SYS System Variables.csv` for the PostgreSQL `SystemVariables` catalog.
 
 Unmapped sheets are exported using their original names, but `migrate.py` ignores them unless a current `process_*` function reads that CSV.
 
-### Empty Split Economic Sheets
+### System Economic Sheets Are Excluded
 
-The split system-economic contract uses `Price_Demand_DB_mapping` to point to `Prices` and `Demand_Supply`. A sheet with the complete required headers and zero data rows is valid. The required headers are:
+The system-workbook importer does not own price, demand, supply, or user-economic defaults. `excel_to_csv.py` checks the sheet name before calling `ExcelFile.parse(...)` and skips all of these inputs:
 
-- `Prices`: `Price Name`, `Default Value`, `Type`, `Dimension`, and `Units`;
-- `Demand_Supply`: `Demand or Supply`, `Default Value`, `Type`, `Dimension`, and `Units`.
+- `Price_Demand_DB_mapping`;
+- `Prices` and `Demand_Supply`;
+- `U_Prices` and `U_Demand_Supply`;
+- the legacy `Entity Specs` / `SYS Costs` alias.
 
-When both mapped system sheets are header-only, the converter still emits header-only CSVs and the importer normalizes them to an empty DataFrame. `process_costs(...)` logs a warning, returns without inserting, updating, or deleting `CostEntitiesConfig`, and allows `main()` to continue to the later `process_streams(...)` phase. Empty sheets therefore mean "no economic overrides in this workbook," not "delete the existing system defaults."
+The skipped sheets produce no CSV. Their presence, absence, row count, headers, values, or formatting therefore cannot validate, fail, or change the non-economic system import. In particular, malformed mappings and populated economic rows are not accepted and discarded later; the converter never parses them.
 
-This tolerance is intentionally narrow. Missing required headers, incomplete candidate rows, invalid `Type` values, populated unsupported columns, and user-scoped data in the system database import remain fatal contract errors. In particular, a row with a blank name but a populated `Default Value`, `Type`, or `Units` cell is content-bearing, not empty; it fails with `incomplete economic rows` instead of taking the warning path.
+`migrate.main()` also omits the workbook `process_costs(...)` phase. A system workbook run performs no insert, update, or delete against `CostEntitiesConfig`, including when stale split or legacy economic CSV files remain in a failed run's temporary directory. Prisma migration/seed data, the Cost UI and API, user/network economics, saved-diagram cost payloads, and solver cost support remain separate runtime concerns and are unchanged.
 
-The automated regression creates a disposable workbook with the mapping and required headers but no economic data rows. This verifies the contract without adding or modifying a production workbook in `src/excel-sheets/`.
+The importer continues from `process_run_configs(...)` to solution-algorithm, port-class, variable-mapping, and `process_streams(...)` phases. Regression tests compare missing, populated, malformed, and legacy economic workbook variants and require identical non-economic CSV output.
 
-![Empty economic sheets before and after](./diagrams/empty-economic-sheets-import.svg)
+![System economic sheets excluded before and after](./diagrams/system-economic-sheets-disabled.svg)
 
 ### Issue #120 Workbook Evidence
 
@@ -156,7 +159,6 @@ Generated by, Entity Name, Cost, Unit, Type
 
 - `sanitize_model_library_df(...)` drops model library rows with missing `ModelName` or `ModelVersion`.
 - `sanitize_unit_conversion_df(...)` trims unit text, coerces multipliers and offsets, and drops incomplete conversion rows.
-- `normalize_cost_rows(...)` trims cost config text and drops empty entity rows.
 - `expand_stream_property_aliases(...)` copies stream property values from keys such as `T0`, `P0`, `H0`, and `MF0` to accepted aliases such as `T`, `TZ`, `P`, `PZ`, `H`, `HZ`, `MF`, and `MFZ` when those aliases are missing.
 
 ## Main Functions and Scripts
@@ -171,8 +173,7 @@ Generated by, Entity Name, Cost, Unit, Type
 - `process_ports(...)`: imports `Ports` from node variables, node-port mappings, and port class definitions.
 - `process_varnames(...)`: imports `VarNames` and attaches them to matching port/model-version rows.
 - `process_run_configs(...)`: imports solver and algorithm configuration rows from `SYS Run Configs.csv`.
-- `process_costs(...)`: imports Economic defaults into `CostEntitiesConfig` from `SYS Costs.csv`.
-- `main()` in `migrate.py`: runs the import stages in dependency order.
+- `main()` in `migrate.py`: runs non-economic import stages in dependency order and deliberately does not enter the workbook cost-import path.
 
 ### CI Workbook Selection
 
@@ -212,7 +213,8 @@ PostgreSQL import targets include:
 - `SystemVariables`
 - `UnitConversion`
 - `RunConfigs`
-- `CostEntitiesConfig`
+
+`CostEntitiesConfig` remains in the PostgreSQL schema and keeps its Prisma seed/runtime ownership, but it is not a workbook import target.
 
 `ComputationResults` is also in the PostgreSQL schema, but it is runtime compute-result storage. It is not populated by the workbook importer.
 
@@ -270,13 +272,13 @@ npm run migrate:mongodb
 - If `excel_to_csv.py` fails, the error appears in the terminal because logging redirection has not started yet.
 - If `migrate.py` fails, the terminal may stop after `Running the data import Python script...`; the traceback is in `src/excel-migration/logs/log_<timestamp>.log`.
 - If `migrate.py` fails before cleanup, `Process completed successfully.` and `All steps done!` will not print.
-- Header-only mapped `Prices` and `Demand_Supply` sheets produce a warning and do not stop the import; later stages, including `process_streams(...)`, still run.
-- The warning path preserves existing `CostEntitiesConfig` rows. It is not a destructive reset of economic defaults.
-- Malformed split economic sheets still fail fast: missing headers, incomplete rows, invalid types, unsupported populated columns, and misplaced user-scoped rows are not downgraded to warnings. A blank-name row that still contains `Default Value`, `Type`, or `Units` is an incomplete row and remains fatal.
+- Split and legacy system economic sheets are ignored before parsing, so empty, populated, malformed, and missing variants have the same non-economic import result.
+- The workbook importer never enters `process_costs(...)`; existing `CostEntitiesConfig` rows are preserved rather than reset or overwritten.
 - `process_ports(...)` currently casts `HiddenByDefault` and `SendtoCalc` with `int(...)`, so those CSV values must be numeric-like, usually `0` or `1`. A workbook that uses `Y`, `N`, `Yes`, or `No` for those fields can fail during port import unless the converter is extended first.
 - Import reruns use a mix of `ON CONFLICT DO UPDATE`, `ON CONFLICT DO NOTHING`, and targeted cleanup. Treat reruns as upsert/update behavior, not as a full database reset that removes rows missing from the workbook.
 - Some process functions log an error and continue when a CSV is missing or malformed. Always inspect the latest log, not only the final terminal line, before trusting imported data.
 - Removing the obsolete workbook-only SYS inputs changes the Excel source contract only. It does not change persisted PostgreSQL/MongoDB, canvas, saved-diagram, or import/export structures, so Issue #120 requires no schema version bump.
+- Excluding system economic sheets changes only which workbook sources the importer consumes. It does not change PostgreSQL/MongoDB schema shape, canvas/snapshot shape, saved-diagram cost payloads, or the runtime API contract, so Issue #166 requires no `CURRENT_SCHEMA_VERSION` bump.
 
 ## Extension Points
 
@@ -302,10 +304,10 @@ docker compose build python-runner
 bash run-all.sh jun-16-2026.xlsx
 ```
 
-For a manual empty-economic-sheet regression, use a disposable local workbook copy, clear only the data rows under the mapped `Prices` and `Demand_Supply` headers, and confirm all of these signals:
+For a manual system-economic exclusion regression, use disposable local workbook copies with missing, populated, and malformed economic sheets, and confirm all of these signals:
 
 - the import exits successfully;
-- the log contains `contain no data rows` as a warning rather than an exception;
+- conversion logs each known economic sheet as ignored and creates no corresponding CSV;
 - existing `CostEntitiesConfig` rows are unchanged;
 - `process_streams(...)` executes and material stream/domain mappings are populated;
 - the frontend stream selector lists imported streams and can select `NG`.
