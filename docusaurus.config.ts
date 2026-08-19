@@ -3,7 +3,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'Chemware Docs',
+  title: 'HYPRONET-GUI',
   tagline: 'Capstone documentation for industrial plant modeling and simulation workflows.',
   favicon: 'img/favicon.ico',
 
@@ -50,9 +50,9 @@ const config: Config = {
       respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Chemware Docs',
+      title: 'HYPRONET-GUI',
       logo: {
-        alt: 'Chemware Docs logo',
+        alt: 'HYPRONET-GUI logo',
         src: 'img/logo.svg',
       },
       items: [
