@@ -226,7 +226,6 @@ const sidebars: SidebarsConfig = {
         {type: 'doc', id: 'capstone/CodeExplanation/excel-import-pipeline'},
         {type: 'doc', id: 'capstone/CodeExplanation/diagram-verification-lifecycle'},
         {type: 'doc', id: 'capstone/CodeExplanation/issue-132-material-import-navigation'},
-        {type: 'doc', id: 'capstone/CodeExplanation/test'},
       ],
     },
   ],
