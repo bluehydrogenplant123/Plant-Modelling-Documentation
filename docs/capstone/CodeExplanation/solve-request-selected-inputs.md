@@ -123,8 +123,8 @@ The **Optimization > Optimization Options** dropdown entry controls a separate p
 
 The selection menus keep temporary ids rather than mutating committed Header state immediately:
 
-- Optimization uses `draftSelectedIds` plus `selectionPanel`.
-- DataRec uses `draftInstrumentSetId`, `draftMeasurementIds`, and `draftObjectiveFunctionIds`.
+- Optimization uses `draftSelectedIds`, `draftObjectiveFunctionMode`, and `selectionPanel`.
+- DataRec uses `draftInstrumentSetId`, `draftMeasurementIds`, `draftObjectiveFunctionIds`, and `draftObjectiveFunctionMode`.
 - Each panel also owns loading and error state for its current API request.
 - **Apply** resolves draft ids against the freshly loaded option objects before invoking the parent callback.
 
@@ -148,6 +148,7 @@ Optimization request fields:
 ```json
 {
   "optimizationOptions": {
+    "objectiveFunctionMode": "custom",
     "mode": "dro",
     "wassersteinRadius": 0.25,
     "wassersteinNorm": "L2",
@@ -162,6 +163,7 @@ DataRec request fields:
 ```json
 {
   "dataRecOptions": {
+    "objectiveFunctionMode": "default",
     "instrumentSetId": "64b000000000000000000003",
     "measurementIds": ["64b000000000000000000005"],
     "objectiveFunctionSetIds": ["objective-set-1"]
@@ -187,20 +189,22 @@ The route derives its calculation type from the saved `diagram.parameters.global
 2. Resolve `objectiveFunctionSetIds` only against `Objective Function` sets.
 3. Resolve `additionalConstraintSetIds` only against `Constraint` sets.
 4. Reject a missing id or a set with the wrong type.
-5. Default the mode to `deterministic` unless it is exactly `dro`.
-6. Reject DRO when the radius is missing, non-numeric, or negative.
-7. Copy the saved set names and equation objects into the queued snapshot.
+5. Normalize `objectiveFunctionMode` to `default` unless it is exactly `custom`.
+6. Default the optimization mode to `deterministic` unless it is exactly `dro`.
+7. Reject DRO when the radius is missing, non-numeric, or negative.
+8. Copy the saved set names and equation objects into the queued snapshot.
 
 ### DataRec resolution
 
-1. Resolve selected Objective Function Set ids from saved `diagram.sets`.
-2. If no Instrument Set is selected, reject any non-empty measurement selection; otherwise return an empty instrument/measurement selection.
-3. Require the Instrument Set and measurement ids to be MongoDB ObjectId-shaped strings.
-4. Require the Instrument Set to belong to both the authenticated user and the current diagram.
-5. Load every saved variable-to-instrument mapping in the selected Instrument Set. These become `instruments` even when no measurement is selected for a mapping.
-6. Load only the selected measurement ids from that Instrument Set.
-7. Reject missing measurements, measurements with saved `rowErrors`, invalid numeric plant values, or measurements whose mapping no longer exists.
-8. Join each measurement to authoritative mapping weight, accuracy, bounds, and model-path data.
+1. Normalize `objectiveFunctionMode` to `default` unless it is exactly `custom`.
+2. Resolve selected Objective Function Set ids from saved `diagram.sets`.
+3. If no Instrument Set is selected, reject any non-empty measurement selection; otherwise return an empty instrument/measurement selection.
+4. Require the Instrument Set and measurement ids to be MongoDB ObjectId-shaped strings.
+5. Require the Instrument Set to belong to both the authenticated user and the current diagram.
+6. Load every saved variable-to-instrument mapping in the selected Instrument Set. These become `instruments` even when no measurement is selected for a mapping.
+7. Load only the selected measurement ids from that Instrument Set.
+8. Reject missing measurements, measurements with saved `rowErrors`, invalid numeric plant values, or measurements whose mapping no longer exists.
+9. Join each measurement to authoritative mapping weight, accuracy, bounds, and model-path data.
 
 The translated snapshot is attached to `configuration.selected_inputs` before the task is inserted. This freezes selected set names/membership and expanded DataRec values for the queued run. One boundary remains separate: the worker reloads the top-level Equation Writing catalog from `diagram.equations` at dispatch time.
 
@@ -238,6 +242,7 @@ Optimization selection example:
     "solve_inputs": {
       "calculation_type": "Optimization",
       "optimization": {
+        "objective_function_mode": "custom",
         "mode": "deterministic",
         "wasserstein_radius": null,
         "wasserstein_norm": null,
@@ -269,6 +274,7 @@ DataRec selection example:
     "solve_inputs": {
       "calculation_type": "DataRec",
       "data_reconciliation": {
+        "objective_function_mode": "default",
         "instrument_set": {
           "id": "64b000000000000000000003",
           "network": "Main Network",
@@ -337,7 +343,7 @@ DataRec selection example:
 }
 ```
 
-All normal translated model, TP, stream, material, and economic parameters remain alongside these fields.
+All normal translated model, TP, stream, material, and economic parameters remain alongside these fields. In `default` mode, Supply & Demand data remains under `parameters.costs`; in `custom` mode, selected saved sets remain under `objective_functions`. The mode field chooses which source the calculation server should use without duplicating either source.
 
 ### Stale parameter cleanup versus the equation catalog
 

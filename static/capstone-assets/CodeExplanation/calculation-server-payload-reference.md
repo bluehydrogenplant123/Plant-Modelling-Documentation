@@ -70,6 +70,7 @@ The following is a representative complete Optimization request. Fields marked o
     "solve_inputs": {
       "calculation_type": "Optimization",
       "optimization": {
+        "objective_function_mode": "custom",
         "mode": "deterministic",
         "wasserstein_radius": null,
         "objective_functions": [{ "set_id": "objective-set-1", "name": "Objective", "equations": ["eq-1"] }],
@@ -126,8 +127,9 @@ For Data Reconciliation, `solve_inputs` has this alternate shape:
 
 ```json
 {
-  "calculation_type": "Data Reconciliation",
+  "calculation_type": "DataRec",
   "data_reconciliation": {
+    "objective_function_mode": "default",
     "instrument_set": "instrument-set-id",
     "instruments": ["instrument-id"],
     "measurements": ["measurement-id"],
@@ -139,6 +141,7 @@ For Data Reconciliation, `solve_inputs` has this alternate shape:
 ## Normalization Before Dispatch
 
 - `selected_inputs` is removed from `configuration`; its solver form is `parameters.solve_inputs`.
+- `objective_function_mode` is always `default` or `custom`. Default selects Supply & Demand data already translated under `parameters.costs`; custom selects the independently populated `objective_functions` array.
 - Stale legacy solve-input keys such as `sets`, `collections`, `equation_sets`, `constraints`, and old data-reconciliation keys are removed from `diagram.parameters` before the final merge.
 - Equation variable bounds are converted from the saved display unit into the dimension base unit. Structured tokens retain their path fields; manually defined paths have null structured fields and units.
 - Equations, collections, selected sets, and SoluAlgoLib references use ids where references are needed, avoiding ambiguity from duplicate display names.
