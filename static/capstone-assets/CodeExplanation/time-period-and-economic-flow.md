@@ -30,6 +30,7 @@ Current behavior was checked in these source files:
 - `src/src/frontend/src/components/modal/useNodeDataPrefetch.ts`
 - `src/src/frontend/src/components/header-bar/header-buttons/cost-button.tsx`
 - `src/src/frontend/src/components/header-bar/header-buttons/cost-button-utils.ts`
+- `src/src/frontend/src/components/header-bar/header-buttons/user-tables-menu.tsx`
 - `src/src/frontend/src/components/header-bar/index.tsx`
 - `src/src/frontend/src/components/header-bar/utils/save-util.tsx`
 - `src/src/frontend/src/features/canvas/canvasSlice.ts`
@@ -87,7 +88,7 @@ The UI does not edit solver-facing `parameters` directly. The backend start rout
 3. The same Global TP modal validates Sliding Horizon, stores it in Redux, and triggers the diagram save path so it is persisted as `canvas.slidingHorizon`.
 4. TP Specs edits are stored as versioned sparse changes. Base TP specs use `tp_spec_base_changes`; Multi-TP specs use version-scoped `tp_changes`.
 5. Applying a TP spec version marks that version active only for its scope and calculation type.
-6. Base Economic and Multi-TP Economic edits save `costEntities` and `costMappings` to the diagram through `/api/data/diagrams/:diagramId/costs`.
+6. Base Economic and Multi-TP Economic edits require a persisted `diagramId`, then save `costEntities` and `costMappings` to the diagram through `/api/data/diagrams/:diagramId/costs`.
 7. Multi-TP initialization or range changes may call `/api/data/diagrams/:diagramId/costs/initialize-mtp` so economic rows match the current TP structure.
 8. When an MTP run starts, `ComputationButton` sends the Redux value as `parameters.global_params.slidingHorizon`. Base TP requests omit this request field.
 9. `computeRoutes.ts` loads the diagram, TP rows, active TP spec version, cost entities, and cost mappings, then independently validates and resolves Sliding Horizon.
@@ -362,12 +363,40 @@ Callback result storage copies this metadata into PostgreSQL `ComputationResults
 
 `CostButtons` is used in two modes:
 
-- Base Economic uses `showTpRanges={false}` from the `Economic` header section.
-- Multi-TP Economic uses `showTpRanges` from the `Multi-TP` header section.
+- Base Economic uses `showTpRanges={false}` from the Base **User Tables** menu.
+- Multi-TP Economic uses `showTpRanges` from the Multi-TP **User Tables** menu.
 
 The Multi-TP version is read-only when the header cannot detect a Multi-TP network, or when the computing-disable rule for cost buttons is active.
 
+Economic editing is available only after the main diagram save creates a
+`diagramId`. On a new `/canvas/:domainId` route, **User Tables** keeps the
+Economic entries disabled and displays the shared save-first reason. The
+`CostButtons` save handler repeats this guard defensively and dispatches an
+actionable error instead of silently returning if it is invoked without a
+`diagramId`. The main diagram save does not own the modal's local Economic
+state, so users must save the diagram before editing Economic rows.
+
 The component loads `diagram.costEntities` and `diagram.costMappings`. In Multi-TP mode it also loads `tpNodeVers` to discover the available ranges and maximum TP. If existing saved economic rows do not match the current TP ranges, the component can initialize Multi-TP data through `/api/data/diagrams/:diagramId/costs/initialize-mtp`.
+
+Persisted-state detection distinguishes absence from an intentional empty
+save:
+
+- `null` or `undefined` `costEntities` means Economic state was never
+  initialized, so configuration defaults may be created.
+- Any persisted array, including `[]` or an array containing rows only from
+  the other scope, is authoritative and must not restore Base defaults.
+- An explicit array in either `costEntities` or `costMappings` also prevents
+  Multi-TP initialization from re-seeding rows after a final-row deletion.
+
+Deleting the last same-name Base entity in the active panel also removes its
+Base mappings. If another same-name Base entity row remains, its mappings
+remain valid and are preserved. Multi-TP group deletion retains its existing
+range-aware cascade behavior.
+
+This is a no-op compatibility clarification for the existing MongoDB `Json?`
+fields and existing API array payloads. It changes no schema, workbook format,
+runtime-library contract, or saved-diagram version, so it requires no schema
+bump, migration, or backfill.
 
 Save validates that all entity and mapping ranges are finite, start at TP `1` or later, and have `toTp >= fromTp`. It then merges rows with normalized ranges, inferred scope, trimmed names, and deduplication keys before calling:
 
@@ -462,6 +491,9 @@ Relevant backend tests are present at:
 - `src/tests/backend/utils/economicCosts.test.ts`
 - `src/tests/backend/utils/storeComputationResultUtils.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
+- `src/tests/backend/routes/dataRoutes.test.ts`
+- `src/tests/frontend/costButtonUtils.test.ts`
+- `src/tests/frontend/headerBarEconomicAvailability.test.ts`
 
 Focused backend validation commands, run from `src/`:
 
@@ -501,6 +533,10 @@ There are also no focused automated tests for TP Spec version utilities, version
 - Base TP is intentionally blocked once real Multi-TP ranges exist.
 - `TimePeriodViewer` contains save code for TP rows, but the current UI disables TP structure editing with `TP_STRUCTURE_EDITING_ENABLED = false`.
 - Legacy unscoped `1-1` cost rows are base rows for compatibility. New Multi-TP rows should use explicit `scope: "mtp"`.
+- Never use array length to decide whether Economic persistence exists. `[]`
+  is an intentional saved value; only absent `costEntities` may seed defaults.
+- Do not expose Economic editing before a diagram has a `diagramId`; the main
+  diagram save does not include `CostButtons` local state.
 - Do not treat a saved TP spec version as applied unless `isActive` is true for that exact scope and calculation type.
 - Saving a non-active TP spec version is allowed, but it must not update node cache, active `tp_changes`, or solve request metadata until the user clicks `Apply`.
 - TP Spec versions are sparse overlays, not immutable table snapshots. Unchanged cells continue to inherit node model-version defaults.

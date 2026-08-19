@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram id="issue-170-price-delete" name="Before Fix Verification">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="Issue #170: Economic Price deletion save and persistence" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="160" y="20" width="1280" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Unsaved-canvas feedback and explicit-empty persistence are separate boundaries of one user workflow" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#4b5563;" vertex="1" parent="1">
+          <mxGeometry x="160" y="65" width="1280" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="4" value="BEFORE" style="swimlane;startSize=44;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#f8cecc;swimlaneFillColor=#fffafa;strokeColor=#b85450;fontColor=#7f1d1d;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="480" height="570" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="&lt;b&gt;Unsaved canvas&lt;/b&gt;&lt;br&gt;/canvas/:domainId&lt;br&gt;diagramId is absent" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7c4a03;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="40" y="70" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="&lt;b&gt;Economic modal Save&lt;/b&gt;&lt;br&gt;returns before persistence" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7f1d1d;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="260" y="70" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="&lt;b&gt;Silent outcome&lt;/b&gt;&lt;br&gt;no request, no feedback,&lt;br&gt;deletion not persisted" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#f8cecc;strokeColor=#b85450;fontColor=#7f1d1d;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="150" y="210" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="&lt;b&gt;Saved response&lt;/b&gt;&lt;br&gt;prices = []" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="40" y="360" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="&lt;b&gt;Length-based initialization&lt;/b&gt;&lt;br&gt;[] treated as missing&lt;br&gt;defaults restored" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#6b5200;fontSize=13;spacing=8;" vertex="1" parent="4">
+          <mxGeometry x="260" y="350" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#b85450;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="4" source="5" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="no-op" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#b85450;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="4" source="6" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="reload" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#d6b656;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="4" source="8" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="13" value="FIX" style="swimlane;startSize=44;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#dae8fc;swimlaneFillColor=#f7fbff;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="110" width="480" height="570" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="&lt;b&gt;Header save-first gate&lt;/b&gt;&lt;br&gt;Economic entry disabled while diagramId is absent" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="13">
+          <mxGeometry x="40" y="70" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="&lt;b&gt;Visible guidance&lt;/b&gt;&lt;br&gt;Save the diagram before editing Economic data" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#6b5200;fontSize=13;spacing=8;" vertex="1" parent="13">
+          <mxGeometry x="260" y="70" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="&lt;b&gt;Defensive modal guard&lt;/b&gt;&lt;br&gt;missing diagramId produces an alert instead of a silent return" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#6b5200;fontSize=13;spacing=8;" vertex="1" parent="13">
+          <mxGeometry x="150" y="210" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="&lt;b&gt;Saved diagram&lt;/b&gt;&lt;br&gt;delete selected or final Price" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="13">
+          <mxGeometry x="40" y="370" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="&lt;b&gt;Array-presence semantics&lt;/b&gt;&lt;br&gt;Array.isArray([]) means intentionally persisted empty" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#215c2c;fontSize=13;spacing=8;" vertex="1" parent="13">
+          <mxGeometry x="260" y="350" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="&lt;b&gt;Scoped persistence&lt;/b&gt;&lt;br&gt;PUT /api/data/diagrams/:diagramId/costs" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#215c2c;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="13">
+          <mxGeometry x="150" y="480" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#6c8ebf;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="13" source="14" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="fallback" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#d6b656;dashed=1;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="13" source="15" target="16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="13" source="17" target="18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="save" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#82b366;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="13" source="18" target="19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="24" value="VERIFICATION" style="swimlane;startSize=44;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#d5e8d4;swimlaneFillColor=#f7fff7;strokeColor=#82b366;fontColor=#215c2c;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="110" width="480" height="570" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="&lt;b&gt;Unsaved canvas check&lt;/b&gt;&lt;br&gt;User Tables shows save-first guidance; no editable Economic flow" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#6b5200;fontSize=13;spacing=8;" vertex="1" parent="24">
+          <mxGeometry x="40" y="70" width="400" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="&lt;b&gt;Saved diagram check&lt;/b&gt;&lt;br&gt;delete selected or final Price, then Save" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f4e79;fontSize=13;spacing=8;" vertex="1" parent="24">
+          <mxGeometry x="40" y="190" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="&lt;b&gt;Network + UI receipt&lt;/b&gt;&lt;br&gt;PUT 200 and visible success" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#215c2c;fontSize=13;spacing=8;" vertex="1" parent="24">
+          <mxGeometry x="260" y="190" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="28" value="&lt;b&gt;GET / reload receipt&lt;/b&gt;&lt;br&gt;selected Price remains absent; final deletion remains []" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;align=center;verticalAlign=middle;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#215c2c;fontSize=13;spacing=8;" vertex="1" parent="24">
+          <mxGeometry x="150" y="320" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="29" value="&lt;b&gt;Clean acceptance&lt;/b&gt;&lt;br&gt;no related console, network, or backend errors" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#5b3b68;fontSize=13;fontStyle=1;spacing=8;" vertex="1" parent="24">
+          <mxGeometry x="80" y="460" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="PUT" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#82b366;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="24" source="26" target="27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="reload" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#82b366;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="24" source="27" target="28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="32" value="no errors" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=#ffffff;fontSize=11;strokeColor=#9673a6;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="24" source="28" target="29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="33" value="&lt;b&gt;REAL_SERVER_REQUIRED - separate acceptance gate&lt;/b&gt;&lt;br&gt;GUI → /solve/ → task_id → callback → Mongo terminal → API/UI retrieval" style="shape=note;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=10;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="710" width="1520" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="Legend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="300" y="800" width="1000" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="" style="rounded=0;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="34">
+          <mxGeometry x="20" y="35" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="Failure / silent behavior" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="34">
+          <mxGeometry x="60" y="31" width="160" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="37" value="" style="rounded=0;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="34">
+          <mxGeometry x="240" y="35" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="UI / request boundary" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="34">
+          <mxGeometry x="280" y="31" width="150" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="39" value="" style="rounded=0;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="34">
+          <mxGeometry x="450" y="35" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="40" value="Gate / guidance" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="34">
+          <mxGeometry x="490" y="31" width="120" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="41" value="" style="rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="34">
+          <mxGeometry x="630" y="35" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="42" value="Persisted / verified" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="34">
+          <mxGeometry x="670" y="31" width="140" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="43" value="" style="rounded=0;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="34">
+          <mxGeometry x="820" y="35" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="44" value="Clean acceptance" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="34">
+          <mxGeometry x="860" y="31" width="120" height="24" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
