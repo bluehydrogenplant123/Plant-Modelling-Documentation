@@ -6,7 +6,7 @@ description: Explains Component Mapping CRUD, validation, workbook canonicalizat
 
 ## Overview
 
-Component Mapping is the global reference-data boundary between user material workbook headers and canonical component names. An authenticated Canvas user maintains mappings through **Model -> COMP. Map**. Material import fetches and validates one complete mapping snapshot, parses the workbook, and canonicalizes fraction keys before any edge or Redux mutation. When a legacy two-sheet workbook has no Port Class metadata, Material Editor blocks the import until the user explicitly confirms one concrete class owned by the current domain.
+Component Mapping is the global reference-data boundary between user material workbook headers and canonical component names. An authenticated Canvas user maintains mappings through **User Tables -> Material Properties -> Component Mapping**. Material import fetches and validates one complete mapping snapshot, parses the workbook, and canonicalizes fraction keys before any edge or Redux mutation. When a legacy two-sheet workbook has no Port Class metadata, Material Editor blocks the import until the user explicitly confirms one concrete class owned by the current domain.
 
 The boundary maps `User Name -> System Name`; it does not change fraction values, units, basis, workbook files, system catalog rows, or solver serialization rules.
 
@@ -19,11 +19,11 @@ The editable source is [component-mapping-import-boundary.drawio](./diagrams/com
 ## Source Files
 
 - `src/src/shared/componentMapping.ts`: shared record type, snapshot validation, deterministic key canonicalization, and collision diagnostics.
-- `src/src/frontend/src/components/component-mapping/ComponentMappingEditor.tsx`: Canvas CRUD modal for all three fields.
+- `src/src/frontend/src/components/component-mapping/ComponentMappingEditor.tsx`: reusable Canvas CRUD modal and Material Editor action for all three fields.
 - `src/src/frontend/src/services/componentMappingService.ts`: one-snapshot authenticated read used by each import attempt.
 - `src/src/frontend/src/services/componentMappedMaterialImport.ts`: executable load -> parse -> canonicalize -> commit orchestration boundary.
-- `src/src/frontend/src/components/header-bar/index.tsx`: owns the exact **Model -> COMP. Map** entry.
-- `src/src/frontend/src/components/material-editor/index.tsx`: fetches the snapshot and canonicalizes parsed streams before React Flow or Redux updates.
+- `src/src/frontend/src/components/header-bar/index.tsx`: no longer exposes a Component Mapping entry; Model remains focused on diagram lifecycle actions.
+- `src/src/frontend/src/components/material-editor/index.tsx`: owns the single Canvas-facing **Component Mapping** entry, opens the shared CRUD modal, fetches the snapshot, and canonicalizes parsed streams before React Flow or Redux updates.
 - `src/src/frontend/src/components/material-editor/legacyMaterialPortClassSelection.ts`: filters the legacy-workbook selector to concrete current-domain Material Classes and supports visible-class preselection without auto-confirming it.
 - `src/src/backend/routes/componentMappingRoutes.ts`: authenticated Canvas CRUD routes.
 - `src/src/backend/routes/componentMappingHandlers.ts`: shared validation and persistence handlers.
@@ -37,7 +37,7 @@ The editable source is [component-mapping-import-boundary.drawio](./diagrams/com
 
 ## Ownership And API Contract
 
-PostgreSQL owns the mapping catalog. The Canvas route is available to any authenticated user because the agreed editing surface is part of Model, while the existing System route remains admin-only.
+PostgreSQL owns the mapping catalog. The Canvas route is available to any authenticated user because the editing surface is part of Material Editor, while the existing System route remains admin-only.
 
 | Operation | Canvas endpoint                      | System endpoint                                      | Request or response                               |
 | --------- | ------------------------------------ | ---------------------------------------------------- | ------------------------------------------------- |
@@ -74,7 +74,7 @@ The shared contract validates the complete snapshot so frontend import and backe
 
 ## Data Flow
 
-1. A signed-in user maintains rows in **Model -> COMP. Map** or the preserved System view.
+1. A signed-in user maintains rows in **Material Editor -> Component Mapping** or the preserved admin-only System view.
 2. The backend validates the proposed complete snapshot before a create or update and relies on a case-insensitive PostgreSQL unique index as the final duplicate-alias guard.
 3. One Material Editor import attempt calls `GET /api/component-mappings` once.
 4. The frontend validates the complete response before reading it as a mapping snapshot.
@@ -144,7 +144,7 @@ Automated coverage should include:
 - repeat-safe insertion of the three supplied reference rows plus identical-row preservation and conflicting-row failure;
 - blocking current-domain legacy class selection with explicit Confirm/Cancel and zero mutation before confirmation;
 - zero-valued `METHY-01`, `METHY-02`, and `SULFU-01` headers surviving as `CH3`, `CH4O`, and `H2SO4`;
-- Material Editor source ordering that proves mapping completes before Redux dispatch; and
+- Material Editor ownership tests that prove the single Canvas entry opens the shared editor, the Header entry is absent, and mapping completes before Redux dispatch; and
 - save/reload, full diagram export/import, duplicate, workbook export/import, generated-variable, and outbound `material_fractions` regressions;
 - unchanged non-GSLN translation/computation controls.
 
@@ -172,7 +172,7 @@ Manual acceptance uses an isolated database and disposable diagram. The `C1 -> C
 - Do not infer selector/filter or Domain/Port Class behavior from the mapping table. Those ideas were proposals, not the accepted #148 UI contract.
 - The legacy import-context selector is not a Component Mapping table filter and adds no Domain/Port Class fields to that table.
 - Treat a failed mapping fetch as an import blocker, not as permission to apply the workbook without mapping.
-- Keep the System view and Canvas view on the same handlers so their validation cannot drift.
+- Keep the admin-only System view and Material Editor Canvas view on the same handlers so their validation cannot drift.
 - Changing a mapping does not retroactively migrate old saved diagrams.
 - Baseline test or TypeScript project-reference debt is tracked separately and must not be hidden in this feature.
 
