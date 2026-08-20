@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="drawio" version="26.0.0">
-  <diagram id="issue-166" name="Before and after">
+  <diagram id="system-economic-exclusion" name="Before and after">
     <mxGraphModel dx="1200" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="720" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="2" value="Issue #166: System workbook economics are excluded before parsing" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1">
+        <mxCell id="2" value="System workbook economics are excluded before parsing" style="text;html=1;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1">
           <mxGeometry x="180" y="20" width="840" height="40" as="geometry" />
         </mxCell>
         <mxCell id="3" value="Price, demand, supply, templates, and legacy cost sheets cannot gate the non-economic import" style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#4b5563;" vertex="1" parent="1">
@@ -14,7 +14,7 @@
         <mxCell id="4" value="BEFORE" style="swimlane;startSize=40;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7c4a03;fontSize=18;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="40" y="110" width="520" height="480" as="geometry" />
         </mxCell>
-        <mxCell id="5" value="AFTER ISSUE #166" style="swimlane;startSize=40;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1e5b2a;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="5" value="AFTER" style="swimlane;startSize=40;container=1;pointerEvents=0;rounded=1;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1e5b2a;fontSize=18;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="640" y="110" width="520" height="480" as="geometry" />
         </mxCell>
         <mxCell id="6" value="&lt;b&gt;System workbook&lt;/b&gt;&lt;br&gt;Price_Demand mapping&lt;br&gt;Prices / Demand_Supply&lt;br&gt;U templates / Entity Specs" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontColor=#7c4a03;fontSize=13;spacing=8;" vertex="1" parent="4">

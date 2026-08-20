@@ -297,7 +297,7 @@ Existing backend utility tests for this area:
 Focused command:
 
 ```powershell
-cd C:\Users\19612\Desktop\Project\HYPRONET-GUI\src
+cd src
 npx.cmd jest tests/backend/utils/translation.test.ts tests/backend/utils/translationCosts.test.ts tests/backend/utils/translationEmbeddedModelVersion.test.ts tests/backend/utils/reverseTranslation.test.ts --runInBand --coverage=false
 ```
 

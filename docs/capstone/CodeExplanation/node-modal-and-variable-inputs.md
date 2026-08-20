@@ -239,7 +239,7 @@ It writes `is_human_input: true` and `is_computed: false` for user edits. Hidden
 Recommended source-level checks after code changes:
 
 ```powershell
-cd C:\Users\19612\Desktop\Project\HYPRONET-GUI\src
+cd src
 npm.cmd run build
 ```
 

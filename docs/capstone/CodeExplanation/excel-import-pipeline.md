@@ -103,37 +103,6 @@ The importer continues from `process_run_configs(...)` to solution-algorithm, po
 
 ![System economic sheets excluded before and after](./diagrams/system-economic-sheets-disabled.svg)
 
-### Issue #120 Workbook Evidence
-
-The accepted workbook shared in the July 14 Teams meeting is `jul-7-2026.xlsx`. The current Teams version (July 12, 11:15 PM) and the repo copy are byte-for-byte identical (`SHA256 417AB435E0170ED4EDAF68E352647A90C8126AA3EE05203678ACE9BA08BFB1CF`). Excel exposes these 22 visible sheets:
-
-```text
-Units
-Comp Task Types
-Comp Step Types
-System Variables
-Domains
-Node Variables
-Node Model Library
-Port Classes and Vars
-Run Configs
-Node Ports Model Library
-Entity Specs
-EQ type
-Solution Algorithm Library
-Port Classes Database Mapping
-#Prop_GSL_R
-#Comp_MES_R
-#Prop_MES_R
-#Prop_MES_HP
-#Comp_MES_HP
-#Prop_diesel_R
-#Prop_crude_R
-#Comp_crude_R
-```
-
-The workbook contains 23 sheets in total: `SYS Node Variable Spec` is present but hidden, which is why the Excel UI reports 22 worksheets. No importer reads that legacy authoring-helper sheet, but it remains unchanged so the repo preserves the exact accepted workbook. `Stream Properties` and `Stream Fractions` are absent, while `System Variables` remains present and active. The issue body statement that the accepted workbook also removed the SYS-variable source conflicts with the meeting record and every visible Teams version, so the deterministic regression omits only the two obsolete legacy stream sheets. The repo `jul-7-2026.xlsx` remains a compatibility check for `System Variables` and the current port-class material sheets.
-
 ### Header and Row Normalization
 
 `excel_to_csv.py` normalizes selected headers before writing CSV files. Important examples include:
@@ -277,8 +246,8 @@ npm run migrate:mongodb
 - `process_ports(...)` currently casts `HiddenByDefault` and `SendtoCalc` with `int(...)`, so those CSV values must be numeric-like, usually `0` or `1`. A workbook that uses `Y`, `N`, `Yes`, or `No` for those fields can fail during port import unless the converter is extended first.
 - Import reruns use a mix of `ON CONFLICT DO UPDATE`, `ON CONFLICT DO NOTHING`, and targeted cleanup. Treat reruns as upsert/update behavior, not as a full database reset that removes rows missing from the workbook.
 - Some process functions log an error and continue when a CSV is missing or malformed. Always inspect the latest log, not only the final terminal line, before trusting imported data.
-- Removing the obsolete workbook-only SYS inputs changes the Excel source contract only. It does not change persisted PostgreSQL/MongoDB, canvas, saved-diagram, or import/export structures, so Issue #120 requires no schema version bump.
-- Excluding system economic sheets changes only which workbook sources the importer consumes. It does not change PostgreSQL/MongoDB schema shape, canvas/snapshot shape, saved-diagram cost payloads, or the runtime API contract, so Issue #166 requires no `CURRENT_SCHEMA_VERSION` bump.
+- Removing obsolete workbook-only SYS inputs changes the Excel source contract only. It does not change persisted PostgreSQL/MongoDB, canvas, saved-diagram, or import/export structures, so no schema version bump is required.
+- Excluding system economic sheets changes only which workbook sources the importer consumes. It does not change PostgreSQL/MongoDB schema shape, canvas/snapshot shape, saved-diagram cost payloads, or the runtime API contract, so `CURRENT_SCHEMA_VERSION` remains unchanged.
 
 ## Extension Points
 

@@ -330,14 +330,14 @@ Conditional rendering and cleanup:
 For implementation changes in the header or its child components, run the frontend build from the frontend package:
 
 ```powershell
-cd C:\Users\19612\Desktop\Project\HYPRONET-GUI\src\src\frontend
+cd src/src/frontend
 npm.cmd run build
 ```
 
 For a broader repository build, run from `src/`:
 
 ```powershell
-cd C:\Users\19612\Desktop\Project\HYPRONET-GUI\src
+cd src
 npm.cmd run build
 ```
 

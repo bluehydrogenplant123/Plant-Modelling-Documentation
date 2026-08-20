@@ -199,7 +199,7 @@ Current caution: selecting an instance or database id hydrates through `onLabelC
 Recommended source-level checks after code changes:
 
 ```powershell
-cd C:\Users\19612\Desktop\Project\HYPRONET-GUI\src
+cd src
 npm.cmd run build
 ```
 

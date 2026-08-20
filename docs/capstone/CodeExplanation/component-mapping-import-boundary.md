@@ -30,7 +30,7 @@ The editable source is [component-mapping-import-boundary.drawio](./diagrams/com
 - `src/src/backend/routes/adminReferenceRoutes.ts`: preserves the existing System configuration endpoint by reusing the same handlers behind admin authorization.
 - `src/src/backend/prisma/postgres/schema.prisma`: maps the PostgreSQL `Component Mapping` table.
 - `src/src/backend/prisma/postgres/migrations/20260811170000_add_component_mapping/migration.sql`: deployable fresh/existing database migration.
-- `src/src/backend/prisma/postgres/migrations/20260817223000_seed_farbod_component_aliases/migration.sql`: idempotent Farbod reference rows with explicit conflict diagnostics.
+- A follow-up PostgreSQL migration installs the three reference aliases idempotently with explicit conflict diagnostics.
 - `src/src/frontend/src/features/domain/domainSlice.ts`: receives only successfully canonicalized imported streams.
 - `src/src/frontend/src/components/header-bar/utils/save-util.tsx`: saves the canonical Redux material state in diagram `snapshotData`.
 - `src/src/backend/utils/translation.ts`: consumes canonical selected-stream fraction keys without a second mapping layer.
@@ -70,7 +70,7 @@ The shared contract validates the complete snapshot so frontend import and backe
 - Zero-valued component columns remain present and are renamed exactly like non-zero values.
 - Two keys in one input stream that collapse to the same canonical target reject the whole batch with both source keys, the stream identity, and the target in the diagnostic.
 
-`component` is required neutral metadata. It is stored and edited but is not a workbook key or solver key. For the three Farbod rows, no separate description was supplied, so `component` intentionally equals `system_name` rather than inventing chemistry labels.
+`component` is required neutral metadata. It is stored and edited but is not a workbook key or solver key. For these three reference rows, no separate description is part of the public contract, so `component` intentionally equals `system_name` rather than inventing chemistry labels.
 
 ## Data Flow
 
@@ -104,7 +104,7 @@ Canonicalization belongs before Redux, not in the solver translator. This keeps 
 
 The table migration creates `Component Mapping` for a fresh database and uses `IF NOT EXISTS` column/index operations for an existing database that received the draft table through `prisma db push`. It refuses to invent values for blank legacy rows and refuses case-insensitive duplicate aliases; operators must repair those rows before migration continues.
 
-The follow-up reference migration installs exactly the three mappings Farbod supplied:
+The follow-up reference migration installs exactly the three maintained reference mappings:
 
 | Component | System Name | User Name  |
 | --------- | ----------- | ---------- |
@@ -125,9 +125,9 @@ Do not infer a whole-library workbook or runtime schema migration from this refe
 
 The current Stable 7 runtime workbook is `src/excel-sheets/Aug-16-2026.xlsx` (SHA-256 `D053926548563C50889A3D3C79D453CEA032B52B67F12AB0D2E56C4ACCFCD653`). An exact-cell audit finds no `C1` value in that workbook; canonical `CH4` is present at `#Comp_MES_HP!F1`. The companion `HYPRONET_GUI_Excel_Import_Examples.xlsx` also contains no exact `C1` value. This feature neither edits those workbooks nor seeds mappings from them.
 
-`C1 -> CH4` is retained only as the meeting-specified synthetic, disposable acceptance fixture. It proves that an arbitrary user alias is replaced by a canonical System Name through the full import boundary. It is not current Stable 7 reference data, a recommended customer mapping, or a production seed. Automated tests construct the row in memory or inside isolated test databases; manual acceptance must create it in an isolated database and remove it after the run.
+`C1 -> CH4` is retained only as a synthetic, disposable acceptance fixture. It proves that an arbitrary user alias is replaced by a canonical System Name through the full import boundary. It is not current Stable 7 reference data, a recommended customer mapping, or a production seed. Automated tests construct the row in memory or inside isolated test databases; manual acceptance must create it in an isolated database and remove it after the run.
 
-The Farbod source audit records `Amix_ATR_mixer_usr_stream_data.xlsx` at SHA-256 `D96C9C51FCB0B72492CAC8A113C0B17CED31302B6AF5AAB01E2E6578FDC3C497`. Its two data sheets have no Port Class metadata, and the three alias columns are zero-valued in the supplied rows. The original workbook is read-only evidence: it is never edited or committed. Browser acceptance uses the sanitized structural fixture `src/cypress/fixtures/issue148-farbod-legacy-material.xlsx` (SHA-256 `EB5D4C58F241B1A3C20AE3A8F1095B0625E054F55F73FCB9CCB37DAB62D65553`): only the two sheet names, `A1:I5` / `A1:P5` bounds, E/O/P alias positions, and four zero-valued alias rows are retained.
+Legacy workbook evidence establishes that the two data sheets can omit Port Class metadata while the three alias columns remain zero-valued. Browser acceptance uses a sanitized structural fixture that retains only the two sheet names, `A1:I5` / `A1:P5` bounds, E/O/P alias positions, and four zero-valued alias rows. Personal attribution, source filenames, source hashes, and private workbook contents are not part of the public contract.
 
 Component Mapping remains a global three-column table; the final scope explicitly leaves the existing free-text editor as-is. System Name search/dropdown, Domain filtering, Port Class filtering, and Domain/Port Class schema fields are out of scope.
 
@@ -155,7 +155,7 @@ $env:RUN_COMPONENT_MAPPING_MIGRATION_INTEGRATION='1'
 npx.cmd jest tests/integration/componentMappingMigration.integration.test.ts --runInBand --coverage=false
 ```
 
-Manual acceptance uses an isolated database and disposable diagram. The `C1 -> CH4` row remains a synthetic control and must not be copied into production reference data. The Farbod path is:
+Manual acceptance uses an isolated database and disposable diagram. The `C1 -> CH4` row remains a synthetic control and must not be copied into production reference data. The reference-mapping path is:
 
 1. Apply the migrations to an isolated PostgreSQL database and verify the three supplied aliases are present exactly once.
 2. Import the sanitized two-sheet workbook without Port Class metadata. Verify the selector offers only current-domain classes, then cancel and confirm that nothing was imported.

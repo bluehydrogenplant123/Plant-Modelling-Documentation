@@ -252,7 +252,7 @@ Hook and cleanup contracts:
 Automated checks for code changes should be run from the repository's `src/` package when the implementation changes:
 
 ```powershell
-cd C:\Users\19612\Desktop\Project\HYPRONET-GUI\src
+cd src
 npm.cmd run build
 ```
 
