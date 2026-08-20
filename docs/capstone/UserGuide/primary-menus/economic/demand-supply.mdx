@@ -38,3 +38,10 @@ The diagram's demand and supply rows are saved for later economic workflows. If 
 - [Cost & revenue](./cost-revenue)
 - [Analysis Menu](../analysis)
 - [Set Run Menu](../set-run)
+## Deleting saved Demand and Supply data
+
+Deleting a Demand or Supply mapping and selecting **Save** removes the Economic fixed override for that exact node, port, variable, scope, and TP range. The model variable returns to the canonical unfixed state stored in the diagram's Domain Snapshot; a previously synchronized Demand value is not retained.
+
+Deleting an entity also deletes mappings that reference that entity. Partial deletion preserves unrelated rows and mappings. Deleting the final row persists intentional empty arrays, so reopening the panel or reloading the diagram does not recreate defaults.
+
+The save is atomic across the Economic arrays, node model state, and TP-spec sparse changes. If any target cannot be reconciled with the saved snapshot, or any Mongo write fails, the save is rejected and none of those changes are committed.

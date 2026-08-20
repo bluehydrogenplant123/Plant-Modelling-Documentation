@@ -398,6 +398,12 @@ fields and existing API array payloads. It changes no schema, workbook format,
 runtime-library contract, or saved-diagram version, so it requires no schema
 bump, migration, or backfill.
 
+Demand and Supply mappings additionally have a bidirectional persistence contract. A save compares the prior persisted mappings with the submitted mappings. Current targets receive the Economic `F` override; removed targets restore their complete model-variable object from `Diagram.snapshot.data`, delete matching Base sparse patches, and delete only MTP patches whose `changeSource` is `ECONOMIC_MAPPING`. Remaining mappings are reapplied after restoration so a partial deletion cannot unfix a still-mapped target.
+
+The inverse synchronization and the final `Diagram.costEntities` / `Diagram.costMappings` update execute in one Mongo interactive transaction. Canonical target resolution completes before writes, and a missing snapshot target is a validation failure. Storage failures roll back Node, TP-spec, and Diagram changes together. The design reuses existing JSON and sparse-change fields, so Issue #175 remains `NO_SCHEMA_BUMP_EXPECTED` and requires no workbook or saved-diagram migration.
+
+The flow is documented in [Issue #175 Demand/Supply inverse synchronization](./diagrams/issue-175-demand-supply-inverse-sync.svg), with an editable [draw.io source](./diagrams/issue-175-demand-supply-inverse-sync.drawio).
+
 Save validates that all entity and mapping ranges are finite, start at TP `1` or later, and have `toTp >= fromTp`. It then merges rows with normalized ranges, inferred scope, trimmed names, and deduplication keys before calling:
 
 ```http
