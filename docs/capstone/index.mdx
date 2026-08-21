@@ -4,51 +4,35 @@ sidebar_position: 1
 sidebar_class_name: sidebar-item-hidden
 ---
 
+import Link from '@docusaurus/Link';
+
 <div className="portal-shell">
   <div className="portal-hero">
     <span className="portal-kicker">Current Docs</span>
-    <h1>HyProNet setup, user manual, and CodeExplanation documentation.</h1>
-    <p>
-      Current setup guides and source-code explanations are grouped by the same sections shown in the sidebar:
-      Installation, User Manual, and CodeExplanation.
-    </p>
+    <h1>HYPRONET-GUI documentation.</h1>
+    <p>Every documentation section synchronized from the GUI repository is listed below and in the sidebar.</p>
   </div>
 
   <div className="portal-grid">
-    <a className="portal-card" href="./Installation/HYPRONET_INSTALLATION_GUIDE">
-      <span>Installation</span>
-      <h3>HyProNet Installation Guide</h3>
-      <p>Detailed environment setup, workbook import, and real solver connectivity instructions.</p>
-    </a>
-    <a className="portal-card" href="./Installation/STARTUP_GUIDE">
-      <span>Quick start</span>
-      <h3>HyProNet Streamlined Guide</h3>
-      <p>Concise startup, shutdown, update, and runtime notes for current development.</p>
-    </a>
-    <a className="portal-card" href="./UserGuide/system-overview">
-      <span>User Manual</span>
-      <h3>HYPRONET System Overview</h3>
-      <p>Start with the data-driven model, domains, streams, port classes, and node model library.</p>
-    </a>
-    <a className="portal-card" href="./CodeExplanation/CODE_EXPLANATION_GUIDELINES">
-      <span>Standards</span>
-      <h3>CodeExplanation Writing Standards</h3>
-      <p>Placement, structure, source-path, and verification rules for writing maintainable explanations.</p>
-    </a>
-    <a className="portal-card" href="./CodeExplanation/code-explanation-index">
-      <span>Index</span>
-      <h3>Code Explanation Index</h3>
-      <p>Current entry point for feature and workflow explanations, grouped by source area.</p>
-    </a>
-    <a className="portal-card" href="./CodeExplanation/code-explanation-overview">
-      <span>Overview</span>
-      <h3>Code Explanation Overview</h3>
-      <p>Coverage, reading order, and maintenance boundaries for the current CodeExplanation set.</p>
-    </a>
-    <a className="portal-card" href="./CodeExplanation/excel-import-pipeline">
-      <span>Import boundary</span>
-      <h3>Excel Import Pipeline</h3>
-      <p>Workbook normalization, CSV contracts, Prisma setup, and reference-data loading boundaries.</p>
-    </a>
+    <Link className="portal-card" to="/docs/capstone/user-guide">
+      <span>{"54 pages"}</span>
+      <h3>{"User Manual"}</h3>
+      <p>{"Browse all User Manual documentation."}</p>
+    </Link>
+    <Link className="portal-card" to="/docs/capstone/code-explanation">
+      <span>{"27 pages"}</span>
+      <h3>{"Code Explanation"}</h3>
+      <p>{"Browse all Code Explanation documentation."}</p>
+    </Link>
+    <Link className="portal-card" to="/docs/capstone/installation">
+      <span>{"3 pages"}</span>
+      <h3>{"Installation"}</h3>
+      <p>{"Browse all Installation documentation."}</p>
+    </Link>
+    <Link className="portal-card" to="/docs/capstone/testing">
+      <span>{"5 pages"}</span>
+      <h3>{"Testing"}</h3>
+      <p>{"Browse all Testing documentation."}</p>
+    </Link>
   </div>
 </div>
