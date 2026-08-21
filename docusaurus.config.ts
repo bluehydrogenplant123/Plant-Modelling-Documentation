@@ -62,18 +62,6 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
-        {
-          to: '/docs/capstone/CodeExplanation/ai-codeexplanation-maintenance-workflow',
-          position: 'left',
-          label: 'Workflow',
-          className: 'navbar-workflow-button navbar-workflow-button--primary',
-        },
-        {
-          type: 'custom-workflowDownload',
-          position: 'left',
-          label: 'Download',
-          className: 'navbar-workflow-button navbar-workflow-button--download',
-        },
       ],
     },
     prism: {
