@@ -488,6 +488,22 @@ const costsPayload = {
 - `mappings` drop `scope`, `fromTp`, and `toTp`; the solver receives network/node/port/var/entity only.
 - `duration` is emitted as an array with `From TP`, `To TP`, `Duration`, and `DurationUnit`.
 
+### Economic default ownership
+
+`20260709053000_restore_cost_entities_config` retains the PostgreSQL
+`CostEntitiesConfig` table, but `20260709062000_seed_cost_entities_config` is
+an intentional no-op. A database rebuilt from the current migration chain
+therefore returns `costsConfig.entities: []`. `buildCostsConfig()` still emits
+the `DEFAULT_COST_UNITS` and `DEFAULT_COST_TYPES` option sets, so Add and import
+flows do not depend on seeded entity rows.
+
+New-diagram creation calls `buildBaseCostEntitiesFromConfig(...)`; an empty
+configuration produces `costEntities: []` and `costMappings: []`. The frontend
+only considers an absent `costEntities` field eligible for initialization. An
+explicit saved `[]` remains authoritative and is never treated as a request to
+recreate defaults. Existing MongoDB diagram arrays remain diagram-owned and
+are not backfilled or deleted by the PostgreSQL migration change.
+
 The same compute-start pass writes TP spec version metadata into `parameters.global_params.task_config`. For MTP, `slidingHorizon` is a sibling of `task_config` under `parameters.global_params`; it is not nested inside `task_config`. The solver request therefore identifies the calculation type, applied TP spec table, and MTP horizon size. The callback storage path persists TP-spec metadata with computation results for traceability and possible result filtering.
 
 ## Testing
@@ -540,7 +556,8 @@ There are also no focused automated tests for TP Spec version utilities, version
 - `TimePeriodViewer` contains save code for TP rows, but the current UI disables TP structure editing with `TP_STRUCTURE_EDITING_ENABLED = false`.
 - Legacy unscoped `1-1` cost rows are base rows for compatibility. New Multi-TP rows should use explicit `scope: "mtp"`.
 - Never use array length to decide whether Economic persistence exists. `[]`
-  is an intentional saved value; only absent `costEntities` may seed defaults.
+  is an intentional saved value. Only absent `costEntities` enters optional
+  config initialization, and an empty config still produces `[]`.
 - Do not expose Economic editing before a diagram has a `diagramId`; the main
   diagram save does not include `CostButtons` local state.
 - Do not treat a saved TP spec version as applied unless `isActive` is true for that exact scope and calculation type.

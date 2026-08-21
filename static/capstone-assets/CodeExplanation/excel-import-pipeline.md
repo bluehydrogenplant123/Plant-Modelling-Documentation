@@ -95,7 +95,7 @@ The system-workbook importer does not own price, demand, supply, or user-economi
 - `U_Prices` and `U_Demand_Supply`;
 - the legacy `Entity Specs` / `SYS Costs` alias.
 
-The skipped sheets produce no CSV. Their presence, absence, row count, headers, values, or formatting therefore cannot validate, fail, or change the non-economic system import. In particular, malformed mappings and populated economic rows are not accepted and discarded later; the converter never parses them.
+The skipped sheets produce no CSV. Their presence, absence, row count, headers, values, or formatting therefore cannot validate, fail, or change the non-economic system import. In particular, malformed mappings and populated economic rows are not accepted and discarded later; the converter never parses them. The current PostgreSQL migration history also leaves `CostEntitiesConfig` empty, so fresh System Economic defaults do not come from either workbook ingestion or SQL seed data.
 
 `migrate.main()` also omits the workbook `process_costs(...)` phase. A system workbook run performs no insert, update, or delete against `CostEntitiesConfig`, including when stale split or legacy economic CSV files remain in a failed run's temporary directory. Prisma migration/seed data, the Cost UI and API, user/network economics, saved-diagram cost payloads, and solver cost support remain separate runtime concerns and are unchanged.
 

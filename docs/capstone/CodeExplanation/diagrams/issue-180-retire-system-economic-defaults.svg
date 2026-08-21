@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Issue 180 retire System Economic defaults</title>
+  <desc id="desc">Before and after flow showing the retired SQL seed, empty fresh configuration, diagram ownership, and verification chain.</desc>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#526777"/></marker></defs>
+  <rect width="1600" height="1000" fill="#f8fbfc"/>
+  <text x="60" y="65" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#17324d">Issue #180 | Retire System Economic defaults</text>
+  <text x="60" y="100" font-family="Arial, sans-serif" font-size="17" fill="#526777">Migration data correction; schema, workbook, APIs, UI, saved diagrams, and solver support remain</text>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="70" y="160" width="280" height="150" rx="14" fill="#fdecec" stroke="#b33a3a" stroke-width="3"/><text x="210" y="205" font-size="19" font-weight="700" fill="#17324d"><tspan x="210">BEFORE: historical seed</tspan><tspan x="210" dy="30">INSERT ... ON CONFLICT</tspan><tspan x="210" dy="30">9 System rows</tspan></text>
+    <rect x="420" y="160" width="300" height="150" rx="14" fill="#fff4d6" stroke="#b7791f" stroke-width="3"/><text x="570" y="205" font-size="18" fill="#17324d"><tspan x="570">PostgreSQL config -&gt; /api/data</tspan><tspan x="570" dy="30">costsConfig.entities = 9</tspan><tspan x="570" dy="30">new diagrams copy defaults</tspan></text>
+    <rect x="810" y="160" width="290" height="150" rx="14" fill="#e8f5e9" stroke="#2e7d32" stroke-width="3"/><text x="955" y="205" font-size="19" font-weight="700" fill="#17324d"><tspan x="955">AFTER: migration no-op</tspan><tspan x="955" dy="30">restore table retained</tspan><tspan x="955" dy="30">no forward DELETE</tspan></text>
+    <rect x="1180" y="160" width="300" height="150" rx="14" fill="#e9eef8" stroke="#3e5c8a" stroke-width="3"/><text x="1330" y="205" font-size="18" fill="#17324d"><tspan x="1330">Fresh PostgreSQL</tspan><tspan x="1330" dy="30">CostEntitiesConfig = 0</tspan><tspan x="1330" dy="30">entities [] + option sets</tspan></text>
+  </g>
+  <g stroke="#526777" stroke-width="3" fill="none" marker-end="url(#arrow)"><path d="M350 235 H420"/><path d="M720 235 H810"/><path d="M1100 235 H1180"/></g>
+  <rect x="150" y="400" width="1300" height="330" rx="16" fill="#f7fafc" stroke="#17324d" stroke-width="4"/><text x="180" y="440" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#17324d">OWNERSHIP BOUNDARY</text>
+  <g font-family="Arial, sans-serif" text-anchor="middle" font-size="18" fill="#17324d">
+    <rect x="210" y="500" width="250" height="150" rx="12" fill="#eaf4f4" stroke="#2a6f6b" stroke-width="3"/><text x="335" y="545"><tspan x="335">Fresh/new diagram</tspan><tspan x="335" dy="30">costEntities = []</tspan><tspan x="335" dy="30">costMappings = []</tspan></text>
+    <rect x="520" y="500" width="260" height="150" rx="12" fill="#fff4d6" stroke="#b7791f" stroke-width="3"/><text x="650" y="545"><tspan x="650">User Add / Import</tspan><tspan x="650" dy="30">units + types retained</tspan><tspan x="650" dy="30">Save through API</tspan></text>
+    <ellipse cx="950" cy="575" rx="130" ry="90" fill="#e8f5e9" stroke="#2e7d32" stroke-width="3"/><text x="950" y="540"><tspan x="950">Mongo diagram arrays</tspan><tspan x="950" dy="30">explicit [] stays empty</tspan><tspan x="950" dy="30">existing rows unchanged</tspan></text>
+    <rect x="1130" y="500" width="250" height="150" rx="12" fill="#e9eef8" stroke="#3e5c8a" stroke-width="3"/><text x="1255" y="545"><tspan x="1255">Compute preparation</tspan><tspan x="1255" dy="30">diagram-owned economics</tspan><tspan x="1255" dy="30">solver support preserved</tspan></text>
+  </g>
+  <g stroke="#526777" stroke-width="3" fill="none" marker-end="url(#arrow)"><path d="M460 575 H520"/><path d="M780 575 H820"/><path d="M1080 575 H1130"/></g>
+  <rect x="270" y="830" width="1060" height="100" rx="14" fill="#ddf3e4" stroke="#26734d" stroke-width="3"/><text x="800" y="875" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#17324d"><tspan x="800">Verification: fresh migrations = 0 -&gt; API entities [] -&gt; UI empty -&gt;</tspan><tspan x="800" dy="30">Add / Save / reopen / reload -&gt; compute task and callback gate</tspan></text>
+  <path d="M800 730 V830" stroke="#26734d" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+</svg>

@@ -40,7 +40,7 @@ These tables are shared catalog/configuration data. Most are populated by the sy
 | `RunConfigs` | `{ id, run_config_type, attribute_name, label_text, data_type, default_value, options }` | Solver/run configuration fields and defaults. |
 | `SolutionAlgoLibrary` | `{ id, domain, algorithm_name, phase_name, max_phase_iter, tolerance_percent, solver }` | System defaults for SoluAlgoLib phases. |
 | `EqTypeConfig` | `{ id, domain, eq_type, description }` | Equation-type choices by domain. |
-| `CostEntitiesConfig` | `{ id, entity_key, entity_name, default_value, default_unit, default_dimension }` | System defaults for economic cost entities. |
+| `CostEntitiesConfig` | `{ id, entity_key, entity_name, default_value, default_unit, default_dimension }` | Optional System Economic entity configuration. The current migration chain creates the table but seeds no rows. |
 | `ComputationResults` | `{ id, diagram_id, run_name, node_id, port_name, port_var_name, from_tp, to_tp, value, unit }` | Persisted solver result rows; operational rather than workbook catalog data. |
 | `DashboardBindings` | `{ id, diagram_id, network_name, metabase_dashboard_id, metabase_dashboard_name }` | Links a HyProNet network to a Metabase dashboard. |
 | `DashboardPanelConfigs` | `{ id, dashboard_binding_id, metabase_card_id, panel_name, chart_type, source_mode, config }` | Per-panel dashboard display configuration. |

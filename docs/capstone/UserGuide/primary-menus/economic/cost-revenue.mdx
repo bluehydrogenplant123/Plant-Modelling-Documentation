@@ -23,6 +23,10 @@ Economic data.”
 
 **Cost & revenue** opens the **Economic - Cost & revenue** modal. The modal is used for economic rows, including entity and mapping work, plus import, export, and save actions.
 
+Fresh diagrams start with no System Cost or Revenue rows. Use **Add Price** or
+**Import** to create diagram-owned rows; the unit and type selectors remain
+available even when the System configuration contains no entities.
+
 ![Economic Cost and revenue modal with cost and revenue rows, mappings, import, export, and save controls](../../images/economic-cost-revenue.png)
 
 ## Basic Steps
@@ -42,9 +46,10 @@ Economic data.”
 
 ## Result
 
-The diagram's cost and revenue rows are saved for later analysis or
+The diagram's user-created or imported cost and revenue rows are saved for later analysis or
 computation. A saved empty list is intentional persisted state; reopening the
-diagram does not restore workbook defaults. If the modal is read-only, review
+diagram does not restore SQL or workbook defaults. Existing saved diagrams keep
+their own Economic arrays. If the modal is read-only, review
 or export the rows and return after editing is available.
 
 ## Related Pages
