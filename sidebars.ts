@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
       collapsible: true,
       collapsed: false,
       items: [
+        {type: 'doc', id: 'capstone/UserGuide/system-overview'},
         {
           type: 'category',
           label: 'Interface Overview',
