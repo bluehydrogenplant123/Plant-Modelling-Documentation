@@ -14,7 +14,7 @@ docs/CodeExplanation/
 
 Current source setup and installation guides live under `docs/Installation/` and are linked from the Import/Runtime section when runtime context is needed.
 
-In the published Docusaurus sidebar, the source folders appear as top-level groups: `Installation` and `CodeExplanation`. There is no extra visible wrapper menu above them.
+In the published Docusaurus sidebar, every non-empty top-level directory under `docs/` is discovered as a top-level group. Section names are not hardcoded, and there is no extra visible wrapper menu above the generated groups.
 
 The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical reference only. Do not treat archive pages as current behavior unless the source code has been rechecked. Misplaced or generated CodeExplanation copies under `version6.1/`, including `version6.1/doc/docs/capstone/CodeExplanation/`, are intentionally not linked from this index.
 
@@ -25,10 +25,12 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 ## Orientation
 
 - [Code Explanation Overview](./code-explanation-overview.md): high-level coverage, boundaries, recommended reading order, and page map for the current CodeExplanation set.
+- [Documentation Sync and Publishing](./documentation-sync-and-publishing.md): default-branch synchronization, target-repository ownership, dynamic section discovery, generated sidebars and homepage cards, and publication verification.
 
 ## Frontend/Core UI
 
 - [Dashboard and Canvas Code Explanation](./dashboard-and-canvas.md): dashboard create/load/delete flows, canvas shell routing, React Flow setup, sidebar drag-and-drop, display filtering, and high-level edit guards.
+- [Large Model Performance and Recovery](./large-model-performance-and-recovery.md): movement-time render suppression, node-specific cache subscriptions, closed-panel guards, on-demand model data, and legacy model-version recovery.
 - [Header Bar Code Explanation](./header-bar.md): top-level canvas navigation, secondary controls, Optimization/DataRec setup orchestration, shared-editor signals, save metadata, display filtering, run configuration entry points, and computation-aware UI guards.
 - [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md): active Calc Type dropdowns, selection versus editing boundaries, Header-owned run state, authoritative backend resolution, queued snapshots, and `parameters.solve_inputs`.
 - [Material Domain Editor Workflow Code Explanation](./material-domain-editor-workflow.md): User Tables entry, Domain + Port Class grouping, Generic/common materials, Properties/Fractions views, workbook import, API grouping, and solver sanitization boundaries.
@@ -39,6 +41,11 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 - [Equation Writing Module Code Explanation](./equation-writing-module.md): equation authoring, tokenization, Add Variable metadata, Dimension/Unit conversion, Mongo persistence, and solver equation normalization.
 - [Constraint Module Code Explanation](./constraint-module.md): `+Constr` set and collection layout, Redux draft cache, equation membership assignment, deletion guards, and Mongo persistence.
 - [Solution Algorithm Library Module Code Explanation](./solution-algo-library-module.md): SoluAlgoLib table editing, PostgreSQL base rows, Mongo diagram selections, Algorithm dropdown integration, and solver configuration payload.
+
+## Components and Split Fractions
+
+- [Component Template Lifecycle](./component-template-lifecycle.md): canonical template syntax, null-versus-zero presence, stream-driven expansion and cleanup, cache and TP behavior, and unresolved-reference guards.
+- [Separator and ASU Split Fractions](./separator-asu-split-fractions.md): `SPLT_FRAC` SF-family expansion, Base/Multi-TP values, graphical `SEPARATOR` allocation, and compute-time validation.
 
 ## Save/Subnetwork
 
@@ -72,4 +79,4 @@ The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical 
 
 ## Navigation Rule
 
-For current feature documentation, start from the visible `CodeExplanation -> Code Explanation Index` page in Docusaurus, or from the source path `docs/CodeExplanation/` when editing files. Use `docs/Installation/` for install and runtime setup guides. Use `docs-archive/PreviousDoc/CodeExplanation/` only for historical comparison, and do not link new current docs to misplaced `version6.1/` CodeExplanation copies.
+For current feature documentation, start from the visible `CodeExplanation -> Code Explanation Index` page in Docusaurus, or from the source path `docs/CodeExplanation/` when editing files. The publishing workflow discovers all non-empty top-level `docs/` directories automatically. Use `docs/Installation/` for install and runtime setup guides. Use `docs-archive/PreviousDoc/CodeExplanation/` only for historical comparison, and do not link new current docs to misplaced `version6.1/` CodeExplanation copies.

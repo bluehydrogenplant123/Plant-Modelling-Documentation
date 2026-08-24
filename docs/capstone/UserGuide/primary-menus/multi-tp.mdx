@@ -1,33 +1,60 @@
 ---
 title: Multi-TP Menu
 sidebar_position: 28
-description: Introduction to the Multi-TP primary menu.
+description: Use the Multi-TP controls and open verified Multi-TP economic data from User Tables.
 ---
 
 # Multi-TP Menu
 
-The **Multi-TP** primary menu is used for multi-time-period workflows after the model is ready for time-period-specific configuration.
+Use **Multi-TP** for model-version, range, specification, and economic work that
+varies by time period.
 
-## Secondary Buttons
+## Before You Start
 
-Click a linked button name to open the detailed page for that secondary button.
+- Save the diagram before opening data that is stored for that diagram.
+- Verify the diagram before using **Global TP** or the Multi-TP economic items
+  in **User Tables**.
 
-| Button | What It Is For |
+## Secondary Controls
+
+| Control | What It Is For |
 | --- | --- |
-| **Time Horizon** | Placeholder for time horizon controls. It is disabled in the current header implementation. |
-| **View Time Periods** | Placeholder for viewing time periods. It is disabled in the current header implementation. |
-| **[TP Node - Model Version Control](./multi-tp/tp-node-model-version-control)** | Open the TP node model-version control workflow after verification. |
-| **[Global TP](./multi-tp/global-tp)** | Configure global time-period ranges and duration settings. |
-| **[TP Specs](./multi-tp/tp-specs)** | Review or edit TP-specific specification values in Multi-TP mode. |
-| **[Economic](./multi-tp/economic)** | Open Multi-TP economic panels when Multi-TP ranges are available. |
+| **Time Horizon** | A visible placeholder that is currently disabled. |
+| **View Time Periods** | A visible placeholder that is currently disabled. |
+| **[TP Node - Model Version Control](./multi-tp/tp-node-model-version-control)** | Open the TP node model-version workflow. |
+| **[Global TP](./multi-tp/global-tp)** | Configure global time-period ranges and duration settings after verification. |
+| **[TP Specs](./multi-tp/tp-specs)** | Review or edit TP-specific specification values. |
+| **TP Data** | A visible placeholder with no current action. |
+| **User Tables** | Open **Cost and Revenue Data** or **Supply and Demand Data** for Multi-TP rows. **Material Properties** is disabled in this menu. |
+
+## Open Multi-TP Economic Data
+
+1. Select the **Multi-TP** primary menu.
+2. Open **User Tables** in the secondary controls.
+3. Click **Cost and Revenue Data** or **Supply and Demand Data**.
+
+The two economic items are enabled only when the current diagram is saved and
+verified, and when economic editing is not restricted by the current
+computation state.
+
+## Result
+
+The selected Multi-TP economic panel opens with the current diagram's TP rows.
+
+## Troubleshooting
+
+| Problem | What To Check |
+| --- | --- |
+| **Global TP** is not visible | Verify the diagram first. |
+| The economic items in **User Tables** are disabled | Save and verify the diagram, then wait for any active computation restriction to finish. |
 
 ## Related Pages
 
 - [TP Node - Model Version Control](./multi-tp/tp-node-model-version-control)
 - [Global TP](./multi-tp/global-tp)
 - [TP Specs](./multi-tp/tp-specs)
-- [Multi-TP Economic](./multi-tp/economic)
-- [Economic primary menu](./economic)
+- [Multi-TP Economic Data](./multi-tp/economic)
+- [Economic data](./economic)
 - [TP Analysis menu](./tp-analysis)
 - [Run button](./run)
 - [Back to interface overview](../interface-overview)

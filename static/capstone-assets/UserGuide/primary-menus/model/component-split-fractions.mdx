@@ -1,0 +1,54 @@
+---
+title: Configure Component Split Fractions
+sidebar_position: 15
+description: Enter Base or Multi-TP split fractions for SEPARATOR and ASU SPLT_FRAC nodes.
+---
+
+# Configure Component Split Fractions
+
+Use this workflow to divide each active inlet component across a `SEPARATOR` or `ASU` node that uses the `SPLT_FRAC` model version.
+
+## Before You Start
+
+- Add a `SEPARATOR` or `ASU` node and select its `SPLT_FRAC` model version.
+- Connect a material stream to the node's `IN` port.
+- Confirm that the stream contains the required component fractions. Text `null` means a component is absent; numeric `0` keeps the component present.
+- Save the diagram before configuring Multi-TP values.
+
+## Steps
+
+1. Select the `SEPARATOR` or `ASU` node on the canvas.
+2. In the node toolbar, open **Node Variables**.
+3. Choose the required **Time Period**.
+4. Find **Component Split Fractions**. The panel lists the active components from the connected inlet stream.
+5. In the traditional view, enter a value from `0` through `1` for every active component. Both `0` and `1` are valid.
+6. For a `SEPARATOR`, click **Graphical View** when you want to edit the two-outlet allocation. Enter an **OUT1** or **OUT2** percentage, or drag the slider. The other outlet updates automatically so the total remains 100%.
+7. If the inlet contains a positive `MF0` or `MF` value, you can also enter an outlet component amount in the displayed mass-flow unit.
+8. Select another **Time Period** and repeat the edits when the split changes over time.
+9. Click the main **Save** action to persist the Base and Multi-TP changes.
+
+`ASU` uses the traditional 0-to-1 fields. It does not display the two-outlet graphical allocation.
+
+## Result
+
+The node stores one valid split value for every active component and selected time period. Components marked with text `null` do not appear. A component whose inlet value is numeric `0` remains present and still receives a split-fraction row.
+
+Computation can start only when every active split value is finite and between `0` and `1`.
+
+## Troubleshooting
+
+| Problem | What To Check |
+| --- | --- |
+| The panel says to connect a material stream | Connect the material stream to the node's `IN` port. |
+| The connected stream has no active components | Check the inlet fractions. Use numbers, including numeric `0`, for present components and text `null` only for absent components. |
+| Split fractions cannot be configured | Check the node model version, inlet and INFO port mappings, duplicate component names, and duplicate split-variable mappings. |
+| A variable needs a value from 0 to 1 | Enter a finite value from `0` through `1` for every listed component. |
+| Outlet amount fields are disabled | Confirm that the inlet has a positive `MF0` or `MF` value. Use percentage or slider input when no positive inlet amount is available. |
+| **Graphical View** is not available | The two-outlet graphical editor is available only for `SEPARATOR`; use the traditional fields for `ASU`. |
+
+## Related Pages
+
+- [Model Menu overview](../model)
+- [Global TP](../multi-tp/global-tp)
+- [TP Specs](../multi-tp/tp-specs)
+- [System Overview](../../system-overview)

@@ -66,7 +66,7 @@ Current `CodeExplanation` pages live under:
 docs/CodeExplanation/
 ```
 
-In the published Docusaurus sidebar, the source folders appear as top-level groups: `Installation` and `CodeExplanation`. Do not add another visible wrapper menu above them.
+In the published Docusaurus sidebar, every non-empty top-level directory under `docs/` is discovered as a top-level group. The current section names are not hardcoded in the publishing workflow. Do not add another visible wrapper menu above the generated groups.
 
 The legacy `CodeExplanation` reference surface is:
 

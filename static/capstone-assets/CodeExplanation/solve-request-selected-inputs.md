@@ -43,7 +43,7 @@ The backend does not trust browser-supplied record contents. It resolves the ide
 - `src/src/backend/services/solveInputTranslationService.ts`: validates selected set, Instrument Set, and measurement identifiers and builds the authoritative Optimization or DataRec snapshot.
 - `src/src/backend/services/computationTaskService.ts`: persists the computation configuration, including the internal selected-input snapshot, on the MongoDB computation task.
 - `src/src/backend/workers/computationDispatchWorker.ts`: reloads the queued task and diagram, then passes saved equations, collections, SoluAlgoLib rows, and selected inputs into the solve-request builder.
-- `src/src/backend/services/solverEngineApiService.ts`: removes stale parameter copies, converts selected set equation objects to equation-id references, moves selected inputs into `parameters.solve_inputs`, and builds the final solver request.
+- `src/src/backend/services/solverEngineApiService.ts`: removes stale parameter copies, converts selected set equation objects to equation-id references, keeps only the supported DataRec model-path fields, moves selected inputs into `parameters.solve_inputs`, and builds the final solver request.
 
 ## Purpose and Responsibility
 
@@ -204,7 +204,7 @@ The route derives its calculation type from the saved `diagram.parameters.global
 6. Load every saved variable-to-instrument mapping in the selected Instrument Set. These become `instruments` even when no measurement is selected for a mapping.
 7. Load only the selected measurement ids from that Instrument Set.
 8. Reject missing measurements, measurements with saved `rowErrors`, invalid numeric plant values, or measurements whose mapping no longer exists.
-9. Join each measurement to authoritative mapping weight, accuracy, bounds, and model-path data.
+9. Join each measurement to authoritative mapping weight, accuracy, bounds, and model-path data. The snapshot model path contains `network`, `node_id`, `node_name`, `port`, and `variable`.
 
 The translated snapshot is attached to `configuration.selected_inputs` before the task is inserted. This freezes selected set names/membership and expanded DataRec values for the queued run. One boundary remains separate: the worker reloads the top-level Equation Writing catalog from `diagram.equations` at dispatch time.
 
@@ -213,6 +213,8 @@ The translated snapshot is attached to `configuration.selected_inputs` before th
 At dispatch, `buildSolveRequest(...)` removes the internal `selected_inputs` field from solver configuration and writes the normalized form to `parameters.solve_inputs`.
 
 For selected equation sets, the queued snapshot temporarily contains full persisted equation objects. The final solver payload reduces each nested set's `equations` array to equation ids. The full normalized Equation Writing catalog remains separately available in top-level `parameters.equations`.
+
+Each DataRec instrument and measurement uses the same five-field `model_path`: `network`, `node_id`, `node_name`, `port`, and `variable`. Persisted mapping records or legacy queued snapshots can still contain `subnetwork`, `subSubnetwork`, or `sub_subnetwork`, but request assembly does not send those fields to the solver.
 
 Optimization selection example:
 
@@ -296,8 +298,6 @@ DataRec selection example:
             },
             "model_path": {
               "network": "Main Network",
-              "subnetwork": "none",
-              "sub_subnetwork": "none",
               "node_id": "heater-node-1",
               "node_name": "Heater",
               "port": "OUT",
@@ -327,8 +327,6 @@ DataRec selection example:
             },
             "model_path": {
               "network": "Main Network",
-              "subnetwork": "none",
-              "sub_subnetwork": "none",
               "node_id": "heater-node-1",
               "node_name": "Heater",
               "port": "OUT",
@@ -447,6 +445,7 @@ Manual verification matrix:
 - The active Instrument Set is Redux state, while selected measurements and DataRec Objective Functions are Header-local state. Preserve the reset effects when moving ownership.
 - Backend selection uses the saved calculation type from `diagram.parameters`; direct clients must not assume that merely sending `optimizationOptions` or `dataRecOptions` changes the calculation type.
 - All mappings from a selected Instrument Set become DataRec `instruments`; only the measurement list is individually selected.
+- DataRec `model_path` is intentionally limited to `network`, `node_id`, `node_name`, `port`, and `variable`; subnetwork depth fields from stored or legacy records are stripped before solver dispatch.
 - `configuration.selected_inputs` is an internal queued-task snapshot and must not be sent as a solver configuration field.
 - Top-level `parameters.equations` and nested equation-id selections serve different purposes. The stale-parameter cleanup happens before the authoritative equation catalog is added back.
 - The selected set snapshot freezes equation membership ids, but the worker reloads the full `diagram.equations` definitions at dispatch. Editing or deleting an equation while a task is waiting can therefore change or break the catalog referenced by that queued selection.

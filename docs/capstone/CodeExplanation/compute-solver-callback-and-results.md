@@ -23,6 +23,8 @@ The current source of truth is the TypeScript path from `computeRoutes.ts` throu
 - `src/src/backend/services/computationTaskHandler.ts`: success-callback handler that applies reverse translation and persists callback side effects.
 - `src/src/backend/utils/reverseTranslation.ts`: maps solver `results.tps_specs` back into parameters, node model versions, and computed TP changes.
 - `src/src/backend/utils/storeComputationResultUtils.ts`: stores solver machine-generated values in PostgreSQL `ComputationResults`.
+- `src/src/shared/computationPhaseProgress.ts`: stores local lifecycle timestamps and derives the three-stage progress snapshot returned by polling.
+- `src/src/frontend/src/components/header-bar/header-buttons/computation-progress.ts`: validates progress snapshots and supplies the visible stage/state labels and live duration formatting.
 - `src/src/backend/utils/tpSpecVersionUtils.ts`: resolves active TP Spec version sets and logical tables by diagram, scope, and calculation type.
 - `src/src/backend/prisma/mongodb/schema.prisma`: stores version ids, calculation type, and change source on computed `TpChanges`.
 - `src/src/backend/prisma/postgres/schema.prisma`: stores TP Spec traceability fields on computation results.
@@ -52,10 +54,10 @@ The solver API service owns the external HTTP contract. It appends `/solve/`, `/
 | Output | Destination | Notes |
 | --- | --- | --- |
 | `diagram.parameters` | MongoDB `diagram` | `/start` writes freshly translated base parameters; selected inputs and saved equation/collection data are added later during dispatch. |
-| `computationTask` | MongoDB | Created as `waiting`, updated to `computing`, then terminal `success`, `failed`, `timeout`, or `aborted`. |
+| `computationTask` | MongoDB | Created as `waiting`, updated to `computing`, then terminal `success`, `failed`, `timeout`, or `aborted`; its internal configuration also carries local runtime timestamps used for stage progress. |
 | `configuration.selected_inputs` | MongoDB computation task | Internal authoritative snapshot resolved before queueing; removed from solver configuration during request assembly. |
 | `computationTask:${diagramId}` | Redis | Cached by `getLatestComputationTask` for 5 minutes and invalidated on task insert/update/delete. |
-| Bull job | Redis-backed `computationDispatchQueue` | Contains `diagramId`, names, user metadata, and `canvasWithModelVersions`. |
+| Bull job | Redis-backed `computationDispatchQueue` | Contains only `diagramId`, `diagramName`, `userId`, and `userName`. The worker reloads the current task and diagram from MongoDB. |
 | Solver request | External solver `${BASE_SOLVER_ENGINE_URL}/solve/` | Contains `callback_url`, `configuration`, and `parameters`, including normalized equations/collections and optional `parameters.solve_inputs`. |
 | `ComputationResults` rows | PostgreSQL | Upserted in batches from callback `results.tps_specs`, including calculation type and applied TP Spec metadata. |
 | Diagram, node, and TP change updates | MongoDB | Applied during success callback processing; computed MTP rows are scoped to a TP Spec version table when context resolution succeeds. |
@@ -131,7 +133,7 @@ Important exact fields:
 - `parameters.solve_inputs` comes from the queued task's internal `configuration.selected_inputs`. Selected sets contain equation-id references; DataRec contains the selected Instrument Set, all mappings from that set, selected measurements, and selected Objective Function Sets.
 - Before those fields are attached, `removeIndependentSolveInputParameters(...)` removes stale equation/set/constraint/instrument/measurement/Optimization/DataRec copies from saved `diagram.parameters`.
 
-The worker loads the task and diagram from MongoDB when processing the queue job. The queued `canvasWithModelVersions` is not the final solver payload in the current worker implementation. The exact selected-input shapes and their editor-to-solver boundary are documented in [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md).
+The queue job intentionally does not carry a canvas or model-version snapshot. The worker loads the computation task and diagram from MongoDB when it processes the job, then builds the final solver request from that persisted state. The exact selected-input shapes and their editor-to-solver boundary are documented in [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md).
 
 ## Core State and Data Structures
 
@@ -143,6 +145,8 @@ The worker loads the task and diagram from MongoDB when processing the queue job
 - `ComputationStatus.aborted`: user abort succeeded or solver reported the task was already terminated.
 - `SolveInputSnapshot`: Optimization or DataRec selection values resolved from persisted data before the task enters the queue.
 - `configuration.selected_inputs`: internal task-only location for that snapshot. `buildSolveRequest(...)` removes it from configuration and emits normalized `parameters.solve_inputs`.
+- `configuration.runtime_timing`: internal task-only timestamps `requestReceivedAt`, `solverAcceptedAt`, and `callbackReceivedAt`. `buildSolveRequest(...)` removes this field before solver dispatch.
+- `phaseProgress`: polling-only snapshot containing `currentPhase`, `snapshotAt`, and the three phase rows with `pending`, `active`, `completed`, or `unavailable` state plus `durationMs`.
 - `computeUploadSessions`: in-memory upload session map with 30-minute TTL cleanup.
 - `computationTask:${diagramId}`: Redis cache key for the latest computation task.
 - `computationDispatchQueue`: Bull queue backed by Redis `TASK_QUEUE_REDIS_DB` or DB `1`, with `removeOnComplete` and `removeOnFail`.
@@ -153,7 +157,7 @@ The worker loads the task and diagram from MongoDB when processing the queue job
 - `POST /api/compute/upload/init`: creates an in-memory chunk upload session after diagram ownership checks.
 - `POST /api/compute/upload/:sessionId/chunk`: stores a string chunk in the upload session.
 - `POST /api/compute/upload/:sessionId/finalize`: reassembles uploaded JSON, creates a waiting task, and enqueues dispatch.
-- `GET /api/compute/details/:diagramId`: returns status-specific polling information and queue-position details for waiting tasks.
+- `GET /api/compute/details/:diagramId`: returns status-specific polling information, `phaseProgress`, and queue-position details for waiting tasks.
 - `GET /api/compute/history/:diagramId`: returns task history for the diagram.
 - `DELETE /api/compute/results`: deletes PostgreSQL result rows and matching MongoDB tasks for a `diagramId` and `runName`.
 - `POST /api/compute/abort`: calls solver `/kill/` when `taskId` exists and marks the MongoDB task as `aborted`.
@@ -174,13 +178,13 @@ The worker loads the task and diagram from MongoDB when processing the queue job
 6. The route loads only active-table MTP changes, with fully unversioned compatibility rows, or converts active Base patches into translation overrides.
 7. `translation(...)` builds the solver-facing base `parameters`, including `parameters.tps_specs` and optional `parameters.costs`.
 8. The route attaches the main diagram's active TP Spec metadata and writes the final base `parameters` back to the MongoDB diagram record.
-9. `ComputationTaskService.insertComputationTask(...)` creates a MongoDB task with status `waiting`, including the selected-input snapshot, and invalidates the Redis task cache.
+9. `ComputationTaskService.insertComputationTask(...)` creates a MongoDB task with status `waiting`, including the selected-input snapshot and local `requestReceivedAt`, and invalidates the Redis task cache.
 10. `computationDispatchQueue.add(...)` stores a Bull job in Redis.
 11. `computationDispatchWorker.ts` consumes one job at a time and reloads the task and diagram.
 12. `buildSolveRequest(...)` combines base parameters with selected inputs, saved equations, collections, SoluAlgoLib configuration, callback URL, and unit conversions.
-13. The solver returns `task_id`; the worker stores it on the MongoDB task and changes status to `computing`.
+13. The solver returns `task_id`; the worker stores it and local `solverAcceptedAt` on the MongoDB task, then changes status to `computing`.
 14. The worker loops until the task changes away from a processing status.
-15. The solver posts to `/api/external/compute/callback`.
+15. The solver posts to `/api/external/compute/callback`; the callback route records local `callbackReceivedAt` before result handling.
 16. The callback route updates failed or timeout tasks directly; success callbacks call `handleComputationSuccess(...)`.
 17. Success handling reverse-translates results, writes version-scoped computed TP changes, upserts traceable PostgreSQL result rows, writes diagram/node state, and marks the task `success`.
 
@@ -195,6 +199,20 @@ Bull queue state and task status are separate:
 - Task insert, update, and result deletion delete the Redis cache key so polling does not keep a stale status.
 
 `COMPUTATION_CONSTANTS.MAX_CONCURRENT_WORKERS` is `1`, so the current worker is intentionally serialized. The worker also holds the active job while the solver task is still `waiting` or `computing`.
+
+## Computation Phase Progress
+
+`GET /api/compute/details/:diagramId` calls `buildComputationPhaseProgress(...)` for the latest task. The returned phases are:
+
+| Phase key | Visible label | Boundary |
+| --- | --- | --- |
+| `preparing` | Preparing / waiting in queue | From local request receipt or task creation until the solver accepts the task. |
+| `solver_processing` | Solver computation | From local solver acceptance until the callback reaches the GUI backend. |
+| `processing_results` | Processing returned results | From callback receipt until successful callback persistence completes. |
+
+An active phase reports its elapsed duration at the polling snapshot; the frontend continues that counter locally until the next response. Completed phases retain their final duration. Pending and unavailable phases display no duration.
+
+Historical tasks remain valid even when they predate `configuration.runtime_timing`. If the callback stored both solver `start_time` and `end_time`, the solver phase can use their difference because both values share the solver clock. Local preparation and result-processing phases remain `unavailable` when their timestamps cannot be reconstructed. An unavailable phase is missing timing evidence, not a computation failure.
 
 ## Callback, Status, and Result Flow
 
@@ -232,7 +250,7 @@ Successful callback persistence includes:
 
 - Updating `parameters.tps_specs` values from callback machine-generated values.
 - Updating base-period node `modelVersion` values and `is_computed`.
-- Creating or updating computed MongoDB `tpChanges` for non-base time periods.
+- Creating or updating computed MongoDB `tpChanges` for non-base time periods; the exact concurrent-update and batched-create behavior is described below.
 - Tagging computed TP changes with the resolved version set/table ids, calculation type, and `changeSource: "COMPUTED"` without overwriting manual rows.
 - Updating parent, subnetwork instance, and wrapper-node diagrams when subnetwork mappings are present.
 - Upserting PostgreSQL `ComputationResults` rows from `results.tps_specs`.
@@ -248,7 +266,7 @@ Rows are keyed by:
 diagram_id, run_name, node_id, port_name, port_var_name, from_tp, to_tp
 ```
 
-The insert uses PostgreSQL `ON CONFLICT` to update value, bounds, spec, unit, type, solver, algorithm, network, subnetwork, node name, calculation type, TP Spec scope, TP Spec version code, and TP Spec logical table. Writes are batched with `COMPUTATION_RESULTS_BATCH_SIZE = 1000`.
+The insert uses PostgreSQL `ON CONFLICT` to update value, bounds, spec, unit, type, solver, algorithm, network, subnetwork, node name, calculation type, TP Spec scope, TP Spec version code, and TP Spec logical table. PostgreSQL writes are split into chunks with `COMPUTATION_RESULTS_BATCH_SIZE = 1000`.
 
 `storeComputationResults(...)` extracts traceability metadata from the first parameter source whose `global_params.task_config` contains calculation-type or TP Spec fields:
 
@@ -259,7 +277,9 @@ The insert uses PostgreSQL `ON CONFLICT` to update value, bounds, spec, unit, ty
 | `tp_spec_version` | `tp_spec_version` |
 | `tp_spec_table` | `active_tp_spec_table` |
 
-MongoDB persistence happens in `handleComputationSuccess(...)`, not in `storeComputationResults(...)`. The handler updates node `modelVersion`, diagram `canvas`, diagram `parameters`, computed `tpChanges`, and the task status.
+MongoDB persistence happens in `handleComputationSuccess(...)`, not in `storeComputationResults(...)`. For computed `tpChanges`, the handler deduplicates prepared writes, runs existing-row `updateMany(...)` operations with `TP_CHANGE_WRITE_CONCURRENCY = 16`, collects the rows that did not match, and creates those missing rows with `createMany(...)` in chunks of `TP_CHANGE_CREATE_BATCH_SIZE = 1000`.
+
+This is not one bulk operation for every MongoDB result. Existing rows still use separate, concurrency-limited update calls; only missing-row creation is batched. The handler also updates node `modelVersion`, diagram `canvas`, diagram `parameters`, and the task status.
 
 ## Error Handling and Edge Cases
 
@@ -272,6 +292,7 @@ MongoDB persistence happens in `handleComputationSuccess(...)`, not in `storeCom
 - Upload finalize deletes the in-memory upload session after parse errors, authorization errors, missing diagrams, duplicate processing tasks, and successful queueing.
 - The worker marks the task `failed` if solver dispatch throws after a task id is available locally.
 - `/details/:diagramId` reports `waiting`, `computing`, `failed`, `aborted`, `timeout`, and `success` with different polling behavior.
+- `/details/:diagramId` derives three-stage progress from local lifecycle timestamps. Historical tasks can return `unavailable` for phases whose timestamps were never stored.
 - `/abort` returns an error if the latest task is not processing; if the solver says the task is already terminated, the route still marks the local task as aborted.
 - Callback requests for already terminal tasks return `409` and do not reprocess results.
 - Compute start logs and skips an unresolved related-diagram TP Spec context, but the main diagram context must resolve before metadata can be attached.
@@ -293,6 +314,8 @@ Existing related backend utility tests are under:
 - `src/tests/backend/services/solveInputTranslationService.test.ts`
 - `src/tests/backend/services/solverEngineApiService.test.ts`
 - `src/tests/backend/workers/computationDispatchWorker.test.ts`
+- `src/tests/backend/routes/external/computeCallbackRoutes.test.ts`
+- `src/tests/backend/services/computationTaskHandler.test.ts`
 - `src/tests/backend/utils/translation.test.ts`
 - `src/tests/backend/utils/translationCosts.test.ts`
 - `src/tests/backend/utils/translationEmbeddedModelVersion.test.ts`
@@ -316,7 +339,8 @@ Manual integration check:
 5. For Optimization/DataRec, confirm the matching `parameters.solve_inputs` exists and `configuration.selected_inputs` does not reach the solver.
 6. Confirm `parameters.equations` contains the normalized equation catalog while selected sets use equation ids.
 7. Confirm `parameters.global_params.task_config` identifies the active TP Spec version used by the run.
-8. Confirm callback success produces version-scoped computed TP changes plus PostgreSQL `ComputationResults` rows carrying the expected `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table`.
+8. Confirm polling moves through **Preparing / waiting in queue**, **Solver computation**, and **Processing returned results**, and shows unavailable timing rather than inventing a duration for a legacy task.
+9. Confirm callback success produces version-scoped computed TP changes plus PostgreSQL `ComputationResults` rows carrying the expected `calc_type`, `tp_spec_scope`, `tp_spec_version`, and `tp_spec_table`.
 
 Selected-input translation, solver assembly, and worker argument handoff have focused tests. Full compute-route, queue, and callback behavior still needs either a focused integration test or a manual end-to-end check. The existing result-storage test also does not assert the four TP Spec metadata values, so that remains a focused coverage gap.
 
@@ -328,6 +352,7 @@ Selected-input translation, solver assembly, and worker argument handoff have fo
 - Do not hand-edit these files to define behavior. Use source files and tests as the source of truth, then use generated artifacts only for read-only confirmation.
 - Do not commit generated solver or callback JSON unless a task explicitly asks for a fixture update.
 - `configuration.selected_inputs` is an internal queued snapshot. It must be stripped before solver dispatch and must not be confused with persisted base `diagram.parameters`.
+- `configuration.runtime_timing` is internal GUI-backend timing metadata and is also stripped before solver dispatch.
 - `removeIndependentSolveInputParameters(...)` removes stale parameter copies, after which `buildSolveRequest(...)` deliberately adds the authoritative saved equation catalog back as `parameters.equations`.
 - Selected set membership is snapshotted before queueing, but the worker reloads full top-level equation definitions from `diagram.equations` at dispatch. Avoid editing equations while an older task is waiting.
 - Current `authenticateGateway` behavior is pass-through logging. Enforcing `x-gateway-secret` would require a code change and should be documented separately when implemented.

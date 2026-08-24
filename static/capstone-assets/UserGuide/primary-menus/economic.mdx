@@ -1,31 +1,50 @@
 ---
-title: Economic Menu
+title: Economic Data
 sidebar_position: 22
-description: Introduction to the Economic primary menu.
+description: Open cost, revenue, demand, and supply data from User Tables.
 ---
 
-# Economic Menu
+# Economic Data
 
-The **Economic** primary menu opens economic data panels for the current diagram. Use it when the model needs cost, revenue, demand, or supply data before analysis or computation.
+Use **User Tables** to maintain economic data for the current diagram.
 
-## Secondary Buttons
+## Before You Start
 
-Click a button name to open the detailed page for that secondary button.
+- Save a new diagram with the main **Save** action. The economic items in
+  **User Tables** remain disabled until the diagram has been saved.
+- A fresh diagram has no economic rows. Add rows or import them in the required
+  panel.
 
-| Button | What It Is For |
+## User Tables Items
+
+| Item | What It Opens |
 | --- | --- |
-| **[Cost & revenue](./economic/cost-revenue)** | Edit cost and revenue rows, including entity and mapping data. |
-| **[Demand & Supply](./economic/demand-supply)** | Edit demand and supply rows used by economic workflows. |
+| **[Cost and Revenue Data](./economic/cost-revenue)** | The **Economic - Cost & revenue** modal for cost and revenue rows and mappings. |
+| **[Supply and Demand Data](./economic/demand-supply)** | The **Economic - Demand & Supply** modal for demand and supply rows and mappings. |
 
-## When To Use It
+## Steps
 
-Use **Economic** after the model structure exists and before running workflows that depend on economic rows.
+1. Open **User Tables** in the top toolbar.
+2. Click **Cost and Revenue Data** or **Supply and Demand Data**.
+3. Add, import, edit, map, or delete the required rows.
+4. Click **Save** in the modal header.
 
-Economic panels can become read-only while computation-related rules are active.
+## Result
+
+The selected panel saves its economic rows and mappings for the current
+diagram. Reopening the same **User Tables** item loads the saved data.
+
+## Troubleshooting
+
+| Problem | What To Check |
+| --- | --- |
+| The economic items are disabled | Save the diagram with the main **Save** action first. |
+| The items remain disabled on a saved diagram | Wait for any computation-related operation that temporarily restricts economic editing to finish. |
 
 ## Related Pages
 
-- [Analysis menu](./analysis)
+- [Cost & revenue](./economic/cost-revenue)
+- [Demand & Supply](./economic/demand-supply)
 - [Multi-TP menu](./multi-tp)
 - [Set Run menu](./set-run)
 - [Back to interface overview](../interface-overview)

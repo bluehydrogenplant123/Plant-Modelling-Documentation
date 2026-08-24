@@ -1,38 +1,51 @@
 ---
 title: Plant Measurements
 sidebar_position: 1
-description: Use the Plant Measurements secondary button from the Analysis menu.
+description: Create measurement sets, map instruments, and enter or import plant measurements.
 ---
 
 # Plant Measurements
 
-Use **Plant Measurements** when you need to manage measurement sets, connect variables to instruments, and import or enter plant measurement values.
+Use **Plant Measurements** to connect model variables to instruments and save
+measurement values in a measurement set.
 
-## Where To Find It
+## Before You Start
+
+- Save the diagram first. Plant Measurements needs a saved diagram.
+- Add the required nodes and variables to the diagram before creating their
+  instrument mappings.
+
+## Steps
 
 1. Select the **Analysis** primary menu.
-2. Click **Plant Measurements** in the secondary button row.
-
-## What It Opens/Does
-
-The **Plant Measurements** modal contains a **Measurement Set** selector, **New Measurement Set**, and **Delete Set** controls. It has two tabs: **Instrument Mapping** and **Plant Measurements**.
-
-Use **Add Mapping** to add variable-to-instrument rows on the **Instrument Mapping** tab. Use **Add Measurement**, **Import**, and **Remove Selected** on the **Plant Measurements** tab. Use **Save** to store the current changes.
-
-![Plant Measurements modal with measurement set controls and Instrument Mapping table](../../images/plant-measurements.png)
-
-## Basic Steps
-
-1. Open **Plant Measurements** from the **Analysis** menu.
-2. Choose an existing **Measurement Set**, or click **New Measurement Set**.
-3. On **Instrument Mapping**, click **Add Mapping** and fill in the mapping rows.
-4. On **Plant Measurements**, click **Add Measurement** to enter rows manually, or click **Import** to load measurement data.
-5. Select unwanted rows and click **Remove Selected** if you need to clean up the table.
-6. Click **Save**.
+2. Click **Plant Measurements**.
+3. Choose an existing **Measurement Set**. To create one, click **New
+   Measurement Set**, choose a **Network**, review or edit the **Set Name**, and
+   click **Create Set**.
+4. Open the **Instrument Mapping** tab and click **Add Mapping**.
+5. Complete the mapping fields: **Network**, **Subnetwork**, **Node**, **Port**,
+   **Variable**, **Instrument**, **Units**, **LB**, **UB**, **Absolute Acc**,
+   **% Accuracy**, and **Weight**.
+6. Open the **Plant Measurements** tab. Click **Add Measurement** to enter a row,
+   or click **Import** to load measurement rows from a CSV or Excel workbook.
+7. Select rows and click **Remove Selected** when you need to remove them.
+8. Click **Save**.
+9. To remove the entire measurement set and all of its rows, click **Delete
+   Set** and confirm the deletion.
 
 ## Result
 
-The selected measurement set keeps its instrument mappings and plant measurement rows for later analysis workflows.
+The selected measurement set keeps its instrument mappings and plant
+measurement rows. Selecting the set again reloads its saved data.
+
+## Troubleshooting
+
+| Problem | What To Check |
+| --- | --- |
+| The measurement sets do not load | Save the diagram first, then reopen **Plant Measurements**. |
+| **Create Set** is disabled | Select a valid **Network** in the **New Measurement Set** dialog. |
+| Save is rejected | Review the **Status** cells, then fix or remove invalid mapping or measurement rows. |
+| An imported measurement is invalid | Confirm that **Instrument Name** matches one mapping in the selected set and that **Units** match the mapped instrument. |
 
 ## Related Pages
 

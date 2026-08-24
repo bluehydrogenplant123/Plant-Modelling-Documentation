@@ -1,50 +1,76 @@
 ---
-title: Multi-TP Economic
+title: Multi-TP Economic Data
 sidebar_position: 4
-description: Use the Economic dropdown from the Multi-TP menu.
+description: Open Multi-TP cost, revenue, demand, and supply rows from User Tables.
 ---
 
-# Multi-TP Economic
+# Multi-TP Economic Data
 
-Use **Economic** from the **Multi-TP** menu when you need economic panels that depend on Multi-TP ranges.
+Use the **User Tables** control under **Multi-TP** to maintain economic rows for
+specific time-period ranges.
 
-## Where To Find It
+## Before You Start
 
-1. Open an existing diagram with Multi-TP ranges.
-2. Select the **Multi-TP** primary menu.
-3. Open the **Economic** dropdown in the secondary button row.
-4. Choose **Cost & revenue** or **Demand & Supply**.
+- Save and verify the current diagram. Otherwise, the two economic items in the
+  Multi-TP **User Tables** menu remain disabled.
+- Use **Global TP** to configure the ranges you need. Without additional TP
+  ranges, economic rows use the default range from TP 1 to TP 1.
+- Create and save Base rows first if you plan to use **Apply Base Economic**.
 
-## What It Opens
+## Steps
 
-The dropdown opens an **Economic - Cost & revenue** or **Economic - Demand & Supply** panel, depending on the selected item.
+1. Select the **Multi-TP** primary menu.
+2. Open **User Tables** in the secondary controls.
+3. Click **Cost and Revenue Data** or **Supply and Demand Data**.
+4. Select an existing Cost, Revenue, Demand, or Supply name. Use **Add Cost &
+   revenue** or **Add Demand & Supply** to create another name.
+5. Review each row's **From TP** and **To TP** values. **From TP** must be at
+   least 1, and **To TP** must be greater than or equal to **From TP**.
+6. Click **Add TP Row** if the selected name needs another range, then edit its
+   range and values.
+7. Under **Mappings**, select a name and use **Add Mapping Row** when the
+   economic row must point to a model variable.
+8. Click **Save** after manually changing rows or mappings.
 
-The panels are read-only or unavailable when cost buttons are disabled or when the current diagram has no Multi-TP ranges.
+## Apply Base Economic
 
-If you have just added or changed TP ranges, click **Apply Base Economic** first. This copies the base economic rows into the current TP ranges and refreshes the Multi-TP economic data before you review, edit, or save the panel.
+**Apply Base Economic** replaces the existing Multi-TP rows and mappings for
+the open panel with copies of its Base rows. The app creates one copy for each
+current TP range and saves the copied data immediately.
 
-![Multi-TP Cost and revenue panel with From TP and To TP rows, mapping section, import, export, and save controls](../../images/multi-tp-economic-cost-revenue.png)
+Use this action only when you intend to replace the open panel's current
+Multi-TP values. You do not need to click **Save** again unless you make more
+manual changes afterward.
 
-![Multi-TP Demand and Supply panel with From TP and To TP rows, mapping section, import, export, and save controls](../../images/multi-tp-economic-demand-supply.png)
+## From TP and To TP
 
-## Basic Steps
-
-1. Confirm Multi-TP ranges exist for the diagram.
-2. Open the **Economic** dropdown.
-3. Select **Cost & revenue** to work with cost and revenue data.
-4. Select **Demand & Supply** to work with demand and supply data.
-5. If TP ranges were just added or updated, click **Apply Base Economic** to generate or refresh the TP-based economic rows.
-6. Review or update only the fields that are enabled in the selected panel.
-7. Click **Save** if you changed the panel data.
-8. Close the panel when finished.
+- **From TP** and **To TP** define the range stored for one economic row.
+- Opening the panel loads the diagram's current TP ranges. When the configured
+  range set changes, the panel synchronizes its stored Multi-TP rows to the
+  current ranges when required.
+- Saving is rejected when **From TP** is less than 1 or **To TP** is less than
+  **From TP**.
 
 ## Result
 
-The selected Multi-TP economic panel opens for the current diagram. After **Apply Base Economic** runs, the panel shows economic rows for the current TP ranges. If cost controls are disabled or no Multi-TP ranges exist, the panel is read-only or unavailable.
+Manual saves show a **Multi-TP Cost & revenue saved successfully.** or
+**Multi-TP Demand & Supply saved successfully.** message. Applying Base rows
+shows a message that the Base data was applied to Multi-TP rows.
+
+## Troubleshooting
+
+| Problem | What To Check |
+| --- | --- |
+| The economic items are disabled | Save and verify the diagram, then wait for any computation restriction to finish. |
+| **Apply Base Economic** reports that no Base rows are available | Open the top-toolbar **User Tables**, add and save Base rows for the same panel, then return to **Multi-TP**. |
+| Save reports an invalid TP range | Set **From TP** to 1 or higher and make **To TP** greater than or equal to **From TP**. |
+| The expected TP range is missing | Update the ranges in **Global TP**, then reopen the economic panel. |
 
 ## Related Pages
 
 - [Multi-TP Menu overview](../multi-tp)
 - [Global TP](./global-tp)
 - [TP Specs](./tp-specs)
-- [Economic primary menu](../economic)
+- [Economic data](../economic)
+- [Cost & revenue](../economic/cost-revenue)
+- [Demand & Supply](../economic/demand-supply)

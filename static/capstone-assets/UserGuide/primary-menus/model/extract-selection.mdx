@@ -1,47 +1,45 @@
 ---
 title: Extract Selection
 sidebar_position: 4
-description: Use the Extract Selection secondary button from the Model menu.
+description: Create a separate network from selected canvas nodes and streams.
 ---
-
-import extractSelectionDialog from './images/extract-selection-dialog.png';
 
 # Extract Selection
 
-Use **Extract Selection** when you need to turn selected canvas content into a separate network.
+Use **Extract Selection** to create a separate network from part of the current
+canvas.
 
-## Where To Find It
+## Before You Start
 
-1. Select nodes or streams on the canvas.
-2. Select the **Model** primary menu.
-3. Click **Extract Selection** in the secondary button row.
+- Open a saved diagram that contains at least one node. You can select nodes on
+  the canvas before opening the dialog or select them later in the **Preview**.
+  Streams are optional.
+- If the diagram has unsaved changes, opening **Extract Selection** saves the
+  current diagram first. The dialog opens only after that save succeeds.
 
-## What It Opens
+## Steps
 
-The **Extract Selection** dialog contains **Network Name**, **Description**, selected node and stream counts, and a **Preview** panel. The preview lets you inspect and adjust the selected content before creating the extracted network.
-
-<figure style={{ maxWidth: '900px', margin: '1.5rem auto' }}>
-  <img
-    src={extractSelectionDialog}
-    alt="Extract Selection dialog with network name, description, selected counts, preview, Cancel, and Create controls"
-    style={{ width: '100%', height: 'auto', borderRadius: '6px' }}
-  />
-  <figcaption style={{ fontSize: '0.9rem', color: 'var(--ifm-color-emphasis-700)', textAlign: 'center', marginTop: '0.5rem' }}>
-    Enter the extracted network name, review the preview, then click <strong>Create</strong>.
-  </figcaption>
-</figure>
-
-## Basic Steps
-
-1. Review the selected node and stream counts.
-2. Enter a **Network Name**.
-3. Enter a **Description** if needed.
-4. Review the **Preview**.
-5. Click **Create**.
+1. Select the **Model** primary menu.
+2. Click **Extract Selection**.
+3. Review the **Selected nodes** and **Selected streams** counts and the
+   **Preview**.
+4. In the **Preview**, click nodes or streams, or drag a selection box, to
+   adjust the extracted content.
+5. Review or edit the **Network Name**. Enter a **Description** if needed.
+6. Confirm that at least one node is selected, then click **Create**.
 
 ## Result
 
-The selected canvas elements are saved as a separate extracted network.
+A separate diagram is created for the selected content. The new diagram opens
+after creation succeeds.
+
+## Troubleshooting
+
+| Problem | What To Check |
+| --- | --- |
+| **Create** is disabled | Enter a **Network Name**, select at least one node, and wait for any save or creation in progress to finish. |
+| The dialog does not open | Wait for the current diagram to save and resolve any save error shown by the app. |
+| A selected count is incorrect | Adjust the selection in the **Preview** and check the counts again before clicking **Create**. |
 
 ## Related Pages
 
