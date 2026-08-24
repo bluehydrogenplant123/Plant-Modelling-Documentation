@@ -1,6 +1,7 @@
 ---
 title: Large Model Performance and Recovery
 sidebar_position: 12
+sidebar_class_name: "presentation-sidebar-item presentation-sidebar-item-6"
 description: Explains how the canvas limits work during movement, loads detailed node data on demand, narrows panel subscriptions, and recovers legacy model versions.
 ---
 
