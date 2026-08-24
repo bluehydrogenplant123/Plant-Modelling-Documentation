@@ -18,12 +18,15 @@ In the published Docusaurus sidebar, every non-empty top-level directory under `
 
 The legacy archive at `docs-archive/PreviousDoc/CodeExplanation/` is historical reference only. Do not treat archive pages as current behavior unless the source code has been rechecked. Misplaced or generated CodeExplanation copies under `version6.1/`, including `version6.1/doc/docs/capstone/CodeExplanation/`, are intentionally not linked from this index.
 
+**New contributors should read [Start Here: Repository and GUI Code Map](./start-here-repository-code-map.md) first.** It maps Login/User ID, GUI menu actions, frontend owners, API routes, backend files, and persistence boundaries in one place.
+
 ## Standards
 
 - [CodeExplanation Writing Standards](./CODE_EXPLANATION_GUIDELINES.md): placement rules, required structure, frontmatter expectations, source-file standards, verification expectations, and generated-artifact cautions for current CodeExplanation pages.
 
 ## Orientation
 
+- [Start Here: Repository and GUI Code Map](./start-here-repository-code-map.md): first-read map from Login/User ID and every major GUI menu action to frontend files, APIs, backend owners, persistence, and current implementation status.
 - [Code Explanation Overview](./code-explanation-overview.md): high-level coverage, boundaries, recommended reading order, and page map for the current CodeExplanation set.
 - [Documentation Sync and Publishing](./documentation-sync-and-publishing.md): default-branch synchronization, target-repository ownership, dynamic section discovery, generated sidebars and homepage cards, and publication verification.
 
