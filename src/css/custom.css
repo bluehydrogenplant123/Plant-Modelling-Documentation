@@ -346,3 +346,35 @@ h4,
     padding: 1.35rem;
   }
 }
+
+/* HYPRONET presentation sidebar: start */
+.presentation-sidebar-item > .menu__link {
+  margin: 0.2rem 0;
+  border: 1px solid rgba(79, 134, 198, 0.28);
+  border-left: 4px solid #4f86c6;
+  border-radius: 12px;
+  background: #e7f1ff;
+  color: #234f7c;
+  font-weight: 700;
+}
+
+.presentation-sidebar-item > .menu__link:hover,
+.presentation-sidebar-item > .menu__link--active {
+  background: #cfe3ff;
+  color: #173d66;
+  text-decoration: none;
+}
+
+[data-theme='dark'] .presentation-sidebar-item > .menu__link {
+  border-color: rgba(118, 174, 242, 0.42);
+  border-left-color: #76aef2;
+  background: #20354d;
+  color: #c9e2ff;
+}
+
+[data-theme='dark'] .presentation-sidebar-item > .menu__link:hover,
+[data-theme='dark'] .presentation-sidebar-item > .menu__link--active {
+  background: #29496c;
+  color: #ffffff;
+}
+/* HYPRONET presentation sidebar: end */
