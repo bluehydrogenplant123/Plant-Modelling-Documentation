@@ -44,8 +44,8 @@ The solver API service owns the external HTTP contract. It appends `/solve/`, `/
 | `maxComputationTime` | `/api/compute/start` body or upload metadata | Stored as `configuration.max_computation_time`; `/start` rejects values below `COMPUTATION_CONSTANTS.MINIMUM_COMPUTATION_TIME`. |
 | `runName` | `/start`, `/upload/init`, `/results` | Stored on `computationTask` and used as part of the PostgreSQL result identity. |
 | `solverName`, `algorithmName` | `/start` or upload metadata | Looked up in snapshot `runConfigs` and stored in task `configuration`. |
-| `optimizationOptions` | `/start` body or upload metadata when the saved task type is Optimization | Selects mode, Objective Function Sets, and Additional Constraint Sets by id. |
-| `dataRecOptions` | `/start` body or upload metadata when the saved task type is DataRec | Selects one Instrument Set, Plant Measurements, and Objective Function Sets by id. |
+| `optimizationOptions` | `/start` body or upload metadata when the saved task type is Optimization | Selects mode, Objective Function equations, and additional Constraint collections by id. |
+| `dataRecOptions` | `/start` body or upload metadata when the saved task type is DataRec | Selects one Instrument Set, Plant Measurements, and Objective Function equations by id. |
 | TP Spec active context | Diagram TP mode, run calculation type, and MongoDB version metadata | Selects the Base patches or MTP changes used for translation and identifies the version in solve metadata. |
 | `tpChanges` | Optional `/start` body plus active-version MongoDB changes | Merged before translation so explicit request overrides can affect `parameters.tps_specs`. |
 | Chunk payload | `/upload/:sessionId/chunk` | Reassembled by `/upload/:sessionId/finalize` and queued as job metadata. |
@@ -103,7 +103,13 @@ The returned object sent to the solver has this high-level shape:
       duration: object[]
     },
     equations?: object[],
-    equation_collections?: Array<{
+    sets?: Array<{
+      id: string,
+      name: string,
+      type: string,
+      equations: string[]
+    }>,
+    collections?: Array<{
       id: string,
       name: string,
       sets: string[]
@@ -127,10 +133,12 @@ Important exact fields:
 - `parameters.tps_specs` is the main variable-spec array consumed by the solver and later matched against callback results.
 - `parameters.costs` is present when `computeRoutes.ts` passes a `costsPayload` into `translation(...)`; it contains sanitized `entities`, `mappings`, and `duration`.
 - `parameters.global_params.task_config` identifies the active TP Spec context with `tp_spec_scope`, `tp_spec_version`, `tp_spec_version_name`, `active_tp_spec_table`, `active_tp_spec_version_set_id`, and `active_tp_spec_version_table_id`.
-- `configuration.solution_algo_library` contains normalized SoluAlgoLib rows whose set/collection links are ids.
-- `parameters.equations` is rebuilt from saved `diagram.equations`; variable token bounds are converted to base units for the solver copy.
-- `parameters.equation_collections` is rebuilt from saved collections with id-only set references.
-- `parameters.solve_inputs` comes from the queued task's internal `configuration.selected_inputs`. Selected sets contain equation-id references; DataRec contains the selected Instrument Set, all mappings from that set, selected measurements, and selected Objective Function Sets.
+- `configuration.solution_algo_library` contains normalized SoluAlgoLib rows whose `objective_function` and `collection` links are ids.
+- `parameters.equations` is rebuilt from saved `diagram.equations`; token kinds are resolved, objective functions receive `sense`, and variable token bounds are converted to base units for the solver copy.
+- `parameters.declared_variables` is rebuilt from user self-defined variable tokens and uses the same variable-token field shape as equation tokens.
+- `parameters.sets` is rebuilt from saved collections and contains equation-id references only.
+- `parameters.collections` is rebuilt from saved collections and contains set-id references only.
+- `parameters.solve_inputs` comes from the queued task's internal `configuration.selected_inputs`. Custom objectives contain single Objective Function equation definitions; additional constraints contain collection-id references; DataRec contains the selected Instrument Set, all mappings from that set, selected measurements, and selected Objective Function equations.
 - Before those fields are attached, `removeIndependentSolveInputParameters(...)` removes stale equation/set/constraint/instrument/measurement/Optimization/DataRec copies from saved `diagram.parameters`.
 
 The queue job intentionally does not carry a canvas or model-version snapshot. The worker loads the computation task and diagram from MongoDB when it processes the job, then builds the final solver request from that persisted state. The exact selected-input shapes and their editor-to-solver boundary are documented in [Optimization and DataRec Setup and Selected Solve Inputs](./solve-request-selected-inputs.md).

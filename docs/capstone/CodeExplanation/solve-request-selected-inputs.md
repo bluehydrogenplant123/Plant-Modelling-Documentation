@@ -11,7 +11,7 @@ The active **Optimization** and **DataRec** calculation types become dropdown me
 1. They open existing editors for TP specifications, equation sets, instrument mappings, and plant measurements.
 2. They let the user select which saved records belong to the next computation.
 
-Editing and selecting are deliberately separate. Saving an Objective Function Set, Constraint Set, Instrument Set, or Plant Measurement makes it available for selection, but it does not automatically include that record in a run. The dropdown's **Apply** action updates an in-memory run selection, and `ComputationButton` sends only the selected identifiers when the matching calculation type is active.
+Editing and selecting are deliberately separate. Saving an Objective Function equation, Constraint collection, Instrument Set, or Plant Measurement makes it available for selection, but it does not automatically include that record in a run. The dropdown's **Apply** action updates an in-memory run selection, and `ComputationButton` sends only the selected identifiers when the matching calculation type is active.
 
 The backend does not trust browser-supplied record contents. It resolves the identifiers against saved records, validates ownership and relationships, stores an authoritative snapshot on the queued computation task, and later emits the normalized selection under `parameters.solve_inputs`.
 
@@ -43,7 +43,7 @@ The backend does not trust browser-supplied record contents. It resolves the ide
 - `src/src/backend/services/solveInputTranslationService.ts`: validates selected set, Instrument Set, and measurement identifiers and builds the authoritative Optimization or DataRec snapshot.
 - `src/src/backend/services/computationTaskService.ts`: persists the computation configuration, including the internal selected-input snapshot, on the MongoDB computation task.
 - `src/src/backend/workers/computationDispatchWorker.ts`: reloads the queued task and diagram, then passes saved equations, collections, SoluAlgoLib rows, and selected inputs into the solve-request builder.
-- `src/src/backend/services/solverEngineApiService.ts`: removes stale parameter copies, converts selected set equation objects to equation-id references, keeps only the supported DataRec model-path fields, moves selected inputs into `parameters.solve_inputs`, and builds the final solver request.
+- `src/src/backend/services/solverEngineApiService.ts`: removes stale parameter copies, converts selected Objective Function equations and Constraint collections to solver references, keeps only the supported DataRec model-path fields, moves selected inputs into `parameters.solve_inputs`, and builds the final solver request.
 
 ## Purpose and Responsibility
 
@@ -52,7 +52,7 @@ This workflow owns the selection boundary between reusable saved editor data and
 It does not own the contents of those records:
 
 - Equation Writing owns equation definitions.
-- `+Constr` owns Objective Function and Constraint set membership.
+- `+Constr` owns Objective Function and Constraint set membership plus Constraint collections.
 - Plant Measurements owns Instrument Sets, mappings, and measurement rows.
 - TP Specs owns calculation-type-specific variable specifications.
 - The compute route and solver builder own validation, snapshotting, and final payload normalization.
@@ -72,13 +72,13 @@ The specialized dropdown is rendered only for the active calculation type. Inact
 
 | Menu item | Selection source | Result |
 | --- | --- | --- |
-| **Objective function** | Saved `diagram.sets` with type `Objective Function` | Multi-select modal; **Apply** replaces `optimizationOptions.objectiveFunctions`. |
-| **Additional constraints** | Saved `diagram.sets` with type `Constraint` | Multi-select modal; **Apply** replaces `optimizationOptions.additionalConstraints`. |
+| **Objective function** | Saved `diagram.equations` with type `Objective Function` | Selection modal; **Apply** replaces `optimizationOptions.objectiveFunctions` with selected Objective Function equations. |
+| **Additional constraints** | Saved `diagram.collections` | Multi-select modal; **Apply** replaces `optimizationOptions.additionalConstraints` with selected Constraint collections. |
 | **Specification set** | Shared `TPSpecsButton` | Increments `tpSpecsOpenSignal` and opens TP Specs. |
 | **Edit Objective Functions** | Shared `ConstraintModule` | Closes the selector and increments `constraintEditorOpenSignal`. |
 | **Edit Constraints** | Shared `ConstraintModule` | Closes the selector and opens the same `+Constr` editor. |
 
-The set selector fetches `GET /api/data/diagrams/:diagramId` whenever either selection modal opens. `normalizeOptimizationSets(...)` keeps only records with a non-empty id and a recognized set type. Draft checkbox state is isolated inside the modal until **Apply** is clicked; **Cancel** leaves the committed Header Bar selection unchanged.
+The selector fetches `GET /api/data/diagrams/:diagramId` whenever either selection modal opens. Objective Function selection keeps only saved Objective Function equations with ids. Additional Constraint selection keeps only saved collections with ids. Draft selection state is isolated inside the modal until **Apply** is clicked; **Cancel** leaves the committed Header Bar selection unchanged.
 
 ### DataRec dropdown
 
@@ -86,7 +86,7 @@ The set selector fetches `GET /api/data/diagrams/:diagramId` whenever either sel
 | --- | --- | --- |
 | **Define Instruments** | `GET /api/data/diagrams/:diagramId/instrument-sets` | Single-select radio modal; **Apply** sets the active Instrument Set. |
 | **Plant Measurements** | `GET /api/data/instrument-sets/:instrumentSetId/measurements` | Multi-select modal for measurements saved under the active Instrument Set. |
-| **Objective function** | Saved `diagram.sets` with type `Objective Function` | Multi-select modal; **Apply** replaces `dataRecObjectiveFunctions`. |
+| **Objective function** | Saved `diagram.equations` with type `Objective Function` | Selection modal; **Apply** replaces `dataRecObjectiveFunctions`. |
 | **Specification set** | Shared `TPSpecsButton` | Increments `tpSpecsOpenSignal` and opens TP Specs. |
 | **Edit Instruments** | Shared `PlantMeasurementButton` | Applies the selected Instrument Set, closes the selector, and opens the `mappings` tab. |
 | **Edit Measurements** | Shared `PlantMeasurementButton` | Closes the selector and opens the `measurements` tab. |
@@ -110,8 +110,8 @@ The **Optimization > Optimization Options** dropdown entry controls a separate p
 
 | State | Type | Meaning |
 | --- | --- | --- |
-| `optimizationOptions` | `OptimizationOptions` | Committed mode, Objective Function Sets, and Additional Constraint Sets for the next Optimization run. |
-| `dataRecObjectiveFunctions` | `OptimizationObjectiveFunctionSet[]` | Committed Objective Function Sets for the next DataRec run. |
+| `optimizationOptions` | `OptimizationOptions` | Committed mode, selected Objective Function equations, and Additional Constraint collections for the next Optimization run. |
+| `dataRecObjectiveFunctions` | `OptimizationObjectiveFunctionSet[]` | Committed Objective Function equations for the next DataRec run. |
 | `dataRecMeasurements` | `PlantMeasurementDto[]` | Committed saved measurements for the next DataRec run. |
 | `activeInstrumentSet` | Redux `InstrumentSetDto \| null` | Current DataRec Instrument Set and source of all mapping records. |
 | `plantMeasurementOpenSignal` | `number` | Opens the shared Plant Measurements modal from the DataRec dropdown. |
@@ -152,8 +152,8 @@ Optimization request fields:
     "mode": "dro",
     "wassersteinRadius": 0.25,
     "wassersteinNorm": "L2",
-    "objectiveFunctionSetIds": ["objective-set-1"],
-    "additionalConstraintSetIds": ["constraint-set-1"]
+    "objectiveFunctionIds": ["equation-objective-1"],
+    "additionalConstraintCollectionIds": ["collection-1"]
   }
 }
 ```
@@ -166,7 +166,7 @@ DataRec request fields:
     "objectiveFunctionMode": "default",
     "instrumentSetId": "64b000000000000000000003",
     "measurementIds": ["64b000000000000000000005"],
-    "objectiveFunctionSetIds": ["objective-set-1"]
+    "objectiveFunctionIds": ["equation-objective-1"]
   }
 }
 ```
@@ -185,19 +185,20 @@ The route derives its calculation type from the saved `diagram.parameters.global
 
 ### Optimization resolution
 
-1. Normalize saved `diagram.sets` into id, name, type, and equation arrays.
-2. Resolve `objectiveFunctionSetIds` only against `Objective Function` sets.
-3. Resolve `additionalConstraintSetIds` only against `Constraint` sets.
-4. Reject a missing id or a set with the wrong type.
-5. Normalize `objectiveFunctionMode` to `default` unless it is exactly `custom`.
-6. Default the optimization mode to `deterministic` unless it is exactly `dro`.
-7. Reject DRO when the radius is missing, non-numeric, or negative.
-8. Copy the saved set names and equation objects into the queued snapshot.
+1. Normalize saved `diagram.equations` into Objective Function equation options.
+2. Normalize saved `diagram.collections` into collection options.
+3. Resolve `objectiveFunctionIds` only against Objective Function equations.
+4. Resolve `additionalConstraintCollectionIds` only against saved collections.
+5. Reject a missing id or an id with the wrong source/type.
+6. Normalize `objectiveFunctionMode` to `default` unless it is exactly `custom`.
+7. Default the optimization mode to `deterministic` unless it is exactly `dro`.
+8. Reject DRO when the radius is missing, non-numeric, or negative.
+9. Copy the selected equation and collection snapshots into the queued snapshot.
 
 ### DataRec resolution
 
 1. Normalize `objectiveFunctionMode` to `default` unless it is exactly `custom`.
-2. Resolve selected Objective Function Set ids from saved `diagram.sets`.
+2. Resolve selected Objective Function equation ids from saved `diagram.equations`.
 3. If no Instrument Set is selected, reject any non-empty measurement selection; otherwise return an empty instrument/measurement selection.
 4. Require the Instrument Set and measurement ids to be MongoDB ObjectId-shaped strings.
 5. Require the Instrument Set to belong to both the authenticated user and the current diagram.
@@ -212,7 +213,7 @@ The translated snapshot is attached to `configuration.selected_inputs` before th
 
 At dispatch, `buildSolveRequest(...)` removes the internal `selected_inputs` field from solver configuration and writes the normalized form to `parameters.solve_inputs`.
 
-For selected equation sets, the queued snapshot temporarily contains full persisted equation objects. The final solver payload reduces each nested set's `equations` array to equation ids. The full normalized Equation Writing catalog remains separately available in top-level `parameters.equations`.
+For selected objectives, the queued snapshot temporarily contains full persisted Objective Function equation objects. The final solver payload emits compact objective definitions under `objective_functions`. The full normalized Equation Writing catalog remains separately available in top-level `parameters.equations`.
 
 Each DataRec instrument and measurement uses the same five-field `model_path`: `network`, `node_id`, `node_name`, `port`, and `variable`. Persisted mapping records or legacy queued snapshots can still contain `subnetwork`, `subSubnetwork`, or `sub_subnetwork`, but request assembly does not send those fields to the solver.
 
@@ -250,16 +251,17 @@ Optimization selection example:
         "wasserstein_norm": null,
         "objective_functions": [
           {
-            "set_id": "objective-set-1",
-            "name": "Fuel objective",
-            "equations": ["equation-objective-1"]
+            "id": "equation-objective-1",
+            "expression": "Main Network.Heater.OUT.Duty[t]",
+            "sense": "minimize",
+            "tokens": []
           }
         ],
-        "additional_constraints": [
+        "additional_constraint_collections": [
           {
-            "set_id": "constraint-set-1",
+            "collection_id": "collection-1",
             "name": "Operating limits",
-            "equations": ["equation-constraint-1"]
+            "sets": ["constraint-set-1"]
           }
         ]
       }
@@ -341,7 +343,7 @@ DataRec selection example:
 }
 ```
 
-All normal translated model, TP, stream, material, and economic parameters remain alongside these fields. In `default` mode, Supply & Demand data remains under `parameters.costs`; in `custom` mode, selected saved sets remain under `objective_functions`. The mode field chooses which source the calculation server should use without duplicating either source.
+All normal translated model, TP, stream, material, and economic parameters remain alongside these fields. In `default` mode, Supply & Demand data remains under `parameters.costs`; in `custom` mode, selected Objective Function equations remain under `objective_functions`. The mode field chooses which source the calculation server should use without duplicating either source.
 
 ### Stale parameter cleanup versus the equation catalog
 
@@ -350,7 +352,8 @@ All normal translated model, TP, stream, material, and economic parameters remai
 This cleanup does not eliminate the authoritative Equation Writing catalog. The worker separately passes `diagram.equations` to `buildSolveRequest(...)`, which normalizes that saved catalog and recreates top-level `parameters.equations`. The two fields have different responsibilities:
 
 - `parameters.equations` contains normalized saved equation definitions.
-- `parameters.solve_inputs.*.objective_functions[].equations` and `additional_constraints[].equations` contain ids that select equations within named sets for this run.
+- `parameters.solve_inputs.*.objective_functions[]` contains selected Objective Function definitions with stable ids, expression, sense, and tokens.
+- `parameters.solve_inputs.optimization.additional_constraint_collections[]` contains selected collection ids and set id references.
 
 Do not remove either path without updating the solver contract and focused tests.
 
@@ -365,7 +368,7 @@ Do not remove either path without updating the solver contract and focused tests
 7. `computeRoutes.ts` resolves ids against saved diagram and measurement data and rejects stale or unauthorized selections.
 8. The route stores the authoritative snapshot in the queued task's `configuration.selected_inputs`.
 9. The Bull worker reloads the task and diagram.
-10. `buildSolveRequest(...)` removes stale parameter copies, normalizes selected set equation references to ids, moves the snapshot to `parameters.solve_inputs`, and adds the independent normalized equation catalog.
+10. `buildSolveRequest(...)` removes stale parameter copies, normalizes selected Objective Function equations and Constraint collections, moves the snapshot to `parameters.solve_inputs`, and adds the independent normalized equation catalog.
 11. The solver receives the final request through `${BASE_SOLVER_ENGINE_URL}/solve/`.
 
 ## Side Effects
@@ -385,7 +388,7 @@ Do not remove either path without updating the solver contract and focused tests
 - Empty saved lists show a non-destructive message and an editor entry point.
 - Plant Measurements shows a select-Instrument-Set message until an Instrument Set is active.
 - Switching Instrument Sets invalidates selected measurements because measurement ids are scoped to one set.
-- A selected set deleted or changed to the wrong type before compute start causes a `400` selection error.
+- A selected Objective Function equation or Constraint collection deleted before compute start causes a `400` selection error.
 - A stale, unauthorized, or cross-diagram Instrument Set causes a `400` selection error.
 - Missing measurements, measurements with validation errors, invalid values, and missing mapping joins are rejected before queueing.
 - DataRec may run with no Instrument Set only when no measurements are selected; its solver snapshot then contains `instrument_set: null`, empty `instruments`, and empty `measurements`.
@@ -399,7 +402,7 @@ Do not remove either path without updating the solver contract and focused tests
 - Persist run selections across remounts only after defining their ownership and invalidation model; current selections intentionally live in Header/Redux runtime state.
 - Change shared-editor navigation through the signal props instead of creating duplicate editor instances in either dropdown.
 - Change set or measurement id formats only with frontend normalization, backend validation, MongoDB schema, and stale-id errors in mind.
-- If the solver needs full equation objects nested inside selected sets, change `normalizeSelectedEquationSets(...)` and the solver contract deliberately; current nested references are id-only.
+- If the solver needs full equation objects nested inside sets or collections, change set/collection normalization and the solver contract deliberately; current set and collection references are id-only.
 
 ## Testing and Verification
 
@@ -426,7 +429,7 @@ Manual verification matrix:
 | Scenario | Expected result |
 | --- | --- |
 | Switch from Simulation to Optimization | Confirmation appears; after confirm, TP Specs opens and Optimization renders as a dropdown. |
-| Select Objective Function and Constraint sets | Reopening each selector shows the committed checks; Cancel does not change them. |
+| Select Objective Function equations and Constraint collections | Reopening each selector shows the committed checks; Cancel does not change them. |
 | Open either Optimization edit action | The selection modal closes and the shared `+Constr` editor opens. |
 | Switch from Optimization to DataRec | DataRec renders as a dropdown; Optimization returns to a plain button. |
 | Open Plant Measurements without an Instrument Set | Selector asks for an Instrument Set and does not enable Apply. |
@@ -447,8 +450,8 @@ Manual verification matrix:
 - All mappings from a selected Instrument Set become DataRec `instruments`; only the measurement list is individually selected.
 - DataRec `model_path` is intentionally limited to `network`, `node_id`, `node_name`, `port`, and `variable`; subnetwork depth fields from stored or legacy records are stripped before solver dispatch.
 - `configuration.selected_inputs` is an internal queued-task snapshot and must not be sent as a solver configuration field.
-- Top-level `parameters.equations` and nested equation-id selections serve different purposes. The stale-parameter cleanup happens before the authoritative equation catalog is added back.
-- The selected set snapshot freezes equation membership ids, but the worker reloads the full `diagram.equations` definitions at dispatch. Editing or deleting an equation while a task is waiting can therefore change or break the catalog referenced by that queued selection.
+- Top-level `parameters.equations`, `parameters.sets`, `parameters.collections`, and selected solve-input ids serve different purposes. The stale-parameter cleanup happens before these authoritative catalogs are added back.
+- The selected objective snapshot freezes the selected equation object, but the worker also reloads the full `diagram.equations` definitions at dispatch for the top-level catalog. Editing or deleting an equation while a task is waiting can therefore change or break related references.
 - Generated `src/src/backend/services/solve_request.json` is runtime evidence only and may be stale.
 
 ## Related Pages

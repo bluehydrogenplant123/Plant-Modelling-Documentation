@@ -63,8 +63,8 @@ Run config does not own TP ranges, durations, Sliding Horizon, economic entities
 | `runConfigs` | Backend domain data route. | PostgreSQL `RunConfigs`, then Redux domain data. | Solver names are selected from keys that do not match `/algorithm/i`. |
 | Solver config attributes | `RunConfigModal` and `UniversalRunConfigPanel`. | Currently loaded from `RunConfigs`; frontend save attempts `/api/data/run-configs/import`, but the backend route is missing. | `ComputationTaskService.translateComputationConfig` uses the selected solver name. |
 | `solution_algo_library` | `SolutionAlgoLibraryModule`. | MongoDB `diagram.solualgolib`. | `buildSolveRequest(...)` normalizes saved rows into solver configuration. |
-| `optimizationOptions` | Header **Calc Type > Optimization** dropdown. | Header runtime state, then internal queued-task snapshot. | Selects deterministic/DRO mode, Wasserstein radius/norm, and saved Objective Function / Constraint Sets. |
-| `dataRecOptions` | Header DataRec setup. | Header/Redux runtime state, then internal queued-task snapshot. | Selects one Instrument Set, Plant Measurements, and Objective Function Sets. |
+| `optimizationOptions` | Header **Calc Type > Optimization** dropdown. | Header runtime state, then internal queued-task snapshot. | Selects deterministic/DRO mode, Wasserstein radius/norm, Objective Function equation ids, and Constraint collection ids. |
+| `dataRecOptions` | Header DataRec setup. | Header/Redux runtime state, then internal queued-task snapshot. | Selects one Instrument Set, Plant Measurements, and Objective Function equation ids. |
 | `runName` | `ComputationButton`. | Computation task row. | Required in `/api/compute/start`. |
 | `maxComputationTime` | `ComputationButton` UI, then backend route validation. | Computation configuration. | Passed to `translateComputationConfig`. |
 | `slidingHorizon` | `GlobalTpButton`, then Redux canvas state. | `canvas.slidingHorizon`, default `1`. | For MTP only, sent and generated as `parameters.global_params.slidingHorizon`. Never added to `configuration`. |
@@ -178,26 +178,26 @@ The common Base TP start body is:
 }
 ```
 
-When Optimization is active, the request also contains selected set ids and mode:
+When Optimization is active, the request also contains selected Objective Function equation ids, Constraint collection ids, and mode:
 
 ```json
 {
   "optimizationOptions": {
     "mode": "deterministic",
-    "objectiveFunctionSetIds": ["objective-set-1"],
-    "additionalConstraintSetIds": ["constraint-set-1"]
+    "objectiveFunctionIds": ["objective-equation-1"],
+    "additionalConstraintCollectionIds": ["constraint-collection-1"]
   }
 }
 ```
 
-When DataRec is active, the request instead contains selected Instrument Set, measurement, and Objective Function Set ids:
+When DataRec is active, the request instead contains selected Instrument Set, measurement, and Objective Function equation ids:
 
 ```json
 {
   "dataRecOptions": {
     "instrumentSetId": "64b000000000000000000003",
     "measurementIds": ["64b000000000000000000005"],
-    "objectiveFunctionSetIds": ["objective-set-1"]
+    "objectiveFunctionIds": ["objective-equation-1"]
   }
 }
 ```
@@ -409,7 +409,7 @@ There is no dedicated automated Sliding Horizon request test in the current repo
 | MTP with request field omitted | Older/manual client sends no horizon field. | Uses persisted current value, saved canvas value, legacy value, or default `1` in that order. | Older clients must remain runnable. |
 | MTP with invalid explicit value | Contains a non-finite value or value below `1`. | Returns HTTP `400`; no task is queued. | Invalid request must not silently overwrite saved state. |
 | Base TP after an earlier MTP run | Omits the field. | Removes current and legacy solver-facing horizon fields. | Stale MTP horizon must not reach the Base TP solver request. |
-| Optimization run | Includes `optimizationOptions` id arrays and mode. | Queued snapshot becomes Optimization `parameters.solve_inputs`. | Sliding Horizon or run-config changes must not drop selected sets. |
+| Optimization run | Includes `optimizationOptions` id arrays and mode. | Queued snapshot becomes Optimization `parameters.solve_inputs`. | Sliding Horizon or run-config changes must not drop selected Objective Function equations or Constraint collections. |
 | DataRec run | Includes `dataRecOptions` ids. | Queued snapshot expands authoritative mappings and selected measurements. | Sliding Horizon or run-config changes must not drop DataRec selections. |
 
 ## Known Cautions

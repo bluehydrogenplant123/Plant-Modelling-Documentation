@@ -17,11 +17,11 @@ Use **Optimization** when the current network should run in optimization mode.
 
 If another calculation type is selected, clicking **Optimization** opens **Switch Calc Type**. Confirming the switch changes the mode, opens **TP Specs**, and turns **Optimization** into a dropdown with three setup entries:
 
-- **Objective function** selects saved Objective Function Sets and provides an entry to the `+Constr` editor.
-- **Additional constraints** selects saved Constraint Sets and provides an entry to the same editor.
+- **Objective function** selects saved Objective Function equations.
+- **Additional constraints** selects saved Constraint collections and provides an entry to the `+Constr` editor.
 - **Specification set** opens the shared TP Specs panel.
 
-The selectors show saved sets from the current network. Checkbox changes are drafts until you click **Apply**; **Cancel** leaves the current run selection unchanged.
+The selectors show saved Objective Function equations and Constraint collections from the current network. Checkbox changes are drafts until you click **Apply**; **Cancel** leaves the current run selection unchanged.
 
 ## Basic Steps
 
@@ -29,14 +29,14 @@ The selectors show saved sets from the current network. Checkbox changes are dra
 2. Click **Optimization**.
 3. If **Switch Calc Type** appears, review the source and target modes.
 4. Click **Confirm** to switch to **Optimization**.
-5. Open **Objective function**, select the saved sets for the next run, and click **Apply**.
-6. Open **Additional constraints**, select any saved Constraint Sets, and click **Apply**.
+5. Open **Objective function**, select the saved Objective Function equations for the next run, and click **Apply**.
+6. Open **Additional constraints**, select any saved Constraint collections, and click **Apply**.
 7. Use **Specification set** to review or edit TP Specs, then save the TP Specs changes.
 8. If needed, open **Set Run > Optimization Options** and choose **Deterministic** or **DRO**. DRO requires a non-negative Wasserstein Radius.
 
 ## Result
 
-The network uses **Optimization** as its calculation mode. Saved TP Specs and `+Constr` sets remain reusable editor data, while the dropdown's applied set choices control the next Optimization run. Those run choices are temporary and reset when the canvas Header is remounted or another network is opened.
+The network uses **Optimization** as its calculation mode. Saved TP Specs, Equation Writing equations, and `+Constr` collections remain reusable editor data, while the dropdown's applied choices control the next Optimization run. Those run choices are temporary and reset when the canvas Header is remounted or another network is opened.
 
 ## Related Pages
 

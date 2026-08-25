@@ -8,7 +8,9 @@ description: Explains how SoluAlgoLib reads PostgreSQL algorithm rows, saves per
 
 ## Overview
 
-The Solution Algorithm Library module lets users configure algorithm phases for a saved diagram. The base algorithm rows come from PostgreSQL table `SolutionAlgoLibrary`, which is imported from the system Excel workbook. The frontend module displays those rows, lets users edit runtime fields and choose related sets or collections, then saves the diagram-specific choices into MongoDB under `diagram.solualgolib`.
+The Solution Algorithm Library module lets users configure algorithm phases for a saved diagram. The base algorithm rows come from PostgreSQL table `SolutionAlgoLibrary`, which is imported from the system Excel workbook. The frontend module displays those rows, lets users edit runtime fields, choose related Constraint collections, and choose Objective Function equations from Equation Writing, then saves the diagram-specific choices into MongoDB under `diagram.solualgolib`.
+
+Each optimization phase references its selected objective through the row-level `objective_function` field. That value is the stable id of a single Objective Function equation, not the id of an Objective Function set.
 
 The module replaced the old frontend Composite_Algorithm workflow in the header. Users still open it from the Set Run `Algorithm` dropdown, but the dropdown item opens SoluAlgoLib instead of a legacy run-config form.
 
@@ -28,9 +30,9 @@ The module replaced the old frontend Composite_Algorithm workflow in the header.
 
 ## Purpose and Responsibility
 
-The module owns diagram-level SoluAlgoLib editing. It combines read-only base rows from PostgreSQL with user-editable per-diagram choices, such as convergence goto behavior, run type, solver, selected collection, and selected Objective Function set.
+The module owns diagram-level SoluAlgoLib editing. It combines read-only base rows from PostgreSQL with user-editable per-diagram choices, such as convergence goto behavior, run type, solver, selected collection, and selected Objective Function equation.
 
-It does not create the base library rows. Those rows are owned by the Excel import pipeline and PostgreSQL migration scripts. It also does not create sets or collections; it reads options saved by the `+Constr` module.
+It does not create the base library rows. Those rows are owned by the Excel import pipeline and PostgreSQL migration scripts. It also does not create equations, sets, or collections; it reads equations saved by Equation Writing and collections saved by the `+Constr` module.
 
 ## Inputs and Outputs
 
@@ -38,26 +40,26 @@ It does not create the base library rows. Those rows are owned by the Excel impo
 | --- | --- | --- |
 | `state.domain.data.solutionAlgoLibrary` | Redux domain data from PostgreSQL | Provides the base algorithm rows displayed in the table. |
 | `diagramId` | React Router params | Loads and saves diagram-specific SoluAlgoLib selections. |
-| `GET /api/data/diagrams/:diagramId` | Backend route | Loads saved collections, sets, and existing `solualgolib` choices. |
+| `GET /api/data/diagrams/:diagramId` | Backend route | Loads saved collections, equations, and existing `solualgolib` choices. |
 | `diagram.collections` | MongoDB | Populates the Collection dropdown. |
-| `diagram.sets` | MongoDB | Populates the Set dropdown after filtering to Objective Function sets. |
+| `diagram.equations` | MongoDB | Populates the Objective Function dropdown after filtering to Objective Function equations. |
 | `diagram.solualgolib` | MongoDB | Rehydrates saved row edits and selections. |
 
 | Output | Destination | Notes |
 | --- | --- | --- |
 | `editableRows` | Component state | Combines PostgreSQL row defaults and user edits. |
-| `PUT /api/data/diagrams/:diagramId/solualgolib` | Backend route | Persists diagram-specific row values and selected set/collection payloads. |
+| `PUT /api/data/diagrams/:diagramId/solualgolib` | Backend route | Persists diagram-specific row values and selected objective/collection payloads. |
 | `diagram.solualgolib` | MongoDB | Stores the selected row values for the diagram. |
-| `configuration.solution_algo_library` | Solver request | Contains normalized rows with collection and set references reduced to ids. |
+| `configuration.solution_algo_library` | Solver request | Contains normalized rows with collection and objective-function references reduced to ids. |
 | `configuration.algorithm` | Solver request | Defaults to `SoluAlgoLib` when no explicit algorithm exists. |
 
 ## Core State and Data Structures
 
 - `SolutionAlgoLibraryEntry`: domain row with `id`, `domain`, `algorithmName`, `phaseName`, numeric phase controls, goto fields, variables, `runType`, and `solver`.
-- `EditableSolutionAlgoLibraryEntry`: extends the domain row with `collectionId` and `setId`.
+- `EditableSolutionAlgoLibraryEntry`: extends the domain row with `collectionId` and `objectiveFunctionId`.
 - `ConstraintOption`: dropdown option with `id`, `name`, and full `payload`.
 - `collectionOptions`: options loaded from `diagram.collections`.
-- `setOptions`: options loaded from `diagram.sets` and filtered to `Objective Function`.
+- `objectiveFunctionOptions`: options loaded from `diagram.equations` and filtered to `Objective Function`.
 - `showPanel` and `isSaving`: local modal and save guards.
 
 PostgreSQL stores the base rows:
@@ -97,7 +99,7 @@ Mongo stores the diagram-specific row list:
   runType: string | null;
   solver: string | null;
   collection: StoredConstraintCollectionDefinition | null;
-  set: StoredConstraintSetDefinition | null;
+  objectiveFunction: StoredEquationDefinition | null;
 }
 ```
 
@@ -107,15 +109,15 @@ Mongo stores the diagram-specific row list:
 - `normalizeGotoValue(...)`: normalizes variants such as `phase_1`, `1`, and `p1` into `P1`.
 - `normalizeSolverValue(...)`: normalizes solver names such as `iport` and `ipopt` into `IPOPT`.
 - `normalizeConstraintOptions(...)`: converts saved collections into dropdown options.
-- `normalizeObjectiveSetOptions(...)`: converts saved sets into dropdown options and keeps only `Objective Function` sets.
+- `normalizeObjectiveFunctionOptions(...)`: converts saved equations into dropdown options and keeps only Objective Function equations.
 - `normalizePersistedSolutionAlgoRows(...)`: reads saved Mongo rows and maps them by row id so current PostgreSQL rows can be overlaid with saved choices.
 - `handleNumericValueChange(...)`: updates nullable numeric fields and ignores invalid non-numeric input.
 - `handleGotoValueChange(...)`, `handleRunTypeChange(...)`, and `handleSolverChange(...)`: update row-level select values.
-- `handleConstraintChoiceChange(...)`: updates the selected collection or set id for a row.
-- `serializeRowsForPersistence()`: converts editable rows into the Mongo persistence payload with full selected set/collection payloads.
+- `handleConstraintChoiceChange(...)`: updates the selected collection or Objective Function equation id for a row.
+- `serializeRowsForPersistence()`: converts editable rows into the Mongo persistence payload with full selected collection and Objective Function payloads.
 - `handleSave()`: validates that a diagram exists, then saves `solualgolib`.
 - `buildSolutionAlgoLibrary(...)`: backend domain-data helper that reads PostgreSQL rows and filters them by current domain plus `Generic`.
-- `normalizeSolveRequestSolutionAlgoLibrary(...)`: emits solver rows with `collection` and `set` as ids.
+- `normalizeSolveRequestSolutionAlgoLibrary(...)`: emits solver rows with `collection` and `objective_function` as ids.
 
 ## Rendered UI and Interaction Map
 
@@ -130,7 +132,7 @@ Mongo stores the diagram-specific row list:
 | Run Type | Select field using `OPT`, `SIM`, `SYNC_VALUES`, and `ALGEBRAIC`. |
 | Solver | Select field using `IPOPT` and `GUROBI`. |
 | Collection | Dropdown loaded from saved collections. |
-| Set | Dropdown loaded from saved Objective Function sets. |
+| Objective Function | Dropdown loaded from saved Equation Writing Objective Function equations. |
 | Save | Persists all editable rows for the current diagram. |
 
 ## Component Contract
@@ -152,7 +154,7 @@ The component expects `domain.data.solutionAlgoLibrary` to be present when the d
 3. The frontend domain slice stores those rows.
 4. The Set Run `Algorithm` dropdown renders `SolutionAlgoLibraryModule` as a `Dropdown.Item`.
 5. Opening the modal maps PostgreSQL rows into editable local rows.
-6. If `diagramId` exists, the module fetches the diagram to load collections, Objective Function sets, and saved `solualgolib` choices.
+6. If `diagramId` exists, the module fetches the diagram to load collections, Objective Function equations, and saved `solualgolib` choices.
 7. User edits are saved with `PUT /api/data/diagrams/:diagramId/solualgolib`.
 8. The backend sanitizes row values and stores them on `diagram.solualgolib`.
 9. During computation, `computationDispatchWorker.ts` passes `diagram.solualgolib` to `buildSolveRequest(...)`.
@@ -185,30 +187,32 @@ Important route behavior:
 - `solualgolib` must be an array.
 - Numeric fields are converted to numbers or null.
 - Collection and set values can be supplied as full objects or ids; the sanitizer resolves ids from either form.
-- Stored collection and set objects are sanitized through the same helpers used by the `+Constr` save routes.
+- Stored collection objects are sanitized through the same helper used by the `+Constr` save route; Objective Function entries are sanitized through the saved-equation helper.
 - The route replaces the full `diagram.solualgolib` array.
 
 Solver request rules:
 
 - `configuration.algorithm` defaults to `SoluAlgoLib`.
 - `configuration.solution_algo_library` is always included as an array.
-- Row `collection` and `set` fields are reduced to ids before being sent to the solver.
+- Row `collection` and `objective_function` fields are reduced to ids before being sent to the solver.
+- `objective_function` is the id of a single Objective Function equation. The equation definition itself is emitted under `parameters.solve_inputs.*.objective_functions` when that objective is selected for the run.
 - `solution_algo_library` is part of `configuration`, not `parameters`.
 
 ## Side Effects
 
-- Opening the modal fetches the diagram to load currently saved collections, sets, and row selections.
+- Opening the modal fetches the diagram to load currently saved collections, Objective Function equations, and row selections.
 - Saving writes `diagram.solualgolib` in MongoDB.
 - Deleting sets or collections in the `+Constr` module can be blocked by rows saved here.
+- Deleting or renaming an Objective Function equation can affect saved SoluAlgoLib objective-function references.
 - Computation dispatch sends saved rows to the solver in the configuration object.
 
 ## Error Handling and Edge Cases
 
 - Saving without a saved diagram shows `Please save the diagram before saving SoluAlgoLib.`
-- If loading diagram constraints fails, collection and set dropdowns are cleared and an error is logged.
+- If loading diagram constraints fails, collection and Objective Function dropdowns are cleared and an error is logged.
 - Empty numeric inputs are stored as null.
 - Invalid numeric edits are ignored and the previous value is retained.
-- Only Objective Function sets are available in the Set dropdown.
+- Only Objective Function equations are available in the Objective Function dropdown.
 - Duplicate names are safe because saved choices are tracked by id.
 - Missing PostgreSQL `SolutionAlgoLibrary` table returns an empty library from the backend domain helper.
 
@@ -216,7 +220,7 @@ Solver request rules:
 
 - Add a new base column by updating the PostgreSQL schema, Excel migration import, backend domain mapping, `SolutionAlgoLibraryEntry`, modal table, save sanitizer, and solver normalization.
 - Add a new run type or solver by updating the frontend option arrays and solver-side accepted values.
-- Change set filtering by updating `normalizeObjectiveSetOptions(...)` and any solver expectations.
+- Change Objective Function filtering by updating `normalizeObjectiveFunctionOptions(...)` and any solver expectations.
 - If SoluAlgoLib should save only ids instead of full payloads in Mongo, update frontend serialization, backend sanitizer, delete guards, and solver normalization together.
 
 ## Testing and Verification
@@ -243,9 +247,9 @@ Manual verification matrix:
 | Open Set Run `Algorithm` dropdown | `SoluAlgoLib` appears as the available item. |
 | Open modal with PostgreSQL rows loaded | Table displays algorithm and phase rows. |
 | Edit numeric values and save | Mongo `diagram.solualgolib` stores numeric values or nulls. |
-| Select collection and Objective Function set | Saved rows reload with the same selections. |
+| Select collection and Objective Function equation | Saved rows reload with the same selections. |
 | Try duplicate display names | Correct choices persist because ids are used. |
-| Run computation | `configuration.solution_algo_library` is present and row set/collection values are ids. |
+| Run computation | `configuration.solution_algo_library` is present and row `objective_function`/`collection` values are ids. |
 | Remove PostgreSQL table in dev | Domain endpoint returns an empty library instead of crashing. |
 
 ## Known Cautions
@@ -253,8 +257,8 @@ Manual verification matrix:
 - PostgreSQL owns the base library rows; Mongo owns only diagram-specific selections.
 - `solution_algo_library` belongs under solver `configuration`, not `parameters`.
 - The old Composite_Algorithm frontend flow should not be reintroduced through RunConfigs.
-- The Set dropdown intentionally excludes Constraint sets.
-- Delete protections for sets and collections depend on saved SoluAlgoLib rows, so unsaved modal changes cannot protect related objects.
+- The Objective Function dropdown intentionally uses Equation Writing equations, not `+Constr` Objective Function sets.
+- Delete protections for collections depend on saved SoluAlgoLib rows, so unsaved modal changes cannot protect related objects.
 
 ## Related Pages
 

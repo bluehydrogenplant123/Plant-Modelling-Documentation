@@ -12,11 +12,17 @@ The Equation Writing module lets users create objective-function and constraint 
 
 Draft equations live in Redux while the modal is open. Saved equations are written to MongoDB under `diagram.equations`. During computation, the backend reads those saved equations, normalizes their tokens, converts variable bounds to base units, and includes them in the solver request when they are relevant to the active run.
 
+Equations can also reuse variable terms from other equations that belong to a compatible `+Constr` set. Constraint equations share terms with Constraint equations, and Objective Function equations share terms with Objective Function equations after Objective Function sets are restored in `+Constr`.
+
+The module now distinguishes authored token kinds for the solver. Existing diagram variables are normalized as `model_variable`, user self-defined variables are normalized as `declared_variable`, numeric constants are normalized as `literal`, and older unresolved variable-shaped records can still pass through as `variable` for compatibility. Declared variables are also collected once into `parameters.declared_variables` so the solver can create them before evaluating expressions.
+
 ## Source Files
 
 - `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.tsx`: modal UI, equation list, token editing, Add Variable popover, Dimension/Unit conversion behavior, CSV import, save/delete calls, and subnetwork variable discovery.
 - `src/src/frontend/src/components/header-bar/header-buttons/equation-writing-module.css`: layout and sizing for the modal, equation sidebar, editor, Add Variable popover, operator pad, and terms panel.
 - `src/src/frontend/src/features/equationWriting/equationWritingSlice.ts`: Redux draft state for equations, active equation id, imported variable rows, and loaded diagram id.
+- `src/src/frontend/src/features/constraint/constraintSlice.ts`: Redux draft cache for `+Constr` sets used by the shared-term selector.
+- `src/src/frontend/src/components/header-bar/header-buttons/constraint-module.tsx`: assigns equations to compatible Objective Function or Constraint sets.
 - `src/src/frontend/src/components/header-bar/index.tsx`: renders the Equation Writing button in the header.
 - `src/src/frontend/src/store.ts`: registers the `equationWriting` reducer.
 - `src/src/backend/routes/dataRoutes.ts`: sanitizes and persists `diagram.equations`, deletes saved equations, and loads domain-level equation metadata.
@@ -43,6 +49,8 @@ The backend route owns persistence validation and sanitization. The solver API s
 | `state.domain.data.eqTypesConfig` | Redux domain slice | Populates the `EQ Type` selector. |
 | `state.domain.data.units` | Redux domain slice, sourced from PostgreSQL `UnitConversion` | Populates Dimension and Unit controls in Add Variable. |
 | `state.equationWriting` | Redux slice | Supplies equation drafts, active equation id, imported variables, and loaded diagram guard. |
+| `state.constraintDrafts` | Redux slice | Supplies cached `+Constr` set membership for shared-term lookup. |
+| Saved diagram sets | `GET /api/data/diagrams/:diagramId` | Fallback source for shared-term lookup when the `+Constr` cache is not hydrated. |
 | CSV import file | Hidden file input parsed by `xlsx` | Adds user-provided variable rows with `Node`, `Port`, and `Variable` columns. |
 | Saved diagram equations | `GET /api/data/diagrams/:diagramId` | Hydrates Redux drafts when the modal opens. |
 
@@ -52,19 +60,22 @@ The backend route owns persistence validation and sanitization. The solver API s
 | `PUT /api/data/diagrams/:diagramId/equations` | Backend data route | Persists all visible equation drafts for the diagram. |
 | `DELETE /api/data/diagrams/:diagramId/equations/:equationId` | Backend data route | Removes one persisted equation by id. |
 | `diagram.equations` | MongoDB diagram document | Stores user-facing equation data, including the user-selected unit. |
-| `parameters.equations` | Solver request body | Contains normalized saved equations, with variable bounds converted to base units. |
-| `parameters.solve_inputs` | Solver request body | Contains selected run inputs. Set references inside this object use ids rather than full nested equations. |
+| `parameters.equations` | Solver request body | Contains normalized saved equations, with token kinds resolved and variable bounds converted to base units. |
+| `parameters.declared_variables` | Solver request body | Contains one declaration token per user self-defined variable referenced by saved equations or selected nested structures. |
+| `parameters.solve_inputs` | Solver request body | Contains selected run inputs. Objective Function selections use equation ids; additional constraints use collection ids. |
 
 ## Core State and Data Structures
 
 - `EquationDefinition`: frontend draft record with `id`, `name`, `belongTo`, `equationType`, `eqType`, `expression`, and `tokens`.
-- `EquationToken`: discriminated token. Operator tokens store `value`; variable tokens store `type`, `name`, `path`, `network`, `node`, `port`, `variable`, `tp`, `lb`, `ub`, and `units`.
+- `EquationToken`: discriminated token. Operator tokens store `value`; variable-like tokens store the existing user-facing fields `type`, `name`, `path`, `network`, `node`, `port`, `variable`, `tp`, `lb`, `ub`, and `units`, plus a token kind that can become `variable`, `literal`, `model_variable`, or `declared_variable`.
 - `AddVariableDraft`: local popover state for `name`, `lb`, `ub`, `dimension`, `units`, and Pyomo variable `type`.
 - `ImportedVariableDraft`: CSV-imported row with `node`, `port`, and `variable`; deduplicated case-insensitively.
 - `activeEquationId`: current sidebar equation.
 - `loadedDiagramId`: prevents drafts loaded from one diagram from leaking into another.
 - `isUserSelfDefine`: switches node, port, and variable controls into text inputs.
 - `showAddVariablePopover`: controls whether the metadata popover for Add Variable is open.
+- `selectedSharedEquationId` and `selectedSharedTermIndex`: track the same-set equation and variable token selected for reuse.
+- `selectedAttributeVariable`: tracks the structured variable token whose attributes are shown from the expression editor popover.
 
 Persisted equations use this backend wrapper:
 
@@ -82,11 +93,11 @@ Persisted equations use this backend wrapper:
 }
 ```
 
-Solver-normalized equation tokens use snake_case token fields:
+Solver-normalized equation tokens keep the same user-facing fields where possible:
 
 ```ts
 {
-  token_type: 'variable';
+  token_type: 'variable' | 'literal' | 'model_variable' | 'declared_variable';
   type: string | null;
   name: string;
   network: string | null;
@@ -101,6 +112,8 @@ Solver-normalized equation tokens use snake_case token fields:
 }
 ```
 
+Numeric literals use `token_type: 'literal'`. Mongo persistence keeps the original token structure and only updates the token kind; the solve-request builder may compact numeric literals into the solver-facing literal form. Declared-variable expression references do not repeat Pyomo `type`; that metadata belongs to the corresponding top-level `parameters.declared_variables` entry.
+
 ## Main Functions and Components
 
 - `EquationWritingModule`: renders the button and modal, coordinates state, and owns user interactions.
@@ -113,10 +126,16 @@ Solver-normalized equation tokens use snake_case token fields:
 - `handleAddVariableDimensionChange(...)`: changes the Dimension dropdown, selects the first compatible unit, and clears `lb`/`ub` to avoid stale values.
 - `handleAddVariableUnitChange(...)`: converts the current `lb`/`ub` display values between units within the same dimension.
 - `handleConfirmAddVariable()`: validates variable selection and appends the structured variable token.
+- `handleEquationTypeChange(...)`: switches between Objective Function and Constraint, clears the active expression, and prevents stale comparison syntax from crossing equation types.
+- `handleOperatorButtonClick(...)`, `handleExpressionKeyDown(...)`, and `handleExpressionPaste(...)`: block comparison operators for Objective Function equations while allowing them for Constraint equations.
 - `handleExpressionChange(...)`: reparses manually typed expression text and synchronizes tokens.
 - `handleSaveEquations()`: saves the full visible equation list.
 - `handleDeleteEquation(...)`: deletes one saved equation and updates local state.
 - `handleImportedVariableFile(...)`: validates CSV headers and imports user variable choices.
+- `normalizePersistedConstraintSets(...)`: reads saved `+Constr` set membership so shared-term options can be built even when the `+Constr` modal has not been opened.
+- `handleSharedEquationChange(...)`: selects another equation from a compatible same-type set as the source of reusable terms.
+- `handleSharedTermChange(...)`: clones the selected variable token, preserving node, port, variable, bounds, unit, and path metadata, then appends it to the active equation.
+- `handleExpressionTermClick(...)`: opens the attribute popover for `model_variable` and `declared_variable` tokens only.
 - `normalizeSolveRequestEquations(...)`: converts stored equations to solver shape and converts non-base bounds into base-unit values.
 
 ## Rendered UI and Interaction Map
@@ -128,13 +147,16 @@ Solver-normalized equation tokens use snake_case token fields:
 | Equation type selector | Stores `Objective Function` or `Constraint`; the sidebar badge is display-only and fixed-size. |
 | `Belong to` selector | Stores equation ownership context for the expression wrapper. |
 | `EQ Type` selector | Populated from PostgreSQL-backed EQ type config. |
+| Shared Eq selector | Lists same-type equations that share at least one compatible `+Constr` set with the active equation. |
+| Shared Term selector | Lists variable tokens from the selected shared equation and appends the selected token to the active expression. |
 | Variable selectors | Build a variable path from network, node, port, variable, and TP values. |
 | `User Self Define` | Allows `Node/Port/Var`, `Node/Var`, or `Port/Var`, as long as `Var` is not empty. |
 | Add Variable popover | Captures name, lower bound, upper bound, Dimension, Unit, and type before inserting a token. |
 | Dimension dropdown | Lists dimensions from `UnitConversion`; changing it clears bounds and resets unit. |
 | Unit dropdown | Lists the base unit and target units for the selected dimension; changing it converts displayed bounds. |
-| Operator pad | Appends operator tokens such as `+`, `-`, `*`, `/`, `^`, `=`, `<`, `<=`, `>`, and `>=`. |
-| Text editor | Allows free text edits; changes are parsed back into tokens. |
+| Operator pad | Appends operator tokens. Comparison operators `=`, `==`, `<`, `<=`, `>`, and `>=` are disabled for Objective Function equations. |
+| Text editor | Allows free text edits; changes are parsed back into tokens. Keyboard and pasted comparison syntax is blocked for Objective Function equations. |
+| Structured term popover | Clicking a `model_variable` or `declared_variable` term shows its saved attributes. Link styling is only visible when the cursor is over the term. |
 | Terms panel | Displays current tokens and allows term deletion. |
 | Import | Imports CSV rows as draft-only variable choices. |
 | Save Equation | Persists all equation drafts for the current diagram. |
@@ -156,12 +178,13 @@ The component expects the Redux store to provide `domain`, `canvas`, and `equati
 2. Opening the modal fetches `GET /api/data/diagrams/:diagramId` when the current diagram's equations are not already hydrated.
 3. Saved equations are normalized into Redux drafts.
 4. The user edits the active equation through selectors, typed text, operator buttons, CSV imports, and the Add Variable popover.
-5. Add Variable stores user-facing metadata exactly as selected, including non-base units.
-6. Save sends all visible drafts to `PUT /api/data/diagrams/:diagramId/equations`.
-7. `dataRoutes.ts` validates ownership, sanitizes tokens, rejects duplicate equation ids, and writes `diagram.equations`.
-8. During computation, `computationDispatchWorker.ts` loads PostgreSQL `UnitConversion` rows and calls `buildSolveRequest(...)` with `diagram.equations`.
-9. `solverEngineApiService.ts` converts each variable token's `lb` and `ub` from the selected unit into the dimension base unit when a conversion row exists.
-10. The solver request contains base-unit equation bounds, while MongoDB still preserves the user-selected unit for future editing.
+5. The shared-term selectors derive same-type, same-set equations from `constraintDrafts` or saved `diagram.sets`; selecting a term appends a cloned variable token to the active equation.
+6. Add Variable stores user-facing metadata exactly as selected, including non-base units.
+7. Save sends all visible drafts to `PUT /api/data/diagrams/:diagramId/equations`.
+8. `dataRoutes.ts` validates ownership, sanitizes tokens, rejects duplicate equation ids, and writes `diagram.equations`.
+9. During computation, `computationDispatchWorker.ts` loads PostgreSQL `UnitConversion` rows and calls `buildSolveRequest(...)` with `diagram.equations`.
+10. `solverEngineApiService.ts` converts each variable token's `lb` and `ub` from the selected unit into the dimension base unit when a conversion row exists.
+11. The solver request contains base-unit equation bounds, while MongoDB still preserves the user-selected unit for future editing.
 
 ```mermaid
 flowchart TD
@@ -193,10 +216,11 @@ Important solver rules:
 
 - `buildSolveRequest(...)` removes older independent solve-input parameter keys before adding normalized fields.
 - `parameters.equations` is generated from `diagram.equations` when saved equations exist.
+- `parameters.declared_variables` is generated from declared-variable tokens and keeps the same token shape as the equation variable records.
 - `parameters.solve_inputs` is generated from the computation configuration selection snapshot.
-- Selected set snapshots use ids for equation references, so duplicate display names do not confuse the solver.
+- Selected set and collection snapshots use ids for references, so duplicate display names do not confuse the solver.
 - Non-base variable bounds are converted with `(value - offset) / multiplier`; the outbound unit is the dimension base unit.
-- Tokens that do not have complete structured fields are treated as manually defined paths and currently emit null structured fields and null units in the solver payload.
+- Structured diagram variables emit `token_type: 'model_variable'` with network, node id, port, and variable fields. User self-defined variables emit `token_type: 'declared_variable'`. Numeric constants emit `token_type: 'literal'`.
 
 ## Side Effects
 
@@ -215,10 +239,13 @@ Important solver rules:
 - In structured mode, Add Variable requires network, node, port, and variable.
 - In self-defined mode, Add Variable requires only the variable field. Node and port are optional.
 - If self-defined mode has node/port values but no variable, Add Variable shows an error.
+- Shared-term selectors are disabled only when the active equation has no compatible same-type set peers or the selected peer has no variable tokens.
+- Objective Function equations cannot contain comparison operators. Changing between Objective Function and Constraint clears the expression to avoid carrying invalid syntax across types.
+- Shared terms copy the original token metadata; later edits to the source equation do not automatically update copied terms in other equations.
 - Changing Dimension clears `lb` and `ub`; changing Unit converts the current bounds if both units are known.
 - CSV import rejects non-CSV files, empty files, wrong headers, partial rows, and files with no valid rows.
 - The tokenizer preserves bracket contents such as `[t+1]`, so `+` inside brackets is not treated as an operator.
-- Negative numeric literal support is fragile because `-` can be parsed as an operator.
+- Standalone numeric expressions are preserved as literal tokens even when the user did not insert them through Add Variable.
 
 ## Extension Points
 
@@ -254,6 +281,8 @@ Manual verification matrix:
 | Add structured variable | Token contains network, node, port, variable, tp, path, bounds, units, and type. |
 | Add self-defined `Var` only | Token is accepted and no Node/Port validation error appears. |
 | Add self-defined Node/Port without Var | Error alert appears and token is not added. |
+| Constraint equation shares a set with another Constraint equation | `Shared Eq` lists the peer equation and `Shared Term` appends the selected variable token. |
+| Objective Function equation is active | Shared-term controls are disabled. |
 | Change Dimension | Unit resets to a compatible unit and `lb`/`ub` become empty. |
 | Change Unit within same Dimension | Existing `lb`/`ub` values convert on screen. |
 | Run computation with non-base unit bounds | `solve_request.json`, when enabled, shows base-unit bounds and base unit. |
@@ -265,6 +294,7 @@ Manual verification matrix:
 - Do not treat `src/src/backend/services/solve_request.json` as source code. It is generated only when debugging is enabled.
 - Mongo stores user-selected units for editor clarity; solver payload uses base units for variable bounds.
 - Display names are not unique. Use ids when connecting equations to sets, sets to collections, or rows to SoluAlgoLib.
+- Shared-term lookup depends on saved or cached `+Constr` set membership. Unsaved set changes are available only while the Redux draft cache is still loaded for the current diagram.
 - `parameters.solve_inputs` and `parameters.equations` serve different purposes. The former captures selected run inputs; the latter carries normalized saved equations.
 - The Add Variable popover conversion is frontend-only until computation dispatch performs the final base-unit conversion.
 

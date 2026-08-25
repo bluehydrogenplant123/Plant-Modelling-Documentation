@@ -49,7 +49,7 @@ The following is a representative complete Optimization request. Fields marked o
         "runType": "OPT",
         "solver": "IPOPT",
         "collection": "collection-1",
-        "set": "objective-set-1"
+        "objective_function": "eq-1"
       }
     ],
     "Log_level": "development"
@@ -73,10 +73,50 @@ The following is a representative complete Optimization request. Fields marked o
         "objective_function_mode": "custom",
         "mode": "deterministic",
         "wasserstein_radius": null,
-        "objective_functions": [{ "set_id": "objective-set-1", "name": "Objective", "equations": ["eq-1"] }],
-        "additional_constraints": [{ "set_id": "constraint-set-1", "name": "Limits", "equations": ["eq-2"] }]
+        "objective_functions": [
+          {
+            "id": "eq-1",
+            "expression": "x[t]",
+            "sense": "minimize",
+            "tokens": [
+              {
+                "token_type": "model_variable",
+                "type": "pyo.NonNegativeReals",
+                "name": "x[t]",
+                "network": "Network A",
+                "node": "node-1",
+                "port": "Output",
+                "variable": "x",
+                "tp": "t",
+                "path": "Network A.node-1.Output.x[t]",
+                "lb": 0,
+                "ub": 1000,
+                "units": "kg/h"
+              }
+            ]
+          }
+        ],
+        "additional_constraint_collections": [
+          { "collection_id": "collection-1", "name": "Operating limits", "sets": ["constraint-set-1"] }
+        ]
       }
     },
+    "declared_variables": [
+      {
+        "token_type": "declared_variable",
+        "type": "pyo.NonNegativeReals",
+        "name": "custom_flow[t]",
+        "network": null,
+        "node": null,
+        "port": null,
+        "variable": "custom_flow",
+        "tp": "t",
+        "path": "custom_flow[t]",
+        "lb": 0,
+        "ub": null,
+        "units": "kg/h"
+      }
+    ],
     "equations": [
       {
         "id": "eq-1",
@@ -85,10 +125,38 @@ The following is a representative complete Optimization request. Fields marked o
         "equation_type": "Objective Function",
         "eq_type": "linear",
         "expression": "x[t]",
-        "tokens": [{ "token_type": "variable", "type": "pyo.NonNegativeReals", "name": "x[t]", "network": "Network A", "node": "N1", "port": "Output", "variable": "x", "tp": "t", "path": "Network A.N1.Output.x[t]", "lb": 0, "ub": 1000, "units": "kg/h" }]
+        "sense": "minimize",
+        "tokens": [{ "token_type": "model_variable", "type": "pyo.NonNegativeReals", "name": "x[t]", "network": "Network A", "node": "node-1", "port": "Output", "variable": "x", "tp": "t", "path": "Network A.node-1.Output.x[t]", "lb": 0, "ub": 1000, "units": "kg/h" }]
+      },
+      {
+        "id": "eq-2",
+        "name": "Limit equation",
+        "belong_to": "Network A",
+        "equation_type": "Constraint",
+        "eq_type": null,
+        "expression": "x[t] <= 1000",
+        "tokens": [
+          { "token_type": "model_variable", "type": "pyo.NonNegativeReals", "name": "x[t]", "network": "Network A", "node": "node-1", "port": "Output", "variable": "x", "tp": "t", "path": "Network A.node-1.Output.x[t]", "lb": 0, "ub": 1000, "units": "kg/h" },
+          { "token_type": "operator", "value": "<=" },
+          { "token_type": "literal", "value": 1000 }
+        ]
       }
     ],
-    "equation_collections": [{ "id": "collection-1", "name": "Operating limits", "sets": ["constraint-set-1"] }]
+    "sets": [
+      {
+        "id": "constraint-set-1",
+        "name": "Limits",
+        "type": "Constraint",
+        "equations": ["eq-2"]
+      }
+    ],
+    "collections": [
+      {
+        "id": "collection-1",
+        "name": "Operating limits",
+        "sets": ["constraint-set-1"]
+      }
+    ]
   }
 }
 ```
@@ -100,11 +168,13 @@ The following is a representative complete Optimization request. Fields marked o
 | `callback_url` | `BASE_EXTERNAL_URL` | Always present; dispatch fails if the environment variable is missing. |
 | `configuration.max_computation_time`, `solver`, `Log_level` | Compute start and saved run configuration | Always present in the configuration object; individual values may be `null`. |
 | `configuration.algorithm` | Requested algorithm/current compatibility rule | Defaults to `SoluAlgoLib` when the stored value is null. |
-| `configuration.solution_algo_library` | `diagram.solualgolib` | Always an array. Nested set/collection objects are reduced to ids. |
+| `configuration.solution_algo_library` | `diagram.solualgolib` | Always an array. Nested collection and Objective Function objects are reduced to ids as `collection` and `objective_function`. |
 | Core translated parameters | `diagram.parameters`, created by `translation(...)` | Passed through after legacy independent solve-input fields are removed. The common sections are `global_params`, `models`, `nodes`, `tps_specs`, `stream_connectivity`, `material_properties`, `material_fractions`, and optional `costs`. |
 | `parameters.solve_inputs` | Queued task `configuration.selected_inputs` | Present when a run has selected Optimization or Data Reconciliation inputs. |
-| `parameters.equations` | `diagram.equations` | Present only if at least one saved equation normalizes successfully. |
-| `parameters.equation_collections` | `diagram.collections` | Present only if at least one collection exists. |
+| `parameters.equations` | `diagram.equations` | Present only if at least one saved equation normalizes successfully. Objective Function equations include lowercase `sense`. |
+| `parameters.declared_variables` | Declared-variable tokens from saved equations and selected structures | Present only when user self-defined variables exist. Uses the same variable-token field shape as equation variables. |
+| `parameters.sets` | `diagram.collections` / nested saved sets | Present only if at least one referenced set exists; each set contains equation ids only. |
+| `parameters.collections` | `diagram.collections` | Present only if at least one collection exists; each collection contains set ids only. |
 
 ## Translated Diagram Sections
 
@@ -133,7 +203,14 @@ For Data Reconciliation, `solve_inputs` has this alternate shape:
     "instrument_set": "instrument-set-id",
     "instruments": ["instrument-id"],
     "measurements": ["measurement-id"],
-    "objective_functions": [{ "set_id": "objective-set-id", "name": "Objective", "equations": ["eq-id"] }]
+    "objective_functions": [
+      {
+        "id": "objective-equation-id",
+        "expression": "TOTAL_COST[t]",
+        "sense": "minimize",
+        "tokens": []
+      }
+    ]
   }
 }
 ```
@@ -143,8 +220,9 @@ For Data Reconciliation, `solve_inputs` has this alternate shape:
 - `selected_inputs` is removed from `configuration`; its solver form is `parameters.solve_inputs`.
 - `objective_function_mode` is always `default` or `custom`. Default selects Supply & Demand data already translated under `parameters.costs`; custom selects the independently populated `objective_functions` array.
 - Stale legacy solve-input keys such as `sets`, `collections`, `equation_sets`, `constraints`, and old data-reconciliation keys are removed from `diagram.parameters` before the final merge.
-- Equation variable bounds are converted from the saved display unit into the dimension base unit. Structured tokens retain their path fields; manually defined paths have null structured fields and units.
-- Equations, collections, selected sets, and SoluAlgoLib references use ids where references are needed, avoiding ambiguity from duplicate display names.
+- Equation variable bounds are converted from the saved display unit into the dimension base unit. Structured model variables emit `model_variable`; user self-defined variables emit `declared_variable`; numeric constants emit `literal`.
+- Objective Function equations include `sense`, defaulting to lowercase `minimize`.
+- Equations, sets, collections, selected solve inputs, and SoluAlgoLib references use ids where references are needed, avoiding ambiguity from duplicate display names. `parameters.sets` contains equation ids and `parameters.collections` contains set ids.
 - Empty normalized equation and collection arrays are omitted from `parameters`; `configuration.solution_algo_library` remains an empty array when none is saved.
 
 ## Related Pages

@@ -17,7 +17,9 @@ Use **Equation Writing** when you need to create or edit diagram equations and c
 
 ## What It Opens
 
-The **Equation Writing** dialog provides the equation editor used to build equations from diagram variables, imported variable rows, operators, and time-period suffixes.
+The **Equation Writing** dialog provides the equation editor used to build equations from diagram variables, user self-defined variables, imported variable rows, operators, and time-period suffixes. Constraint equations can reuse terms from other constraint equations in the same `+Constr` set, and Objective Function equations can reuse terms from other Objective Function equations in the same compatible set.
+
+Objective Function equations accept only scalar numeric expressions, so comparison operators are disabled in both the operator buttons and keyboard input while an objective is active. Structured variables inserted through the model-variable or user self-defined flows can show their saved attributes from the expression editor; directly typed text remains plain text.
 
 <figure style={{ maxWidth: '900px', margin: '1.5rem auto' }}>
   <img
@@ -34,7 +36,7 @@ The **Equation Writing** dialog provides the equation editor used to build equat
 
 1. Open **Equation Writing**.
 2. Add or select the equation you want to edit.
-3. Build the equation from available variables and operators.
+3. Build the equation from available variables, shared same-set terms, and allowed operators.
 4. Save the equation changes.
 
 ## Result

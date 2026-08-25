@@ -20,7 +20,7 @@ The current UI model assigns sets to each equation rather than editing a set and
 - `src/src/frontend/src/features/equationWriting/equationWritingSlice.ts`: source of loaded equation drafts displayed in the assignment panel.
 - `src/src/frontend/src/components/header-bar/index.tsx`: renders `ConstraintModule` while the Model section is active.
 - `src/src/backend/routes/dataRoutes.ts`: persists `diagram.sets` and `diagram.collections`, sanitizes nested equations, and rejects invalid deletes.
-- `src/src/backend/services/solverEngineApiService.ts`: normalizes collections for the solver request by reducing nested set references to ids.
+- `src/src/backend/services/solverEngineApiService.ts`: normalizes sets and collections for the solver request with id references.
 - `src/src/backend/prisma/mongodb/schema.prisma`: declares `Diagram.sets Json?`, `Diagram.collections Json?`, and `Diagram.solualgolib Json?`.
 
 ## Purpose and Responsibility
@@ -48,7 +48,8 @@ It does not own equation editing itself. Equations are loaded from the Equation 
 | `PUT /api/data/diagrams/:diagramId/collections` | Backend route | Persists the full collection list. |
 | `diagram.sets` | MongoDB | Stores sets with expanded equation objects for UI reload. |
 | `diagram.collections` | MongoDB | Stores collections with expanded Constraint set objects. |
-| `parameters.equation_collections` | Solver request | Stores collection ids, names, and set id lists after normalization. |
+| `parameters.sets` | Solver request | Stores set ids, names, types, and equation id arrays. |
+| `parameters.collections` | Solver request | Stores collection ids, names, and set id arrays. |
 
 ## Core State and Data Structures
 
@@ -56,7 +57,7 @@ It does not own equation editing itself. Equations are loaded from the Equation 
 - `ConstraintEquationSlot`: `{ id, equationId }`; stores ids so duplicate equation names are safe.
 - `ConstraintCollectionDraftItem`: `{ id, name, setSlots }`.
 - `ConstraintCollectionSetSlot`: `{ id, setId }`; stores ids so duplicate set names are safe.
-- `PersistedSoluAlgoAssignment`: `{ algorithmName, phaseName, collectionId, setId }`; used only as a deletion guard.
+- `PersistedSoluAlgoAssignment`: `{ algorithmName, phaseName, collectionId, setId }`; currently uses collection ids for SoluAlgoLib deletion guards and keeps `setId` for legacy compatibility.
 - `selectedSetId` and `selectedCollectionId`: decide whether the right panel shows equation assignments or collection set membership.
 - `isHydratingConstraints` and `isSavingSets`: disable actions during load and save.
 
@@ -87,11 +88,12 @@ Collections persist only Constraint sets:
 - `normalizePersistedEquations(...)`: loads saved equations into the equation-writing Redux slice when needed.
 - `normalizePersistedSets(...)`: converts saved Mongo sets into draft set items with equation id slots.
 - `normalizePersistedCollections(...)`: converts saved Mongo collections into draft collection items with set id slots.
-- `normalizePersistedSoluAlgoAssignments(...)`: extracts current SoluAlgoLib collection/set ids for deletion guards.
+- `normalizePersistedSoluAlgoAssignments(...)`: extracts current SoluAlgoLib collection ids for deletion guards, while keeping the legacy `setId` field empty.
 - `renderEquationSetAssignments(...)`: renders compatible set checkboxes for each equation.
 - `handleEquationSetMembershipChange(...)`: adds or removes equation id slots on the selected set.
+- `handleSetTypeChange(...)`: switches a set between `Objective Function` and `Constraint`, removing assigned equations that no longer match the selected type.
 - `handleAddSet()` and `handleAddCollection()`: create draft rows with generated unique ids.
-- `handleDeleteSet(...)`: prevents deletion when a set is assigned to equations, belongs to a collection, or is referenced by SoluAlgoLib.
+- `handleDeleteSet(...)`: prevents deletion when a set is assigned to equations or belongs to a collection.
 - `handleDeleteCollection(...)`: prevents deletion when a collection is referenced by SoluAlgoLib.
 - `serializeSetForPersistence(...)`: expands equation ids back into full saved equation objects before persistence.
 - `serializeCollectionForPersistence(...)`: expands selected Constraint set ids into full set objects before persistence.
@@ -103,8 +105,8 @@ Collections persist only Constraint sets:
 | --- | --- |
 | Model-section `+Constr` button | Opens the modal when the header's Model section is active. |
 | Collections column | Adds, renames, selects, and deletes collections. |
-| Sets column | Adds, renames, type-selects, selects, and deletes sets. |
-| Set type dropdown | Limits the compatible equations shown for assignment. |
+| Sets column | Adds, renames, type-selects, selects, and deletes sets. The set type dropdown sits on the same row as the set name, with Delete on the far right. |
+| Set type dropdown | Allows `Objective Function` or `Constraint`; it limits compatible equation assignment and is disabled while the set has assigned equations. |
 | Right panel, collection selected | Adds/removes set slots for that collection. Only Constraint sets can be selected. |
 | Right panel, no collection selected | Lists equations and shows compatible set checkboxes for each equation. |
 | Equation assignment list | Uses scrollable fixed-height panels so many equations or sets do not grow the modal indefinitely. |
@@ -134,7 +136,7 @@ The component expects `equationWriting` and `constraintDrafts` reducers to be re
 7. Users assign Constraint sets to collections from the collection detail panel.
 8. Save sends the current full set list and collection list to the backend.
 9. The backend sanitizes and replaces `diagram.sets` and `diagram.collections`.
-10. During computation, saved collections are normalized into `parameters.equation_collections`, where each collection's `sets` field is an id list.
+10. During computation, saved sets and collections are normalized into `parameters.sets` and `parameters.collections`. Sets reference equation ids, and collections reference set ids; full equation definitions remain in top-level `parameters.equations`.
 
 ```mermaid
 flowchart TD
@@ -145,8 +147,9 @@ flowchart TD
   Constr --> SaveCollections["PUT /diagrams/:diagramId/collections"]
   SaveSets --> MongoSets["Mongo diagram.sets"]
   SaveCollections --> MongoCollections["Mongo diagram.collections"]
-  MongoCollections --> SolverBuilder["buildSolveRequest"]
-  SolverBuilder --> Payload["parameters.equation_collections"]
+  MongoSets --> SolverBuilder["buildSolveRequest"]
+  MongoCollections --> SolverBuilder
+  SolverBuilder --> Payload["parameters.sets + parameters.collections"]
 ```
 
 ## Backend/Data-Flow Contract
@@ -164,7 +167,8 @@ Important route behavior:
 - The request body field must be an array.
 - Saved sets are sanitized to `Objective Function` or `Constraint`.
 - Saved collections discard non-Constraint sets during sanitization.
-- Set deletes are rejected when the set has assigned equations, belongs to collections, or is referenced by SoluAlgoLib.
+- Solver payload sets and collections use id-only references. Full equations are not nested inside sets or collections.
+- Set deletes are rejected when the set has assigned equations or belongs to collections.
 - Collection deletes are rejected when the collection is referenced by SoluAlgoLib.
 - The save routes replace the full JSON arrays.
 
@@ -182,14 +186,14 @@ Important route behavior:
 - Loading failures show an error alert and leave drafts empty.
 - A set assigned to any equation cannot be deleted from the UI.
 - A set inside any collection cannot be deleted.
-- A set or collection referenced by SoluAlgoLib cannot be deleted; the module reloads latest SoluAlgoLib assignments before checking.
+- A collection referenced by SoluAlgoLib cannot be deleted; the module reloads latest SoluAlgoLib assignments before checking.
 - Collections can only include Constraint sets.
 - Compatible equation assignment is controlled by `equation.equationType === setItem.setType`.
 - Names can duplicate; ids are the reliable reference keys.
 
 ## Extension Points
 
-- If set persistence should store only equation ids, update `serializeSetForPersistence(...)`, backend sanitization, SoluAlgoLib option loading, and solver normalization together.
+- If Mongo persistence should store only equation ids instead of expanded equation objects, update `serializeSetForPersistence(...)`, backend sanitization, Optimization/DataRec selected-input loading, and solver normalization together.
 - If collections should support Objective Function sets, update collection filtering in frontend and backend sanitization.
 - If more set types are added, update `ConstraintSetType`, type rendering, assignment compatibility, backend sanitizer, and solver expectations.
 - If deletion rules change, keep UI-side checks and backend route checks aligned.
@@ -218,15 +222,17 @@ Manual verification matrix:
 | Add sets and close/reopen modal before saving | Draft sets remain through Redux cache. |
 | Assign Objective Function equation to Objective Function set | Checkbox stays selected and save persists the assignment. |
 | Assign Constraint equation to Constraint set | Checkbox stays selected and save persists the assignment. |
+| Change a set type with no equations assigned | Dropdown updates the set type and the right-panel compatible checkboxes change. |
+| Try to change a set type with equations assigned | Dropdown is disabled until assignments are removed. |
 | Select collection and add set slots | Only Constraint sets appear. |
 | Try to delete a set assigned to an equation | Delete is disabled or rejected with an alert. |
-| Try to delete a set referenced by SoluAlgoLib | Delete is rejected with row names. |
+| Try to delete a collection referenced by SoluAlgoLib | Delete is rejected with row names. |
 | Save and restart project | Saved sets and collections reload from Mongo. |
 | Create duplicate names | Id-based assignment still resolves the correct item. |
 
 ## Known Cautions
 
-- Mongo currently stores expanded nested objects, not only ids. Solver normalization reduces some nested references to ids later.
+- Mongo stores expanded nested objects for reload. Solver `parameters.sets`, `parameters.collections`, SoluAlgoLib, and selected solve-input references use ids.
 - Set and collection display names are not unique. Never use names as persistent linkage.
 - The constraint Redux cache is a draft cache, not a database. Save is still required to persist to Mongo.
 - Collections deliberately include Constraint sets only.

@@ -65,7 +65,7 @@ Important delegated button components imported by `index.tsx` include:
 
 `HeaderBar` owns navigation between header sections, the visible grouping of top-row and second-row controls, and high-level UI state such as the active section, calc type confirmation modal, current Optimization/DataRec run selections, shared-editor open signals, run config modal, Multi-TP availability state, and save status text.
 
-It does not own the persisted contents of Objective Function Sets, Constraint Sets, Instrument Sets, Plant Measurements, or TP Specs. Those records are owned by shared child editors and backend routes; Header only chooses which saved records belong to the next run. It also delegates saving, computation execution, diagram creation/open/import/export, cost editing, material editing, result history, and React Flow visibility changes.
+It does not own the persisted contents of Objective Function equations, `+Constr` sets/collections, Instrument Sets, Plant Measurements, or TP Specs. Those records are owned by shared child editors and backend routes; Header only chooses which saved records belong to the next run. It also delegates saving, computation execution, diagram creation/open/import/export, cost editing, material editing, result history, and React Flow visibility changes.
 
 ## Inputs and Outputs
 
@@ -97,8 +97,8 @@ It does not own the persisted contents of Objective Function Sets, Constraint Se
 | `tpSpecsOpenSignal` increment | `TPSpecsButton` prop | Opens TP Specs after a Simulation/ParamUpdt same-type click, confirmed calc type switch, setup-menu Specification set action, or Multi-TP TP Specs action. |
 | `constraintEditorOpenSignal` increment | `ConstraintModule` prop | Opens `+Constr` from Optimization/DataRec setup without duplicating the editor. |
 | `plantMeasurementOpenSignal` and `plantMeasurementInitialTab` | `PlantMeasurementButton` props | Open the shared editor on the mappings or measurements tab. |
-| `optimizationOptions` | `ComputationButton` prop | Supplies the next Optimization run's mode and selected sets. |
-| `dataRecOptions` | `ComputationButton` prop | Supplies the active Instrument Set plus selected measurements and Objective Function Sets. |
+| `optimizationOptions` | `ComputationButton` prop | Supplies the next Optimization run's mode, selected Objective Function equations, and selected Constraint collections. |
+| `dataRecOptions` | `ComputationButton` prop | Supplies the active Instrument Set plus selected measurements and Objective Function equations. |
 | `setDisplayNodeFilter(...)` | Parent `App.tsx` | Causes canvas nodes and attached edges to hide/show. |
 | `showRunConfigModal` and `selectedRunConfigType` | Header local state | Controls the selected Solver's `RunConfigModal` when Set Run is active. |
 
@@ -109,7 +109,7 @@ It does not own the persisted contents of Objective Function Sets, Constraint Se
 - `showCalcTypeConfirm`: local boolean that renders the calc type confirmation modal.
 - `pendingCalcType`: local calc type waiting for confirmation.
 - `tpSpecsOpenSignal`: local counter passed to `TPSpecsButton`; incrementing it opens TP Specs.
-- `optimizationOptions`: committed deterministic/DRO mode plus selected Objective Function and Constraint sets for the next Optimization run.
+- `optimizationOptions`: committed deterministic/DRO mode plus selected Objective Function equations and Constraint collections for the next Optimization run.
 - `optimizationMode`, `wassersteinRadiusInput`, and `optimizationOptionsError`: draft state and validation for **Set Run > Optimization Options**.
 - `dataRecObjectiveFunctions` and `dataRecMeasurements`: committed DataRec selections for the next run.
 - `activeInstrumentSet`: Redux-owned DataRec Instrument Set; changing it invalidates the Header-owned measurement selection.
@@ -152,7 +152,7 @@ It does not own the persisted contents of Objective Function Sets, Constraint Se
 | Multi-TP User Tables | `mode="mtp"`, `verified`, cost guard | Material Properties is disabled; Economic entries require the current availability guards. | Open Multi-TP, then inspect User Tables. |
 | Calc Type section active | `CALC_TYPES`, `calcType`, `ruleCalcTypeButtons` | Shows Simulation, Optimization, DataRec, ParamUpdt. Active Optimization/DataRec render as setup dropdowns; other entries render as buttons. | Activate each calc type and inspect the secondary controls. |
 | Active Optimization dropdown | `optimizationOptions`, diagram sets | Offers Objective function, Additional constraints, and Specification set. Set selectors load saved sets and commit only on Apply. | Select sets, cancel once, apply once, and reopen each panel. |
-| Active DataRec dropdown | active Instrument Set, selected measurements/objective sets | Offers Define Instruments, Plant Measurements, Objective function, and Specification set. Editor actions open shared modules. | Select an Instrument Set, measurements, and Objective Function Sets. |
+| Active DataRec dropdown | active Instrument Set, selected measurements/objective equations | Offers Define Instruments, Plant Measurements, Objective function, and Specification set. Editor actions open shared modules. | Select an Instrument Set, measurements, and Objective Function equations. |
 | Switch from inactive calc type | `pendingCalcType` | The plain inactive button opens confirmation; Confirm switches type and opens TP Specs. | Switch into Optimization or DataRec and confirm its control becomes a dropdown. |
 | Confirm calc type switch | `pendingCalcType` | Modal closes, Redux calc type updates, and TP Specs opens. | Confirm a switch and check active button. |
 | Cancel calc type switch | `showCalcTypeConfirm`, `pendingCalcType` | Modal closes without dispatching `updateCalcType`. | Open switch modal and cancel. |
@@ -192,7 +192,7 @@ Important child props:
 - Multi-TP `UserTablesMenu` disables Material Properties and receives `economicDisabled={ruleCostButtons || !verified}`.
 - `UserTablesMenu` delegates its Economic entries to `CostButtons`; the parent `MaterialEditor` rendered in `App.tsx` receives the material read-only rule.
 - Active `OptimizationSetupMenu` receives the current Objective Function / Constraint selections, `ruleCalcTypeButtons`, the combined TP Specs guard, and callbacks that open shared editors.
-- Active `DataRecSetupMenu` receives the active Instrument Set, selected measurements / Objective Function Sets, the calc-type and Plant Measurement guards, the combined TP Specs guard, and shared-editor callbacks.
+- Active `DataRecSetupMenu` receives the active Instrument Set, selected measurements / Objective Function equations, the calc-type and Plant Measurement guards, the combined TP Specs guard, and shared-editor callbacks.
 - `ComputationButton` always receives `optimizationOptions` and the derived `dataRecOptions`; the child sends only the option block matching the current calculation type.
 - `ConstraintModule` receives `openSignal={constraintEditorOpenSignal}` and shows its own button only in Model.
 - `PlantMeasurementButton` receives `openSignal`, `initialTab`, and an `onMeasurementsSaved` callback that clears stale DataRec measurement selections; it shows its own button only in Analysis.
@@ -355,7 +355,7 @@ git diff --check -- docs/CodeExplanation/header-bar.md
 | Section switching | Canvas loaded | Click Calc Type, Analysis, Set Run, Multi-TP, TP Analysis, System, Help | Active button turns deep blue; secondary row swaps controls | Local `activeSection` updates | Medium: wrong branch can hide feature controls. |
 | User Tables material entry | Base-period canvas loaded | Open User Tables, then select Material Properties | Parent Material Editor opens when the material rule allows it | `setMaterialEditor(true)` is called | High: wrong routing hides the material workflow. |
 | Simulation/ParamUpdt same click | Calc Type section open with either type active | Click the currently active plain button | No confirm modal; TP Specs opens | `tpSpecsOpenSignal` increments; no `updateCalcType` dispatch | Medium: accidental dispatch changes solver mode. |
-| Active Optimization setup | Optimization calc type active | Open dropdown, select Objective/Constraint sets, Apply | Selected checks are retained when panels reopen | Header `optimizationOptions` changes; editor records are not rewritten | High: wrong selections change solve scope. |
+| Active Optimization setup | Optimization calc type active | Open dropdown, select Objective Function equations and Constraint collections, Apply | Selected checks are retained when panels reopen | Header `optimizationOptions` changes; editor records are not rewritten | High: wrong selections change solve scope. |
 | Active DataRec setup | DataRec calc type active | Select Instrument Set, measurements, and Objective Functions | Each modal reflects the committed selection | Active set updates Redux; other selections update Header state | High: stale ids cause invalid reconciliation input. |
 | Shared editor handoff | Either setup dropdown active | Click an Edit action | Selector closes and the existing editor opens on the correct view | Matching open signal increments | Medium: duplicate editor instances can diverge. |
 | Instrument Set invalidation | DataRec measurements selected | Change Instrument Set | Previously selected measurements clear | `setDataRecMeasurements([])` runs | High: measurements must remain scoped to one set. |
