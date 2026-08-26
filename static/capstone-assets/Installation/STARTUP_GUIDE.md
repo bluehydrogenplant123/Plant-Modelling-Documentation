@@ -14,7 +14,7 @@ Install the following before setting up the repository:
 
 - Git Bash
 - Visual Studio Code
-- Node.js LTS
+- Node.js LTS (20.1 or newer)
 - Docker Desktop
 
 Git Bash:
@@ -59,15 +59,74 @@ Choose the drive or folder where you want to keep the project, then open **Git B
 Run:
 
 ```bash
-git clone https://github.com/bluehydrogenplant123/Plant-Modelling.git capstone
-cd capstone
-git fetch origin
-git switch -c stable-version6.1-apr-6 --track origin/feature/stable-version6.1-apr-6
+git clone --branch feature/stable-version7.0-Aug-11 --single-branch https://github.com/bluehydrogenplant123/HYPRONET-GUI.git HypronetGUI
+cd HypronetGUI
 ```
 
 If GitHub asks you to log in, make sure you sign in with an account that has access to the repository.
 
-## 3. Create the `.env` File
+## 3. Automated Windows Installer
+
+Windows users can run the installer by double-clicking:
+
+```text
+install-hypronet.bat
+```
+
+The installer checks the Windows and virtualization requirements, installs
+missing Git Bash, Node.js LTS 20.1 or newer, Docker Desktop, and WSL 2, prepares the project,
+and optionally starts the application. It uses `winget`, requires internet
+access, and may request administrator approval when enabling or updating WSL.
+
+If WSL installation requires a Windows restart, restart the computer and run
+`install-hypronet.bat` again. The installer is resumable and skips prerequisites
+that are already available.
+
+Before changing Docker resources, the installer offers these modes:
+
+- **Preserve** is the default. It keeps existing labelled HyProNet database
+  volumes and adopts their Docker Compose project name. Migrations and the
+  selected system-workbook import still run against the preserved databases.
+- **Clean** displays the exact HyProNet containers and volumes it found and
+  requires typing `RESET` before deletion. This permanently removes locally
+  stored diagrams and database records in those volumes.
+
+The installer never runs a global Docker prune and does not remove shared
+MongoDB, PostgreSQL, Redis, or Metabase images. Fixed-name containers that are
+unlabelled or have unexpected Compose ownership or images cause a safe stop for
+manual review.
+
+Command-line usage is also supported:
+
+```powershell
+.\install-hypronet.bat `
+  -CleanupMode Prompt `
+  -Workbook Aug-24-2026.xlsx `
+  -LaunchMode Prompt
+```
+
+Valid modes are:
+
+- `-CleanupMode Prompt|Preserve|Clean`
+- `-LaunchMode Prompt|Launch|Skip`
+- `-Workbook <filename>` for a file directly inside `src/excel-sheets`
+- `-DryRun` to inspect and report planned actions without installing packages,
+  writing project configuration, changing Docker resources, importing data, or
+  launching the application
+
+Installer logs are written to:
+
+```text
+%LOCALAPPDATA%\HyProNet\logs
+```
+
+The installer does not install the calculation solver. The GUI can run without
+it, but calculations require the solver configured by `BASE_SOLVER_ENGINE_URL`
+in `src/.env`.
+
+The remaining sections document the manual fallback procedure.
+
+## 4. Create the `.env` File Manually
 
 From the repository root, create `src/.env` by copying `src/.env.example`.
 
@@ -79,11 +138,11 @@ cp src/.env.example src/.env
 
 Review `src/.env` before running the app, especially if you are using a real solver engine instead of the default local setup.
 
-## 4. First-Time Setup
+## 5. Manual First-Time Setup
 
 ### Step 1: Open the Repository in VS Code
 
-Open VS Code and open the cloned `capstone` repository folder.
+Open VS Code and open the cloned `HypronetGUI` repository folder.
 
 ### Step 2: Start Docker Desktop
 
@@ -95,7 +154,7 @@ From the repository root:
 
 ```bash
 cd src
-npm install
+npm ci
 ```
 
 ### Step 4: Install Frontend Dependencies
@@ -104,7 +163,7 @@ Still in the repository terminal:
 
 ```bash
 cd src/frontend
-npm install
+npm ci
 ```
 
 ### Step 5: Return to `src`
@@ -121,7 +180,7 @@ Run:
 Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
-./run-all.sh jun-16-2026.xlsx
+./run-all.sh Aug-24-2026.xlsx
 ```
 
 If there are import errors, check:
@@ -144,14 +203,14 @@ When the command finishes starting, open:
 http://localhost:5173
 ```
 
-## 5. Stopping the Application
+## 6. Stopping the Application
 
 To stop the app:
 
 1. In the terminal running `npm run dev`, press `Ctrl + C`.
 2. Open Docker Desktop and stop the containers if you do not want to keep the databases running.
 
-## 6. Running the Application Again
+## 7. Running the Application Again
 
 For a normal restart:
 
@@ -165,7 +224,7 @@ cd src
 npm run dev
 ```
 
-## 7. Updating the Application from GitHub
+## 8. Updating the Application from GitHub
 
 Be careful when resetting or deleting containers: current diagrams and local runtime data may be lost if you remove the existing databases.
 
@@ -180,7 +239,7 @@ Stop `npm run dev` with `Ctrl + C`.
 From the repository root:
 
 ```bash
-git switch stable-version6.1-apr-6
+git switch feature/stable-version7.0-Aug-11
 git pull
 ```
 
@@ -197,10 +256,10 @@ Then run:
 Terminal: **Git Bash** or **macOS Terminal**
 
 ```bash
-./run-all.sh jun-16-2026.xlsx
+./run-all.sh Aug-24-2026.xlsx
 ```
 
-Again, replace `jun-16-2026.xlsx` with the latest workbook in `src/excel-sheets/` when a newer workbook is released.
+Again, replace `Aug-24-2026.xlsx` with the latest workbook in `src/excel-sheets/` when a newer workbook is released.
 
 Only remove containers first if you intentionally want a clean reset. If you do that, assume local diagrams and runtime data may be lost unless you have backed them up elsewhere.
 
@@ -210,7 +269,7 @@ Only remove containers first if you intentionally want a clean reset. If you do 
 npm run dev
 ```
 
-## 8. Real Solver Notes
+## 9. Real Solver Notes
 
 If you are using a real solver instead of the local default solver endpoint,
 review these values in `src/.env`:
@@ -243,7 +302,7 @@ BASE_EXTERNAL_URL=https://<public-3000-host>/api/external
 
 For more detail, see [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md).
 
-## 9. Related Pages
+## 10. Related Pages
 
 - [REAL_SERVER_QUICKSTART](./REAL_SERVER_QUICKSTART.md)
 - [HYPRONET_INSTALLATION_GUIDE](./HYPRONET_INSTALLATION_GUIDE.md)
