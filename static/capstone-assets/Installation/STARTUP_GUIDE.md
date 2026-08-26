@@ -102,17 +102,34 @@ Command-line usage is also supported:
 .\install-hypronet.bat `
   -CleanupMode Prompt `
   -Workbook Aug-24-2026.xlsx `
+  -CertificateMode Prompt `
   -LaunchMode Prompt
 ```
 
 Valid modes are:
 
 - `-CleanupMode Prompt|Preserve|Clean`
+- `-CertificateMode Prompt|Default|WindowsStore`
 - `-LaunchMode Prompt|Launch|Skip`
 - `-Workbook <filename>` for a file directly inside `src/excel-sheets`
 - `-DryRun` to inspect and report planned actions without installing packages,
   writing project configuration, changing Docker resources, importing data, or
   launching the application
+
+When `-CertificateMode Prompt` is used, the installer asks whether npm needs
+company network certificate support. Choose **Yes** if npm previously reported
+`UNABLE_TO_GET_ISSUER_CERT_LOCALLY`. The `WindowsStore` mode makes Node.js use
+certificate authorities trusted by Windows for that installer process and
+tests `npm ping` with strict SSL verification before dependency installation.
+It does not set `strict-ssl=false`, does not use
+`NODE_TLS_REJECT_UNAUTHORIZED=0`, and does not persistently change npm or Node
+configuration. `Default` uses Node.js certificate handling without this option.
+
+If `WindowsStore` is selected but the certificate check still fails, company
+IT must install the HTTPS-inspection certificate in Windows Trusted Root
+Certification Authorities or provide a PEM certificate that can be configured
+with npm's `cafile` setting. Older Node.js versions that do not support the
+Windows certificate store must be upgraded to the current LTS release.
 
 Installer logs are written to:
 
@@ -123,6 +140,13 @@ Installer logs are written to:
 The installer does not install the calculation solver. The GUI can run without
 it, but calculations require the solver configured by `BASE_SOLVER_ENGINE_URL`
 in `src/.env`.
+
+During backend and frontend dependency installation, npm HTTP fetch messages
+are displayed in the installer window and copied to the installer log. A
+periodic message confirms that `npm ci` is still running when a slow company
+proxy delays output. The installer disables npm audit and funding notices for
+these deterministic installation steps, reducing unnecessary network requests;
+package versions still come from the committed lockfiles.
 
 The remaining sections document the manual fallback procedure.
 
