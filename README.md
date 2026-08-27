@@ -27,7 +27,7 @@ If someone wanted to model e.g. electric distribution network and use JuMP inste
 
 High level view of the HyProNet architecture is gvien in the figure below.
 
-![High-level HyProNet architecture](./assets/Hypronet Architectue 2026 08 27.png) 
+
 
 
 
