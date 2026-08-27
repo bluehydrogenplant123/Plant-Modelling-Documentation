@@ -25,9 +25,9 @@ Calculational server is written in Pyhton/PYOMO.
 
 If someone wanted to model e.g. electric distribution network and use JuMP instead of Python/PYOMO, they would have to write node models in JuMP and re-write assembling the entire network model equations )Cals Server) in JuMP.
 
-High level view of the HyProNet architecture is gvien in the figure below.
+High level view of the HyProNet architecture is given in the figure below.
 
-
+![Hyproent Architecture August 2026](./images/example.png)
 
 
 
