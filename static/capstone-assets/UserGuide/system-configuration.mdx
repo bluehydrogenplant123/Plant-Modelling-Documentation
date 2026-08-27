@@ -1,0 +1,152 @@
+---
+title: System Configuration GUI Navigation Guide
+sidebar_position: 3
+description: Log in as an admin, understand the node icon library, and navigate the six table groups on the System Configuration page (Variables/Units, Domains, Nodes, Algorithm, Calculation, Economics).
+---
+
+# System Configuration GUI Navigation Guide
+
+Use this page to find your way around the admin-only **System Configuration** page — where the node icon library comes from, how to log in as an admin, and how each of its six table groups works.
+
+## The Node Icon Library
+
+The master copy of every node icon lives in one plain-text file, checked into the repo: [`src/excel-sheets/icons.csv`](https://github.com/bluehydrogenplant123/HYPRONET-GUI/blob/main/src/excel-sheets/icons.csv).
+
+It has two columns:
+
+- **Shape** — a numeric ID (`1`, `2`, `3`, … `44`)
+- **SVG** — the full inline SVG markup for that icon
+
+There are currently 44 icons defined (Shape IDs 1–44). Each is a monochrome inline SVG — a process-engineering symbol (reactor, splitter, source, valve shape, etc.). There are no separate image files anywhere: icons are plain SVG text stored in this CSV, and later injected straight into the page.
+
+![icons.csv is the source of truth: a model's Shape ID is resolved to SVG, imported into PostgreSQL, and served to the frontend (Sidebar Palette or admin GUI)](./images/system-configuration/icons-csv-pipeline.png)
+
+1. In the `Node Model Library` Excel sheet, each model row has a **Shape** column holding a numeric ID (e.g. `42`) — not the SVG itself.
+2. `excel_to_csv.py` reads `icons.csv` and replaces every numeric Shape ID with its full SVG markup before writing the model CSV out.
+3. `migrate.py` imports that CSV into PostgreSQL — the resolved SVG string lands in the `Models` table's `shape` column (the model's permanent Icon ID is the row's `_id`).
+4. When a user opens a diagram, the backend sends model data — including that SVG string — to the frontend.
+5. The Sidebar Palette (and the admin GUI) render each model's icon by injecting that SVG directly into the page.
+
+## Creating a New Node Icon
+
+The left sidebar in the diagram canvas is called the **Palette**. It lists every icon a user can drag onto their flowsheet — the built-in icons above, plus any custom icons a user has created.
+
+![The canvas view: the Palette (left) lists draggable node icons with a search box, and dragging an icon onto the canvas creates a node](./images/system-configuration/canvas-palette.png)
+
+The day-to-day way to add or change one node's icon — no Excel, no re-import — is done entirely from the config page: see [Create a node in the admin config page (GUI)](./create-a-node-model.mdx#create-a-node-in-the-admin-config-page-gui).
+
+### Where those icons ultimately come from — the Excel pipeline
+
+A model created from the config page can only pick from icons already sitting in the `Models` table, or a hand-pasted one-off SVG. The actual master list of 44 icon designs above lives in Excel/CSV, and bulk changes to that master list still go through the import pipeline, not the config page:
+
+1. Add a row to `src/excel-sheets/icons.csv` with the next free Shape ID (currently `45`) and SVG markup (square `viewBox`, e.g. `0 0 866 866`).
+2. Reference that Shape ID in the `Node Model Library` Excel sheet for the model row(s) that should use it.
+3. Run, from `src/excel-migration/`:
+
+```bash
+python excel_to_csv.py ../excel-sheets/<workbook>.xlsx csv_outputs
+python migrate.py
+```
+
+:::note
+A model created via the config page is live immediately, but will be silently overwritten on the next full Excel re-import unless it's also added to the Excel sheets — Excel is still the system of record for a full reset/re-import.
+:::
+
+## Accessing the System Configuration Page (Admin)
+
+### What is an "Admin" user?
+
+An **Admin** user is a user account with the `admin` role in the database. Admin users have access to the System Configuration page, which lets them view and edit all system reference tables (units, domains, models, variables, etc.). Regular users do not see this page.
+
+### Default admin credentials
+
+| Email | Password |
+|---|---|
+| `admin@admin.com` | `admin123` |
+
+This account is created automatically when running `init.sh` during project setup.
+
+### How to log in
+
+1. Open the app at `http://localhost:5173/`.
+2. Enter the admin email and password on the login page.
+3. After login, you arrive at the Dashboard. Click **System Configuration** in the top-right area to open the admin config page.
+
+![The login screen: Email, Password fields, a Login button, and a Sign Up link for a new (regular) account](./images/system-configuration/login-screen.png)
+
+On success you land on the Dashboard. If your account's role is `admin` or `owner`, a **System Configuration** button appears next to **Logout** in the top-right corner.
+
+![Dashboard after logging in as an admin account, showing the System Configuration button next to Logout, top right](./images/system-configuration/dashboard-admin-button.png)
+
+Click **System Configuration** to open the admin / system tables GUI described below.
+
+## System GUI Overview and Navigation
+
+The application has three main areas: the Dashboard, the diagram Canvas, and (admin-only) System Configuration.
+
+### Dashboard
+
+The landing page after login. From here a user can:
+
+- **Create New Network** — name a new diagram, pick a Domain and a Calculation Type (Simulation, etc.), and create it.
+- **Import Diagram** — load a diagram from a file.
+- **Open Verified / Unverified Networks** — previously saved diagrams, split by whether they've passed verification.
+- **Open Subnetwork Blueprints** — custom reusable nodes packaged from the canvas (outside System Configuration; not covered on this page).
+
+### Canvas (diagram editor)
+
+Opening or creating a diagram brings up the flowsheet editor:
+
+- **Header bar** (top) — Subnetwork Editor, Save, Verify, Run, and other diagram-level actions.
+- **Palette** (left sidebar) — the searchable node icon library described above, draggable onto the canvas.
+- **Canvas** (center) — drop nodes here, connect their ports to build the process flowsheet, then Save/Verify/Run.
+
+### System Configuration — Navigation and Usage
+
+The System Configuration page has a left-hand navigation menu and a main content area on the right. Switching tables is instant — click a table name in the left menu and the main content area swaps, no page reload.
+
+![The System Configuration left-hand navigation, showing all six groups (Variables and Units, Domains, Nodes, Algorithm, Calculation, Economics)](./images/system-configuration/left-nav-six-groups.png)
+
+The navigation menu is organized into 6 groups:
+
+| Group | Table | Editable? | What it controls |
+|---|---|---|---|
+| Variables and units | System Variables | Yes | Master list of every reusable variable (name, dimension, unit, bounds, Pyomo type) that port classes attach to. |
+| | Units | Yes | Conversion factors between each dimension's base unit and its other display units. |
+| | Component Mapping | Yes | Maps internal component/system names to the names shown to end users. |
+| Domains | Domains | Yes | Process domains (e.g. Hydrogen Plant) and which port classes + property/composition databases belong to each one. |
+| | Port Class Variables | Yes | Port classes (e.g. `MES`, `GSLN`) and which system variables each exposes, with per-variable Hidden / Send-to-calc / Parameter flags. |
+| Nodes | Node Model Library | Yes | The node icon library (above) — models, their icon, ports, and port-to-variable mappings. |
+| | Node Ports Model Library | No | Read-only reference list of every port defined across all node models. |
+| | Node Variables | No | Read-only reference list of every port-variable mapping across all node models/versions. |
+| Algorithm | Solution Algorithm Library | Yes | Per-domain solver algorithm phases (iteration count, tolerance, convergence routing) used by Set Run → Algorithm. |
+| | EQ Type | Yes | Equation-type options offered per domain for a model version's calculation phases. |
+| Calculation | Computation Types | Yes | Task-type options available for a computation run. |
+| | Computation Steps | Yes | Step-type options within a computation run. |
+| | Solvers | Yes | Per-solver (e.g. `GurobiSolver`, `IPOPTSolver`) configurable attributes and their defaults. |
+| Economics | Cost Data | No | Read-only reference list of cost entities — default values, units, and dimensions used by cost calculations. |
+
+#### How to use each table
+
+Most tables support full CRUD (Create, Read, Update, Delete); a few are read-only reference views (see above).
+
+- **View data** — click a table name in the left menu. The data loads in the main area as a list, or a list-and-detail pair (click a row on the left to load its full detail on the right).
+- **Add a row** — click the **+ Add** / **+ New** button (top-right of the table). Fill in the form fields and click **Save**.
+- **Edit a row** — click **Edit** on any row. A form dialog opens; make your changes and click **Save**.
+- **Delete a row** — click **Delete** on a row and confirm.
+
+Changes are immediate — the config page writes directly to PostgreSQL. Anything you add or edit here (a unit, a model, a variable) is reflected in the diagram GUI as soon as the page is refreshed, no re-import needed.
+
+![System Variables: a flat, searchable table with per-row Edit/Delete and a + New Variable button, typical of most tables here](./images/system-configuration/system-variables-table.png)
+
+#### Special views
+
+- **Node Model Library** — a list-and-detail view (not an accordion): the model list is on the left, and selecting one loads its icon, versions, ports, and variables into the detail panel on the right. New models, ports, and variables are all managed from there — see [The Node Icon Library](#the-node-icon-library) above and [Create a New Node Model](./create-a-node-model.mdx) for the icon side of this.
+- **Domains** — shows the domain list with each domain's port-class ↔ database mappings. Click a port class to view its actual stream property/composition data, sourced from that domain's `#Prop_*` / `#Comp_*` reference database.
+- **System Variables** — a single searchable table (no domain column shown in the list itself, though a domain is chosen when creating a variable).
+
+![Units: a typical editable reference table with search, + Add, and per-row Edit/Delete](./images/system-configuration/units-table.png)
+
+#### Data source
+
+All system tables are stored in PostgreSQL. The initial data for a fresh environment is imported from the system Excel workbook via the migration pipeline (see above). After that, changes can be made either by re-importing from Excel (bulk, authoritative) or by editing directly in this GUI (immediate, but local until also reflected back in Excel for any table that gets re-imported).
