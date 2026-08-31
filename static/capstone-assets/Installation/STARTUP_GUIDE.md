@@ -137,6 +137,27 @@ Installer logs are written to:
 %LOCALAPPDATA%\HyProNet\logs
 ```
 
+After a completed system-workbook import, the installer reviews the generated
+`src/excel-migration/logs/log_<timestamp>.log`. Logged row-level data issues are
+shown as prominent warnings, including a preview and the complete log path, but
+they do not prevent Metabase setup or optional application launch. The final
+installer status says **completed with workbook import warnings** because
+affected workbook data or models may be incomplete. A missing import log, a
+Python traceback, or a nonzero migration/import command still stops the
+installer with a nonzero exit code.
+
+Database initialization polls PostgreSQL and MongoDB readiness instead of
+assuming they are ready after a fixed delay. If Docker Desktop briefly exposes
+PostgreSQL's host port before Prisma can use it, the PostgreSQL migration is
+retried for `P1001` connectivity failures. Other Prisma errors are not retried
+and still stop the installer.
+
+If Docker BuildKit reports a missing parent or extraction snapshot while
+exporting `python-runner:latest`, the installer retries that image build once
+with `--no-cache`. This recovery is scoped to the HyProNet image build and does
+not prune global Docker build cache, images, containers, or volumes. If the
+retry also fails, restart Docker Desktop and rerun the installer.
+
 The installer does not install the calculation solver. The GUI can run without
 it, but calculations require the solver configured by `BASE_SOLVER_ENGINE_URL`
 in `src/.env`.
@@ -236,7 +257,31 @@ To stop the app:
 
 ## 7. Running the Application Again
 
-For a normal restart:
+On an already-installed Windows checkout, double-click:
+
+```text
+start-hypronet.bat
+```
+
+This starts Docker Desktop when needed, starts the existing HyProNet database
+and Metabase containers without rerunning migrations or workbook imports,
+launches `npm run dev` in a separate command window, waits for ports `3000` and
+`5173`, and opens `http://localhost:5173`. If HyProNet is already listening on
+both ports, it reuses that server instead of starting a duplicate. Startup logs
+are stored alongside installer logs under `%LOCALAPPDATA%\HyProNet\logs`. If
+only the backend or frontend survived from an earlier run, the starter waits
+briefly and then starts only the missing half after verifying that the existing
+Node process belongs to the current HyProNet checkout. It never kills the
+existing process, and an unrelated or unverifiable port owner still causes a
+safe stop.
+
+To start without opening a browser, run from PowerShell:
+
+```powershell
+.\start-hypronet.bat -NoBrowser
+```
+
+For a manual restart:
 
 1. Open Docker Desktop and make sure the required containers are running.
 2. Open the project in a terminal.
