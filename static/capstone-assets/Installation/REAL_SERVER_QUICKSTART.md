@@ -4,6 +4,11 @@ Use this guide to connect HyProNet to a real solver without VS Code port
 forwarding. The Microsoft Dev Tunnels CLI exposes the local HyProNet backend
 temporarily so the remote solver can send its callback.
 
+On an already-installed Windows checkout, `start-hypronetGUI-remote.bat`
+automates the callback tunnel and application startup described below. It asks
+for the solver Dev Tunnel URL and applies both remote URLs only to the launched
+server process, leaving `src/.env` unchanged.
+
 ## 1. Start the local data services
 
 From `src`:

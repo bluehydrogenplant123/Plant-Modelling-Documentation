@@ -260,25 +260,80 @@ To stop the app:
 On an already-installed Windows checkout, double-click:
 
 ```text
-start-hypronet.bat
+start-hypronetGUI-local.bat
 ```
 
-This starts Docker Desktop when needed, starts the existing HyProNet database
-and Metabase containers without rerunning migrations or workbook imports,
-launches `npm run dev` in a separate command window, waits for ports `3000` and
-`5173`, and opens `http://localhost:5173`. If HyProNet is already listening on
-both ports, it reuses that server instead of starting a duplicate. Startup logs
-are stored alongside installer logs under `%LOCALAPPDATA%\HyProNet\logs`. If
-only the backend or frontend survived from an earlier run, the starter waits
-briefly and then starts only the missing half after verifying that the existing
-Node process belongs to the current HyProNet checkout. It never kills the
-existing process, and an unrelated or unverifiable port owner still causes a
-safe stop.
+This starts Docker Desktop when needed and starts the existing HyProNet database
+and Metabase containers without rerunning migrations or workbook imports. It
+then reconciles the backend on port `3000` and frontend on port `5173`, waits for
+both to remain ready through a short stability check, and opens
+`http://localhost:5173`. If one service survived from an earlier run, the
+starter verifies that its Node process belongs to this checkout and starts only
+the missing service. If that surviving service disappears while the other one
+starts, the launcher detects the change and repairs the newly missing service
+instead of timing out with a partial application. Each component gets at most
+one retry; the launcher never kills an existing process, and an unrelated or
+unverifiable port owner still causes a safe stop.
+
+Startup decisions are stored under `%LOCALAPPDATA%\HyProNet\logs`, and npm
+output remains visible in the persistent HyProNet application window. If a
+component cannot remain ready after its retry, the startup error identifies the
+missing component and directs the user to that window and the `start-*.log`.
 
 To start without opening a browser, run from PowerShell:
 
 ```powershell
-.\start-hypronet.bat -NoBrowser
+.\start-hypronetGUI-local.bat -NoBrowser
+```
+
+### Remote calculation server mode
+
+To use a calculation server exposed through Microsoft Dev Tunnels, double-click:
+
+```text
+start-hypronetGUI-remote.bat
+```
+
+The launcher asks for the calculation server's public Dev Tunnel URL. Paste
+either its tunnel root or API base, for example
+`https://example-8000.use.devtunnels.ms` or
+`https://example-8000.use.devtunnels.ms/api`. It then:
+
+1. Requires the current HyProNet development server to stop so the backend can
+   load the remote-mode URLs.
+2. Creates or reuses a machine-specific persistent Dev Tunnel for backend port
+   `3000`.
+3. Enables anonymous access only on that tunnel port so the solver can post its
+   result callback.
+4. Starts HyProNet with process-scoped `BASE_SOLVER_ENGINE_URL` and
+   `BASE_EXTERNAL_URL` overrides.
+5. Checks the public backend route and opens the local GUI.
+
+The launcher does not rewrite `src/.env`; using
+`start-hypronetGUI-local.bat` later therefore keeps the configured local values.
+Keep both the **HyProNet Development Server** and **HyProNet GUI Callback
+Tunnel** windows open while calculations are running. Closing the callback
+tunnel window disconnects the public callback route.
+
+The Microsoft Dev Tunnels CLI must be installed and signed in. If it is
+missing, run:
+
+```powershell
+winget install Microsoft.devtunnel
+devtunnel user login
+```
+
+The first remote launch can perform the interactive sign-in. Because anonymous
+access exposes the backend port to anyone who knows the tunnel URL, use this
+only for development and close the tunnel window when finished.
+
+Optional arguments:
+
+```powershell
+.\start-hypronetGUI-remote.bat `
+  -SolverUrl https://example-8000.use.devtunnels.ms/api `
+  -TunnelId hypronet-gui-lab-pc `
+  -NoBrowser
 ```
 
 For a manual restart:
