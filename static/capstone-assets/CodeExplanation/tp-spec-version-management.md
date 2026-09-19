@@ -258,7 +258,7 @@ Rows indicate both `isChanged` and `isComputed`. Computed values may be displaye
 - `selectedVersionId`
 - `versionTable`
 - materialized `rowData`
-- loading and saving states
+- loading, editing, and saving states
 - the create/rename dialog state
 
 The selected version and active version are different concepts:
@@ -278,6 +278,8 @@ Changing calculation-type tabs clears the selected version, table, rows, and emp
 
 During computation, `HeaderBar` combines `Model.Specs` and `MTP.TPSpecs` disable rules and passes the result as `readOnly`. Read-only mode still permits inspection and refresh, but disables version mutations and grid edits.
 
+Only Simulation uses the explicit edit mode: the grid is protected until the user clicks **Edit**, editing is limited to Value, Spec, LB, and UB, and the Spec choices are `F` and `I`. Its **Save** is rendered immediately above the grid and exits edit mode only after a successful response. Optimization, DataRec, and ParamUpdt retain their directly editable grid and footer **Save** behavior.
+
 ## Version Operations
 
 ### Select
@@ -291,8 +293,10 @@ Save stops grid editing, sends all displayed rows to the selected `versionTable`
 - For Base, an empty patch deletes the existing `TpSpecBaseChange`; a non-empty patch is inserted or updated.
 - For MTP, an empty patch deletes the matching manual `TpChanges` row for that table; a non-empty patch inserts or updates a manual version-scoped row.
 - Saving an inactive version never activates it.
-- Saving the active Base version triggers a calculation-type-only diagram update and synchronizes the refreshed Base rows into frontend node cache without marking those cache entries dirty.
+- Saving an active version triggers a calculation-type-only diagram update. For Simulation, the frontend reloads authoritative rows without overlaying stale local state, then synchronizes Base rows into node cache or MTP rows into TP-keyed Redux parameters. Other calculation types retain the previous refresh behavior.
 - Saving an inactive Base version does not update node cache or current computation-result state.
+
+Demand/Supply mappings continue to own mapped values, bounds, and units. Their initial Spec is `F`; in Simulation, an existing TP Spec override such as `I` is preserved by row materialization and subsequent Base/MTP economic synchronization. Other calculation types retain the existing fixed-spec mapping behavior.
 
 ### New
 
@@ -459,7 +463,7 @@ The PostgreSQL fields already preserve calculation type, scope, version code, an
 
 ## Testing and Verification
 
-There are currently no focused automated tests for `tpSpecVersionUtils.ts`, the seven version/table endpoints, or `TPSpecsButton` version actions. `src/tests/backend/utils/storeComputationResultUtils.test.ts` also does not assert the four TP Spec result fields. Treat this as a test-coverage gap.
+Focused regression coverage now verifies the Simulation edit policy and the Demand/Supply `F` default with a persistent manual `I` override across route save/read and Base/MTP synchronization. Broader version-action and result-metadata coverage remains a test gap.
 
 Recommended automated coverage:
 

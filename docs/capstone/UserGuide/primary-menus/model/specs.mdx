@@ -37,13 +37,14 @@ Only eligible model variables are shown. A row must have an effective specificat
 1. Open **Specs**.
 2. Select the calculation type tab: **Simulation**, **Optimization**, **DataRec**, or **ParamUpdt**.
 3. Select the version to inspect from the version menu.
-4. Edit the required base specification values.
-5. Click **Save** to persist changes to the selected version.
-6. Click **Apply** when you want that version to become the version used by the network and the next solve request.
+4. In **Simulation**, click **Edit** above the table. Other calculation types remain directly editable.
+5. Edit the required base specification values.
+6. In Simulation, click **Save** above the table; in other calculation types, use the existing **Save** button in the footer.
+7. Click **Apply** when you want that version to become the version used by the network and the next solve request.
 
 The version shown in the dropdown is the **selected** version. The item marked `(active)` is the **active** version. Selecting a version is safe for review and editing; it does not apply that version.
 
-In the **Simulation** tab, the **Spec** cell is read-only. Value, bounds, and supported unit fields remain editable when the panel is not read-only. Other calculation-type tabs allow editing the supported Spec values.
+In the **Simulation** tab, edit mode allows the **Value**, **Spec**, **LB**, and **UB** cells. The **Spec** editor offers `F` and `I`, so an over-specified simulation can free a selected variable without changing the network structure. Demand/Supply mappings continue to synchronize their values and bounds, while a Spec override saved in TP Specs is retained. Other calculation-type tabs retain their supported Spec and unit options.
 
 ## Version Management
 
@@ -64,7 +65,9 @@ Version behavior:
 - **New** creates the next available version number and copies the currently selected version for the current calculation type. The new version starts inactive.
 - **Rename** changes the display name shown in the version menu.
 - **Delete** removes the selected non-default version. If the deleted version was active, the panel falls back to V1 for that calculation type.
-- **Save** stores edits in the selected version. If that version is not active, the network is not updated until **Apply** is clicked.
+- In **Simulation**, **Edit** enables the permitted cells and **Save** above the table stores the edits and exits edit mode.
+- In other calculation types, the existing directly editable grid and footer **Save** behavior is unchanged.
+- If the saved version is not active, the network is not updated until **Apply** is clicked.
 - **Apply** makes the selected version active for the current calculation type, refreshes the panel, and updates the values used by the network.
 
 The version code, display name, and logical table name serve different purposes:
